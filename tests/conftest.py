@@ -17,8 +17,8 @@ import asyncpg
 import pytest
 import redis.asyncio as aioredis
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from testcontainers.postgres import PostgresContainer
-from testcontainers.redis import RedisContainer
+from testcontainers.community.postgres import PostgresContainer
+from testcontainers.community.redis import RedisContainer
 
 # Фиксируем версии образов под стек проекта (docs/02 §2.3): PostgreSQL 16+, Redis 7.
 # Теги должны совпадать с docker-compose.yml, чтобы тесты гонялись на тех же версиях СУБД.
@@ -40,7 +40,7 @@ def postgres_container() -> Iterator[PostgresContainer]:
     with PostgresContainer(
         image=POSTGRES_IMAGE,
         username="test",
-        password="test",
+        password="test",  # noqa: S106
         dbname=TEST_DB_NAME,
     ) as postgres:
         yield postgres
