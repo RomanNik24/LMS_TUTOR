@@ -21,6 +21,7 @@ dev = [
     "pytest-asyncio",
     "pytest-cov",
     "ruff",
+    "testcontainers",
     "time-machine",
 ]
 
