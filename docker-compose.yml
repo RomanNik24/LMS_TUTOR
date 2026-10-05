@@ -73,8 +73,14 @@ services:
       retries: 10
 
   # --- Одноразовый контейнер: создаёт приватный bucket lms-files ---
+  # Community-образы minio/mc больше не публикуются (source-only), поэтому
+  # клиент собирается локально из официального исходника строгой версии
+  # RELEASE.2025-08-13T08-35-41Z (minio/mc/Dockerfile). Заменяет `image:`.
   minio-init:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    build:
+      context: ./minio/mc
+      dockerfile: Dockerfile
+    image: lms-mc:RELEASE.2025-08-13T08-35-41Z
     container_name: my-lms-minio-init
     depends_on:
       minio:
