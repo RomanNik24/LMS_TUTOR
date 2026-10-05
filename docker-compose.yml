@@ -1,0 +1,111 @@
+# Локальная инфраструктура разработки MY_LMS (задача T0.07, docs/10 §1).
+# Только postgres / redis / minio / minio-init / app.
+# Worker, scheduler и nginx появятся на более поздних этапах roadmap.
+# Продакшен-окружение настраивается отдельно (docker-compose.prod.yml) — не здесь.
+#
+# Все пароли и ключи ниже — безопасные тестовые значения для локальной
+# разработки. Реальные секреты живут только в .env.local (не коммитится).
+
+name: my-lms-local
+
+services:
+  # --- PostgreSQL 16 (docs/02 §2.3) ---
+  postgres:
+    image: postgres:16
+    container_name: my-lms-postgres
+    environment:
+      # Тестовые локальные значения, не production credentials.
+      POSTGRES_USER: lms
+      POSTGRES_PASSWORD: lms_dev_password
+      POSTGRES_DB: lms
+    ports:
+      # Публикуем только на localhost, наружу сервер не виден.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lms -d lms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- Redis 7 (docs/02 §2.3). Volume не обязателен: локальные FSM/сессии. ---
+  redis:
+    image: redis:7
+    container_name: my-lms-redis
+    command: ["redis-server", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- MinIO: локальная эмуляция S3-совместимого хранилища (docs/10 §1) ---
+  minio:
+    image: minio/minio:latest
+    container_name: my-lms-minio
+    command: ["server", "/data", "--console-address", "0.0.0.0:9001"]
+    environment:
+      # Тестовые локальные значения, не production credentials.
+      MINIO_ROOT_USER: lmsadmin
+      MINIO_ROOT_PASSWORD: lms_dev_password
+    ports:
+      # API и консоль управления — только на localhost.
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- Одноразовый контейнер: создаёт приватный bucket lms-files ---
+  minio-init:
+    image: minio/mc:latest
+    container_name: my-lms-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    # Команда выполняется через `sh -c "<скрипт>"` (exec form). Скрипт:
+    # ждёт готовности MinIO, создаёт bucket lms-files и убирает любой
+    # anonymous/public доступ, после чего контейнер успешно завершается.
+    command:
+      - sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 lmsadmin lms_dev_password 2>/dev/null; do
+          echo "Ожидание MinIO..."
+          sleep 2
+        done
+        mc mb --ignore-existing local/lms-files
+        # Bucket приватный: снимаем все anonymous-политики (docs/09).
+        mc anonymous set none local/lms-files
+        echo "Bucket lms-files создан, anonymous access отсутствует"
+    restart: "no"
+
+  # --- Backend-приложение (собирается из корневого Dockerfile) ---
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: my-lms-app
+    env_file:
+      # Локальные настройки и тестовые секреты; файл не коммитится в Git.
+      - .env.local
+    ports:
+      # Порт API — только на localhost (nginx появится позже, docs/10 §3).
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Миграции запускаются вручную (`alembic upgrade head`), не автоматически.
+
+volumes:
+  postgres_data:
+  minio_data:
