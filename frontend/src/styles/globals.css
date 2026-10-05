@@ -1,0 +1,72 @@
+/* globals.css — подключение Tailwind, токенов и шрифтов (docs/12 §7.3, docs/07 §3.4) */
+
+@import "tailwindcss";
+@import "./tokens.css";
+
+/*
+ * Самохостинг шрифтов через Fontsource (без CDN — docs/07 §4.1).
+ * wght.css содержит @font-face для всех подмножеств с unicode-range: браузер
+ * сам скачивает нужные файлы (кириллица + латиница), лишнее не грузится.
+ */
+@import "@fontsource-variable/unbounded/wght.css";
+@import "@fontsource-variable/montserrat/wght.css";
+@import "@fontsource-variable/inter/wght.css";
+
+/*
+ * Tailwind v4: блок @theme inline сопоставляет наши CSS-переменные с утилитами
+ * (bg-background, text-muted-foreground, rounded-md, font-display...).
+ * Значения берём строго из tokens.css, hex здесь запрещён.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-success-bg: var(--success-bg);
+  --color-success-fg: var(--success-fg);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-fg: var(--warning-fg);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-fg: var(--danger-fg);
+  --color-hero-foreground: var(--hero-foreground);
+
+  --font-display: var(--font-display);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+
+  /* Радиусы брендбука: sm=8, базовый=12, lg=16 (docs/07 §5) */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-overlay: var(--shadow-overlay);
+}
+
+/* Тёмная тема включается классом .dark на <html> (расставляет lib/telegram.ts) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  margin: 0;
+  min-height: 100dvh; /* dvh вместо vh: мобильные панели (docs/12 §5.5) */
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}

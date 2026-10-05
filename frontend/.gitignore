@@ -1,0 +1,12 @@
+# Node.js (frontend)
+node_modules/
+dist/
+coverage/
+
+# Локальные переменные окружения (секретов во фронтенде нет — docs/02 §7)
+.env
+.env.local
+.env.*.local
+
+# Vite
+.vite/
