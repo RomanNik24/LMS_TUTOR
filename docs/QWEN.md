@@ -40,6 +40,7 @@ Before modifying anything, ALWAYS:
 8. Compare the current working tree against `origin/main`.
 9. Determine exactly which files and components are relevant to the requested task.
 10. Do not modify unrelated files.
+11. Never modify `.gitignore` (see 44.1).
 
 Never assume that an old Qwen branch is current.
 
@@ -1359,6 +1360,7 @@ git diff
 Confirm:
 
 * no unrelated changes;
+* `.gitignore` is NOT in the diff (see 44.1);
 * no secrets;
 * no generated junk;
 * no debug code;
@@ -1398,6 +1400,46 @@ frontend/src/api/schema.d.ts
 ```
 
 may be generated and versioned when the project specification requires it.
+
+---
+
+## 44.1 Never modify `.gitignore`
+
+`.gitignore` is the single source of truth that keeps secrets and junk out of the repository.
+
+It must NOT be created, modified, renamed, deleted, truncated, regenerated or restored by Qwen.
+
+Never run:
+
+```bash
+git checkout <ref> -- .gitignore
+git restore .gitignore
+git checkout HEAD~1 -- .gitignore
+git clean -xdf
+rm .gitignore
+```
+
+Never write ignore rules into it, and never "tidy" it by rewriting it from an older revision.
+
+This file is owned exclusively by the repository owner. It has already been reverted three times by automated work that restored a stale revision, and each revert silently removed the rules protecting `.env.local`, virtual environments, caches, logs and IDE directories.
+
+If `.gitignore` appears broken, truncated or empty:
+
+```text
+Do not fix it.
+Do not restore it from any commit.
+Report it in the final report under "Remaining" and stop touching the file.
+```
+
+The owner restores it.
+
+The only permitted interaction is verification. To check that the rules work, use:
+
+```bash
+git check-ignore -v <path>
+```
+
+Reading the file is allowed. Writing it is not.
 
 ---
 
@@ -1621,6 +1663,7 @@ STOP and report to the owner when:
 5. A required external credential/service is unavailable.
 6. A task cannot be safely completed without deciding an unspecified business rule.
 7. The current branch contains unrelated uncommitted changes that would be overwritten or mixed into the task.
+8. A task appears to require creating, changing or restoring `.gitignore`. Report it instead of doing it (see 44.1).
 
 Do not guess in these situations.
 
