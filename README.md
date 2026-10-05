@@ -42,3 +42,20 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
 
 Остановить окружение: `docker compose down` (с удалением томов данных —
 `docker compose down -v`).
+
+## Проверка кода
+
+Единая команда запускает все проверки проекта и печатает итог:
+
+```bash
+uv run python scripts/check.py
+```
+
+Отдельные группы: `--backend-only` (ruff, ruff format, mypy, pytest) и
+`--frontend-only` (pnpm lint, typecheck, test, build).
+
+Перед коммитом настройте локальные хуки один раз:
+
+```bash
+uv run pre-commit install
+```

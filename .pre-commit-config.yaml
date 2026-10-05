@@ -1,0 +1,55 @@
+# Pre-commit хуки проекта MY_LMS (задача T0.10).
+#
+# Локальные хуки ruff/ruff-format/mypy работают через `uv run`, поэтому
+# проверяется ровно то окружение, в котором живёт проект, — без отдельной
+# установки инструментов в системе.
+#
+# Установка: uv run pre-commit install
+# Прогон по всем файлам: uv run pre-commit run --all-files
+
+minimum_pre_commit_version: "3.0.0"
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  # --- Линтер и форматер Python (те же версии, что в uv.lock) ---
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff check
+        entry: uv run ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format --check --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      # mypy в strict-режиме; проверяем только src, как в CI (docs/10 §6).
+      - id: mypy
+        name: mypy --strict
+        entry: uv run mypy --strict src
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+
+  # --- Базовые проверки гигиены репозитория ---
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Большие файлы не должны попадать в Git.
+      - id: check-added-large-files
+      # Файл всегда заканчивается переводом строки.
+      - id: end-of-file-fixer
+      # Приватные ключи в репозиторий не попадают.
+      - id: detect-private-key
+
+  # --- Проверка секретов (gitleaks) ---
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
