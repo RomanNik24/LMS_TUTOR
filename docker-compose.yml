@@ -43,8 +43,14 @@ services:
       retries: 10
 
   # --- MinIO: локальная эмуляция S3-совместимого хранилища (docs/10 §1) ---
+  # Community-образы minio/minio больше не публикуются (source-only), поэтому
+  # сервер собирается локально из официального исходника строгой версии
+  # RELEASE.2025-10-15T17-29-55Z (minio/Dockerfile). Заменяет `image:`.
   minio:
-    image: minio/minio:RELEASE.2025-05-24T17-08-30Z
+    build:
+      context: ./minio
+      dockerfile: Dockerfile
+    image: lms-minio:RELEASE.2025-10-15T17-29-55Z
     container_name: my-lms-minio
     command: ["server", "/data", "--console-address", "0.0.0.0:9001"]
     environment:
@@ -57,8 +63,11 @@ services:
       - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
+    # Собственный образ не содержит `mc` (в официальном community-образе он
+    # тоже отсутствовал), поэтому healthcheck — HTTP GET на стандартный
+    # эндпоинт MinIO `/minio/health/live` через curl из базового слоя.
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 10
