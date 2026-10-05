@@ -1,0 +1,101 @@
+/*
+ * Токены дизайна — скопированы СТРОГО из docs/07_design.md §3.4.
+ * Меняем этот файл, а не компоненты: hex-цвета в JSX запрещены (docs/06 B3).
+ */
+
+:root {
+  /* Бренд */
+  --brand-green: #1faa59;
+  --brand-green-dark: #137a3e;
+  --brand-green-light: #6fe39c;
+  --brand-amber: #ff9b2e;
+  --brand-amber-dark: #e67e00;
+  --brand-black: #141414;
+  --brand-white: #ffffff;
+
+  /* Нейтральные */
+  --gray-900: #3a3a3a;
+  --gray-600: #5f5f5f;
+  --gray-500: #8a8a8a;
+  --gray-200: #e0e0e0;
+  --gray-100: #f2f2f2;
+
+  /* Семантические токены shadcn/ui — светлая тема (основная) */
+  --background: #f2f2f2;
+  --foreground: #141414;
+  --card: #ffffff;
+  --card-foreground: #141414;
+  --popover: #ffffff;
+  --popover-foreground: #141414;
+  --primary: #137a3e;
+  --primary-foreground: #ffffff;
+  --secondary: #e4f5eb;
+  --secondary-foreground: #137a3e;
+  --muted: #f2f2f2;
+  --muted-foreground: #5f5f5f;
+  --accent: #e4f5eb;
+  --accent-foreground: #137a3e;
+  --destructive: #c93b3b;
+  --destructive-foreground: #ffffff;
+  --border: #e0e0e0;
+  --input: #e0e0e0;
+  --ring: #1faa59;
+
+  /* Сигнальные и акцентные */
+  --highlight: #ff9b2e; /* единственный акцент: заливка */
+  --highlight-foreground: #141414; /* текст на амбере */
+  --success-bg: #e4f5eb;
+  --success-fg: #137a3e;
+  --warning-bg: #ffefde;
+  --warning-fg: #141414;
+  --danger-bg: #fbe9e9;
+  --danger-fg: #a32a2a;
+
+  /* Шапка-герой (насыщенно-зелёная поверхность) */
+  --hero-gradient: linear-gradient(135deg, #1faa59 0%, #137a3e 100%);
+  --hero-foreground: #ffffff;
+
+  /* Форма */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+
+  /* Тени (только box-shadow, без filter: drop-shadow) */
+  --shadow-card: 0 1px 2px rgba(20, 20, 20, 0.06), 0 4px 12px rgba(20, 20, 20, 0.06);
+  --shadow-overlay: 0 8px 24px rgba(20, 20, 20, 0.18);
+
+  /* Шрифты (см. docs/07 §4) */
+  --font-display: "Unbounded Variable", "Montserrat Variable", system-ui, sans-serif;
+  --font-heading: "Montserrat Variable", system-ui, sans-serif;
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ⚠ Тёмная тема: производная от бренда. Включается классом .dark на <html> */
+.dark {
+  --background: #141414;
+  --foreground: #f2f2f2;
+  --card: #1e1e1e;
+  --card-foreground: #f2f2f2;
+  --popover: #1e1e1e;
+  --popover-foreground: #f2f2f2;
+  --primary: #1faa59;
+  --primary-foreground: #141414;
+  --secondary: #1f2e25;
+  --secondary-foreground: #6fe39c;
+  --muted: #262626;
+  --muted-foreground: #a6a6a6;
+  --accent: #1f2e25;
+  --accent-foreground: #6fe39c;
+  --destructive: #ef6b6b;
+  --destructive-foreground: #141414;
+  --border: #333333;
+  --input: #333333;
+  --ring: #6fe39c;
+  --success-bg: #1f2e25;
+  --success-fg: #6fe39c;
+  --warning-bg: #3a2a12;
+  --warning-fg: #ffd9a8;
+  --danger-bg: #3a1b1b;
+  --danger-fg: #f4a3a3;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+}

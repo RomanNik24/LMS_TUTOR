@@ -1,0 +1,158 @@
+# CI-конвейер MY_LMS (задача T0.13, docs/10 §6).
+#
+# Три проверки с короткими именами (backend / frontend / secrets) — они станут
+# «обязательными проверками» для защиты ветки main (правила настраивает TERM в T0.14).
+#
+# Важно:
+# - секреты здесь НЕ используются: тестовые пароли сервис-контейнеров — публичные
+#   заглушки (postgres/test), реальных значений в workflow нет;
+# - backend-тесты в CI идут через service containers (TEST_USE_SERVICES=1),
+#   а не через testcontainers/DinD — Docker внутри job'а не требуется;
+# - код backend/frontend этим workflow НЕ меняется.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Новый пуш в ту же ветку/PR отменяет предыдущий незавершённый запуск.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Минимальные права: workflow только читает код.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    # PostgreSQL 16 и Redis 7 — те же версии, что в docker-compose.yml и conftest.py.
+    # Порты проброшены на хост раннера, поэтому контейнер достижим по localhost.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres # тестовая заглушка, не секрет
+          POSTGRES_DB: lms_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lms_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Фикстуры tests/conftest.py при TEST_USE_SERVICES=1 берут адреса отсюда
+      # вместо запуска Testcontainers (см. docs/PLAN_FROM_SCRATCH.md, T0.09).
+      TEST_USE_SERVICES: "1"
+      DATABASE_URL_TEST: postgresql+asyncpg://postgres:postgres@localhost:5432/lms_test
+      REDIS_URL_TEST: redis://localhost:6379/0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6 # актуальный стабильный major (2026-10)
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7 # v7 — latest stable major с input `enable-cache`
+        with:
+          enable-cache: true # кэш uv настраивается внутри экшена
+
+      - name: Set up Python
+        # Версию берёт из requires-python в pyproject.toml (>=3.11); на ubuntu-latest
+        # ставит актуальный стабильный CPython и прописывает его в PATH для `uv run`.
+        run: uv python install 3.12
+
+      - name: Sync dependencies (frozen lockfile)
+        run: uv sync --frozen
+
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Mypy (strict, src only)
+        run: uv run mypy --strict src
+
+      - name: Pytest
+        run: uv run pytest -q
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NODE_VERSION: "22" # LTS-line; engines в package.json допускает ^22.13.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        # v4 — стабильный major, полностью совместим с pnpm 10 (проект на pnpm@10.19.0;
+        # v6 ориентирован на pnpm 11+ и новый `pnpm/setup`, в проекте не используется).
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json # берёт версию из packageManager
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6 # актуальный стабильный major (2026-10)
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm test --run
+
+      - name: Security audit (high+)
+        # Аудит не блокирует workflow: падать должен только на high/critical.
+        continue-on-error: true
+        run: pnpm audit --audit-level=high
+
+      - name: Build
+        run: pnpm build
+
+  secrets:
+    name: secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v6
+        with:
+          # Полная история нужна, чтобы gitleaks видел весь diff PR
+          # (BASE..HEAD) и новые коммиты при push в main.
+          fetch-depth: 0
+
+      - name: Gitleaks (detect hardcoded secrets)
+        # v2 — официально поддерживаемый major экшена (v3 требует отдельного
+        # репозитория-конфигурации и новых прав; оставляем минимальные).
+        # На pull_request сканирует diff между base и head, на push — диапазон
+        # новых коммитов. Используется только дефолный GITHUB_TOKEN (read),
+        # никаких реальных секретов в workflow нет.
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

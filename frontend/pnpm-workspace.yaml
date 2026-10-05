@@ -1,0 +1,5 @@
+# Зависимости, которым разрешён postinstall-скрипт (pnpm 10 блокирует их по умолчанию):
+# esbuild (Vite/Vitest) и msw. Добавляйте сюда пакеты только осознанно.
+onlyBuiltDependencies:
+  - esbuild
+  - msw
