@@ -7,3 +7,38 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
 **Статус: в разработке.**
 
 Документация проекта: [docs/00_README_INDEX.md](docs/00_README_INDEX.md)
+
+## Локальный запуск инфраструктуры
+
+Локальные PostgreSQL, Redis, MinIO и backend поднимаются через Docker Compose
+(`docker-compose.yml`). Продакшен-деплой описывается отдельно (см. `docs/10`)
+и здесь не рассматривается.
+
+1. Скопируйте шаблон настроек и заполните локальные значения
+   (файл `.env.local` не коммитится в Git):
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. Поднимите инфраструктуру и приложение:
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. Проверьте состояние сервисов (все должны быть `healthy`,
+   `minio-init` — успешно завершённым `exited`):
+
+   ```bash
+   docker compose ps
+   ```
+
+4. Проверьте, что приложение отвечает:
+
+   ```bash
+   curl http://127.0.0.1:8000/health
+   ```
+
+Остановить окружение: `docker compose down` (с удалением томов данных —
+`docker compose down -v`).

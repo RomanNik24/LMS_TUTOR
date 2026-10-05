@@ -1,0 +1,71 @@
+# Исключения для Docker build context (задача T0.07).
+# Секретные и локальные файлы не должны попадать в образ.
+
+# --- Git ---
+.git
+.gitignore
+.gitattributes
+
+# --- Python: окружения, кэши, артефакты сборки ---
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+coverage.xml
+htmlcov
+*.egg-info
+build
+dist-python
+
+# --- Секреты и переменные окружения ---
+# Реальные значения лежат только в .env.local, в образ они попадают не должны.
+.env
+.env.*
+!.env.example
+
+# --- Локальные данные и базы ---
+data
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
+
+# --- Node / frontend (собирается отдельно, docs/10 §3) ---
+node_modules
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+# --- Docker-тома и локальные данные сервисов ---
+docker-data
+postgres_data
+redis_data
+minio_data
+
+# --- Логи ---
+logs
+*.log
+
+# --- IDE и ОС ---
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# --- Временные файлы ---
+tmp
+temp
+*.tmp
+
+# --- Документация (в образе не нужна) ---
+docs
