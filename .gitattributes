@@ -1,0 +1,19 @@
+# Нормализация переводов строк: в Git всегда LF, чтобы не было конфликтов
+# и «невидимых» изменений из-за CRLF на разных машинах.
+* text=auto eol=lf
+
+# Shell-скрипты всегда LF, иначе они не запускаются в Linux-контейнерах.
+*.sh text eol=lf
+
+# Бинарные файлы не обрабатываем.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.gz binary
+*.dump binary
