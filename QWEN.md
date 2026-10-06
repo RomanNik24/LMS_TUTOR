@@ -102,7 +102,12 @@ START → CODE → FINISH → owner review → merge → stop
 
 After FINISH the owner reviews the result before it is merged. Do not merge automatically.
 
-The collaboration process (branches / Pull Requests vs. direct commits to `main`) is defined separately by the owner and may change. Follow the owner's current instructions. Do not codify a workflow that the owner has not confirmed.
+Branch and PR rule (confirmed by the owner):
+
+- Do NOT create a new branch per task. Work in the single working branch already assigned to the session.
+- Open the Pull Request directly into `main`; the owner merges it.
+- After the PR is merged, reset the working branch to the latest `main` (`git fetch origin main && git checkout -B <working-branch> origin/main`) and continue from there.
+- The `Ветка:` field in task blocks of `docs/PLAN_FROM_SCRATCH.md` is informational only and must not be used to create branches.
 
 ---
 
