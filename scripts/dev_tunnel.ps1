@@ -23,7 +23,10 @@ if (-not (Get-Command cloudflared -ErrorAction SilentlyContinue)) {
 Write-Host "Запускаю туннель на http://localhost:$Port ..."
 
 $script:shown = $false
-# cloudflared пишет журнал в stderr; склеиваем потоки и ищем адрес в строках
+# cloudflared пишет журнал в stderr. В Windows PowerShell 5.1 при 2>&1 каждая строка stderr
+# становится ErrorRecord, а при $ErrorActionPreference = "Stop" это обрывает скрипт
+# (NativeCommandError). Поэтому на время вызова переключаемся на "Continue".
+$ErrorActionPreference = "Continue"
 & cloudflared tunnel --url "http://localhost:$Port" 2>&1 | ForEach-Object {
     $line = $_.ToString()
     Write-Host $line
