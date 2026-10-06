@@ -12,7 +12,7 @@ Lifespan: настройки, Sentry (только при непустом ``SEN
 import logging
 import os
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Response
@@ -22,7 +22,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import get_engine, get_redis, get_session, get_session_factory
+from src.api.telegram import router as telegram_router
 from src.api.v1 import api_router
+from src.bot.runtime import start_bot
 from src.core.config import get_settings
 from src.core.constants import (
     API_V1_PREFIX,
@@ -38,6 +40,7 @@ from src.core.csrf import CsrfMiddleware
 from src.core.error_handlers import register_error_handlers
 from src.core.logging import RequestIdMiddleware, setup_logging
 from src.core.sentry import init_sentry
+from src.db.session import session_scope
 from src.schemas.health import HealthResponse
 from src.services.bootstrap import ensure_owner_from_settings
 
@@ -56,11 +59,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         # Первый владелец по OWNER_TELEGRAM_ID (docs/05 §3.2); без ID — пропуск.
         await ensure_owner_from_settings(settings, get_session_factory(), redis)
-        yield
+        runtime = await start_bot(settings, redis, _session_scope)
+        app.state.bot_runtime = runtime
+        try:
+            yield
+        finally:
+            if runtime is not None:
+                await runtime.stop()
     finally:
         await redis.aclose()
         if get_engine.cache_info().currsize:
             await get_engine().dispose()
+
+
+def _session_scope() -> AbstractAsyncContextManager[AsyncSession]:
+    """Контекст сессии БД для бота (общая фабрика приложения)."""
+    return session_scope(get_session_factory())
 
 
 def _public_base_url() -> str:
@@ -104,6 +118,7 @@ def create_app(app_env: str | None = None) -> FastAPI:
     app.middleware("http")(RequestIdMiddleware(app).dispatch)
     register_error_handlers(app)
     app.include_router(api_router, prefix=API_V1_PREFIX)
+    app.include_router(telegram_router)
 
     @app.get(
         "/health",

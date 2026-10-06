@@ -80,3 +80,10 @@ INVITE_FAILURE_SCOPE = "invite_fail"
 
 # Базовый путь REST API (docs/08 §1).
 API_V1_PREFIX = "/api/v1"
+
+# Бот (docs/05 §4, §7): TTL FSM, допустимые типы апдейтов, префикс приглашения.
+BOT_FSM_TTL_SECONDS = 60 * 60
+BOT_ALLOWED_UPDATES: tuple[str, ...] = ("message", "callback_query", "my_chat_member")
+BOT_INVITE_PAYLOAD_PREFIX = "inv_"
+BOT_WEBHOOK_PATH = "/telegram/webhook"
+BOT_WEBHOOK_AUTH_HEADER = "x-telegram-bot-api-secret-token"

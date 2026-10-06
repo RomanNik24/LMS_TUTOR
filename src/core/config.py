@@ -16,6 +16,7 @@ from src.core.constants import (
     APP_ENV_PROD,
     APP_ENVIRONMENTS,
     BOT_MODE_POLLING,
+    BOT_MODE_WEBHOOK,
     BOT_MODES,
     ENV_FILE_NAME,
     S3_REGION_DEFAULT,
@@ -120,6 +121,15 @@ class Settings(BaseSettings):
             raise ValueError(f"BOT_MODE={self.bot_mode!r}: допустимы {', '.join(BOT_MODES)}")
         if self.schedule_horizon_weeks < 1:
             raise ValueError("SCHEDULE_HORIZON_WEEKS должен быть >= 1")
+        if (
+            self.bot_mode == BOT_MODE_WEBHOOK
+            and self.bot_token.get_secret_value().strip()
+            and not (
+                self.webhook_url.strip().startswith("https://")
+                and self.webhook_secret.get_secret_value().strip()
+            )
+        ):
+            raise ValueError("BOT_MODE=webhook: нужны WEBHOOK_URL (https://…) и WEBHOOK_SECRET")
         return self
 
     @model_validator(mode="after")

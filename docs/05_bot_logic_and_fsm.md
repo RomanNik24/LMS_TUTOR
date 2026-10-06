@@ -118,7 +118,7 @@ FSM используется только для коротких диалого
 - **Отмена:** при отмене/переносе урока ожидающие напоминания для старого времени становятся неактуальными: диспетчер перед отправкой перепроверяет актуальность (`start_epoch` совпадает с текущим временем урока, урок `scheduled`) и иначе ставит `skipped`.
 
 ## 7. Webhook и polling
-- `BOT_MODE=webhook` (prod/staging): эндпоинт `POST /telegram/webhook/{WEBHOOK_PATH_SECRET}`, проверка заголовка `X-Telegram-Bot-Api-Secret-Token`.
+- `BOT_MODE=webhook` (prod/staging): эндпоинт `POST /telegram/webhook/{secret}`, где `{secret}` — секретный сегмент, производный от `WEBHOOK_SECRET` (отдельная переменная не нужна: `sha256("webhook-path:" + WEBHOOK_SECRET)[:32]`); дополнительно проверяется заголовок `X-Telegram-Bot-Api-Secret-Token`. `WEBHOOK_URL` — базовый адрес `https://<домен>/telegram/webhook`, секретный сегмент добавляется при `setWebhook` автоматически. Неверный путь → `404`, неверный заголовок → `403`.
 - `BOT_MODE=polling` (local).
 - Типы апдейтов ограничиваются (`allowed_updates`): `message`, `callback_query`, `my_chat_member`.
 - `my_chat_member` с `kicked` помечает `bot_blocked`.
