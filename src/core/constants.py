@@ -8,9 +8,27 @@
 # только в этом файле, и он не попадает в Git.
 ENV_FILE_NAME = ".env.local"
 
+# Заголовок с идентификатором запроса (docs/03: trace/request id).
+REQUEST_ID_HEADER = "X-Request-ID"
+
 # Окружения из docs/02, раздел 5.
 APP_ENV_LOCAL = "local"
+APP_ENV_STAGING = "staging"
 APP_ENV_PROD = "prod"
+
+# Допустимые значения APP_ENV (проверяются в Settings).
+APP_ENVIRONMENTS: tuple[str, ...] = (APP_ENV_LOCAL, APP_ENV_STAGING, APP_ENV_PROD)
+
+# Режимы работы Telegram-бота (docs/02 §2.2): polling локально, webhook на сервере.
+BOT_MODE_POLLING = "polling"
+BOT_MODE_WEBHOOK = "webhook"
+
+# Допустимые значения BOT_MODE (проверяются в Settings).
+BOT_MODES: tuple[str, ...] = (BOT_MODE_POLLING, BOT_MODE_WEBHOOK)
+
+# Значения по умолчанию для необязательных настроек (docs/02 §7).
+S3_REGION_DEFAULT = "us-east-1"
+SCHEDULE_HORIZON_WEEKS_DEFAULT = 2
 
 # Статус успешного ответа `GET /health`.
 HEALTH_STATUS_OK = "ok"
