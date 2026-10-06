@@ -48,12 +48,12 @@ def _load_settings() -> Settings:
     """
     if os.environ.get("APP_ENV") == "prod":
         # Prod: обязательные поля приходят из окружения (docs/02 §7).
-        return Settings()  # type: ignore[call-arg]
+        return Settings()
 
     database_url = os.environ.get("DATABASE_URL")
     if database_url is None:
         # Local/staging: значения полей берутся из .env.local (ENV_FILE_NAME).
-        return Settings()  # type: ignore[call-arg]
+        return Settings()
 
     return Settings(
         database_url=database_url,

@@ -82,7 +82,7 @@ def test_external_service_error() -> None:
     """ExternalServiceError → документированный 500 (docs/08 §1; 502 не вводим)."""
     error = ExternalServiceError()
 
-    assert (error.http_status, error.code) == (500, "external_service_error")
+    assert (error.http_status, error.code) == (500, "internal_error")
     # Публичный HTTP 502 не вводим: контракт — только статусы docs/08 §1.
     assert all(cls().http_status != 502 for cls in _ALL_APP_ERRORS)
 

@@ -7,16 +7,23 @@
 PostgreSQL/Redis на машине разработчика — тесты работают независимо от того,
 запущены ли локальные сервисы и на каких портах они сидят.
 
-Модели SQLAlchemy и миграции здесь НЕ создаются — это задачи T0.10+.
 Комментарии на русском согласно docs/06_agent_rules.md.
 """
 
+import os
 from collections.abc import AsyncIterator, Iterator
+from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
+from pathlib import Path
 
 import asyncpg
+import httpx
 import pytest
 import redis.asyncio as aioredis
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+import time_machine
+from alembic import command as alembic_command
+from alembic.config import Config
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
@@ -29,13 +36,31 @@ REDIS_IMAGE = "redis:7"
 TEST_DB_NAME = "lms_test"
 
 
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Автоматически помечает всё из tests/integration маркером `integration`."""
+    for item in items:
+        if "integration" in item.path.parts:
+            item.add_marker(pytest.mark.integration)
+
+
+def _use_services() -> bool:
+    """True, если адреса PostgreSQL/Redis заданы окружением (CI), а не Testcontainers."""
+    return os.environ.get("TEST_USE_SERVICES") == "1"
+
+
+def _required_env(name: str) -> str:
+    """Вернуть обязательную переменную окружения режима TEST_USE_SERVICES=1."""
+    value = os.environ.get(name, "")
+    if not value:
+        raise RuntimeError(f"TEST_USE_SERVICES=1, но переменная {name} не задана")
+    return value
+
+
 @pytest.fixture(scope="session")
 def postgres_container() -> Iterator[PostgresContainer]:
     """Поднимает контейнер PostgreSQL 16 на всю сессию тестов.
 
-    Yields:
-        Запущенный контейнер; доступ к строке подключения — через
-        `get_connection_url()` (jdbc-формат) или поля хоста/порта.
+    Используется только без TEST_USE_SERVICES=1; в CI адрес берётся из окружения.
     """
     with PostgresContainer(
         image=POSTGRES_IMAGE,
@@ -48,35 +73,34 @@ def postgres_container() -> Iterator[PostgresContainer]:
 
 @pytest.fixture(scope="session")
 def redis_container() -> Iterator[RedisContainer]:
-    """Поднимает контейнер Redis 7 на всю сессию тестов.
-
-    Yields:
-        Запущенный контейнер; реальный (проброшенный на хост) порт доступен
-        через `get_exposed_port(6379)`.
-    """
+    """Поднимает контейнер Redis 7 на всю сессию тестов (без TEST_USE_SERVICES=1)."""
     with RedisContainer(image=REDIS_IMAGE) as redis:
         yield redis
 
 
 @pytest.fixture(scope="session")
-def postgres_url(postgres_container: PostgresContainer) -> str:
+def postgres_url(request: pytest.FixtureRequest) -> str:
     """Строка подключения PostgreSQL в asyncpg-формате (`postgresql+asyncpg://`).
 
-    Возвращаемый адрес всегда указывает на контейнер (хост + проброшенный порт),
-    поэтому локальный PostgreSQL тестам не мешает и не нужен.
+    TEST_USE_SERVICES=1 → берётся `DATABASE_URL_TEST` (service container CI);
+    иначе — свежий контейнер Testcontainers (локальный PostgreSQL не нужен).
     """
-    # get_connection_url() отдаёт jdbc-URL вида
-    # postgresql://user:pass@host:port/db?driver=... — пересобираем под asyncpg.
-    host = postgres_container.get_container_host_ip()
-    port = postgres_container.get_exposed_port(5432)
+    if _use_services():
+        return _required_env("DATABASE_URL_TEST")
+    container: PostgresContainer = request.getfixturevalue("postgres_container")
+    host = container.get_container_host_ip()
+    port = container.get_exposed_port(5432)
     return f"postgresql+asyncpg://test:test@{host}:{port}/{TEST_DB_NAME}"
 
 
 @pytest.fixture(scope="session")
-def redis_url(redis_container: RedisContainer) -> str:
-    """Строка подключения Redis (`redis://`), указывающая на контейнер."""
-    host = redis_container.get_container_host_ip()
-    port = redis_container.get_exposed_port(6379)
+def redis_url(request: pytest.FixtureRequest) -> str:
+    """Строка подключения Redis: `REDIS_URL_TEST` (CI) или контейнер Testcontainers."""
+    if _use_services():
+        return _required_env("REDIS_URL_TEST")
+    container: RedisContainer = request.getfixturevalue("redis_container")
+    host = container.get_container_host_ip()
+    port = container.get_exposed_port(6379)
     return f"redis://{host}:{port}/0"
 
 
@@ -124,3 +148,79 @@ async def redis_client(redis_url: str) -> AsyncIterator[aioredis.Redis]:
         yield client
     finally:
         await client.aclose()
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _alembic_upgrade_head(database_url: str) -> None:
+    """Применить миграции в отдельном потоке (env.py запускает свой event loop)."""
+
+    def _command() -> None:
+        previous = os.environ.get("DATABASE_URL")
+        os.environ["DATABASE_URL"] = database_url
+        try:
+            cfg = Config(str(ROOT / "alembic.ini"))
+            cfg.set_main_option("script_location", str(ROOT / "src/db/migrations"))
+            alembic_command.upgrade(cfg, "head")
+        finally:
+            if previous is None:
+                os.environ.pop("DATABASE_URL", None)
+            else:
+                os.environ["DATABASE_URL"] = previous
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        pool.submit(_command).result()
+
+
+@pytest.fixture(scope="session")
+def migrated_postgres_url(postgres_url: str) -> str:
+    """PostgreSQL со схемой `alembic upgrade head` (один раз на сессию тестов)."""
+    _alembic_upgrade_head(postgres_url)
+    return postgres_url
+
+
+@pytest.fixture
+async def db_session(migrated_postgres_url: str) -> AsyncIterator[AsyncSession]:
+    """Асинхронная сессия SQLAlchemy с откатом после теста.
+
+    Сессия работает внутри внешней транзакции соединения; `commit()` внутри
+    теста превращается в SAVEPOINT, а по завершении теста всё откатывается —
+    тесты не влияют друг на друга.
+    """
+    engine = create_async_engine(migrated_postgres_url, pool_size=2, max_overflow=0)
+    try:
+        async with engine.connect() as connection:
+            outer = await connection.begin()
+            session = AsyncSession(
+                bind=connection,
+                expire_on_commit=False,
+                join_transaction_mode="create_savepoint",
+            )
+            try:
+                yield session
+            finally:
+                await session.close()
+                await outer.rollback()
+    finally:
+        await engine.dispose()
+
+
+@pytest.fixture
+async def api_client() -> AsyncIterator[httpx.AsyncClient]:
+    """`httpx.AsyncClient`, подключённый напрямую к FastAPI-приложению (без сети)."""
+    from src.main import app  # noqa: PLC0415 - импорт приложения только при необходимости
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+
+@pytest.fixture
+def frozen_time() -> Iterator[time_machine.travel]:
+    """Фикстура time-machine: `frozen_time.move_to(...)` двигает время в тесте.
+
+    Старт — фиксированный момент в UTC; тики выключены, время идёт только по команде.
+    """
+    with time_machine.travel(datetime(2026, 10, 6, 12, 0, tzinfo=UTC), tick=False) as traveller:
+        yield traveller

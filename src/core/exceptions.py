@@ -147,10 +147,9 @@ class BusinessRuleError(AppError):
 class ExternalServiceError(AppError):
     """Сбой внешнего сервиса (Telegram API, S3) — docs/03 §11, docs/06 A5.
 
-    Единый контракт ошибок — docs/08 §1: публичный HTTP 502 не вводим
-    (его нет в документации); используется документированный 500
-    ``internal_error``-статус с нейтральным сообщением. Клиентский код
-    ошибки остаётся различимым через ``code="external_service_error"``.
+    Единый контракт ошибок — docs/08 §1: публичный HTTP 502 и отдельный код
+    в документации не определены, поэтому клиент получает документированные
+    500 ``internal_error`` с нейтральным сообщением.
     Сообщение клиенту нейтральное: внутренние детали стороннего сервиса
     наружу не отдаём.
     """
@@ -159,7 +158,7 @@ class ExternalServiceError(AppError):
         self,
         message: str = "Внешний сервис временно недоступен. Попробуйте позже.",
         *,
-        code: str = "external_service_error",
+        code: str = "internal_error",
         details: dict[str, DetailValue] | None = None,
     ) -> None:
         super().__init__(message, code=code, details=details, http_status=500)

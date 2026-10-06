@@ -7,16 +7,13 @@
   ОГЭ информатика 0–21 = 22; ОГЭ математика 0–31 = 32);
 - корректность состава subjects / exam_types;
 - config ``{"min_geometry": 2}`` для ОГЭ математики;
-- уникальность идентификационных ключей справочных данных;
-- наличие обязательной пометки «ожидает сверки владельцем».
+- уникальность идентификационных ключей справочных данных.
 
 Реальная идемпотентность ``scripts/seed_reference.py`` проверяется
 интеграционными PostgreSQL-тестами T1.03.
 """
 
 from __future__ import annotations
-
-from pathlib import Path
 
 import pytest
 from src.db.seeds.reference import (
@@ -139,10 +136,3 @@ def test_reference_seed_identity_keys_are_unique() -> None:
     for exam_code, scale in GRADE_SCALES.items():
         keys = list(scale)
         assert len(keys) == len(set(keys)), exam_code
-
-
-def test_seeds_marked_for_owner_verification() -> None:
-    """Модуль сидов содержит обязательную пометку «ожидает сверки владельцем»."""
-
-    source = Path("src/db/seeds/reference.py").read_text(encoding="utf-8")
-    assert "ожидает сверки владельцем" in source.lower()

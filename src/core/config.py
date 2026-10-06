@@ -19,8 +19,8 @@ from src.core.constants import (
     ENV_FILE_NAME,
     S3_REGION_DEFAULT,
     SCHEDULE_HORIZON_WEEKS_DEFAULT,
+    SECRET_MIN_BYTES,
 )
-from src.core.timeutils import SECRET_MIN_BYTES
 
 
 class Settings(BaseSettings):
