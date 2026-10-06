@@ -42,3 +42,10 @@ INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60
 INIT_DATA_FUTURE_TOLERANCE_SECONDS = 60
 # Размер случайного токена в байтах для secrets.token_urlsafe (256 бит, docs/09 §2.1).
 TOKEN_BYTES = 32
+
+# Серверные сессии (docs/09 §2.3): cookie с идентификатором, данные — в Redis.
+SESSION_COOKIE_NAME = "session_id"
+SESSION_TTL_STUDENT_SECONDS = 30 * 24 * 60 * 60
+SESSION_TTL_STAFF_SECONDS = 7 * 24 * 60 * 60
+SESSION_KEY_PREFIX = "session:"
+USER_SESSIONS_KEY_PREFIX = "user_sessions:"
