@@ -44,7 +44,7 @@ my_lms/
 │   ├── services/             # Бизнес-логика
 │   ├── repositories/         # Доступ к БД
 │   ├── schemas/              # Pydantic-схемы запросов и ответов (из них строится OpenAPI)
-│   ├── db/                   # base.py, session.py, models/, migrations/ (Alembic)
+│   ├── db/                   # base.py, session.py, models/, migrations/ (Alembic, путь src/db/migrations/)
 │   ├── core/                 # config.py, logging.py, exceptions.py, security.py, texts.py, timeutils.py, enums.py
 │   └── worker/               # broker.py, tasks/
 ├── frontend/                 # ФРОНТЕНД (TypeScript) — подробно в 12_frontend_guide.md
@@ -56,6 +56,7 @@ my_lms/
 ├── scripts/                  # create_owner.py, backup.sh и т. п.
 ├── nginx/                    # Конфиги Nginx
 ├── pyproject.toml, uv.lock
+├── alembic.ini               # конфиг Alembic (ревизии — в src/db/migrations/)
 ├── .env.example
 ├── .pre-commit-config.yaml
 ├── docker-compose.yml        # local
