@@ -21,7 +21,7 @@ from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import get_engine, get_redis, get_session
+from src.api.deps import get_engine, get_redis, get_session, get_session_factory
 from src.core.config import get_settings
 from src.core.constants import (
     APP_ENV_LOCAL,
@@ -37,6 +37,7 @@ from src.core.error_handlers import register_error_handlers
 from src.core.logging import RequestIdMiddleware, setup_logging
 from src.core.sentry import init_sentry
 from src.schemas.health import HealthResponse
+from src.services.bootstrap import ensure_owner_from_settings
 
 # Логи — JSON в stdout, request_id из контекста запроса (docs/09 §4).
 setup_logging()
@@ -51,6 +52,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     redis = Redis.from_url(settings.redis_url)
     app.state.redis = redis
     try:
+        # Первый владелец по OWNER_TELEGRAM_ID (docs/05 §3.2); без ID — пропуск.
+        await ensure_owner_from_settings(settings, get_session_factory(), redis)
         yield
     finally:
         await redis.aclose()

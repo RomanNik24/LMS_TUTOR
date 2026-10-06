@@ -3,6 +3,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from src.core.enums import UserRole
 from src.db.models import User
 from src.repositories.base import BaseRepository
 
@@ -40,4 +41,16 @@ class UserRepository(BaseRepository[User]):
         stmt = select(User).where(User.telegram_id == telegram_id)
         if with_profile:
             stmt = stmt.options(selectinload(User.student_profile))
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def get_first_by_role(self, role: UserRole) -> User | None:
+        """Вернуть любого пользователя с ролью (например, проверить наличие владельца).
+
+        Args:
+            role: Роль.
+
+        Returns:
+            Пользователь с наименьшим id или ``None``.
+        """
+        stmt = select(User).where(User.role == role).order_by(User.id).limit(1)
         return (await self._session.execute(stmt)).scalar_one_or_none()

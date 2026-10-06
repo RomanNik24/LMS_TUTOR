@@ -17,16 +17,20 @@ from src.repositories.base import BaseRepository
 class AuthTokenRepository(BaseRepository[AuthToken]):
     """Доступ к таблице ``auth_tokens``."""
 
-    async def get_by_hash(self, token_hash: str) -> AuthToken | None:
+    async def get_by_hash(self, token_hash: str, *, for_update: bool = False) -> AuthToken | None:
         """Найти токен по SHA-256 хэшу (сам токен в БД не хранится).
 
         Args:
             token_hash: Хэш токена (64 hex-символа).
+            for_update: Заблокировать строку (``SELECT ... FOR UPDATE``), чтобы
+                две одновременные попытки не погасили одноразовый токен дважды.
 
         Returns:
             Токен (в любом состоянии) или ``None``.
         """
         stmt = select(AuthToken).where(AuthToken.token_hash == token_hash)
+        if for_update:
+            stmt = stmt.with_for_update()
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
     async def list_active(

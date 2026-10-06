@@ -40,3 +40,31 @@ class RateLimiter:
                 code="rate_limited",
                 http_status=429,
             )
+
+    async def is_blocked(self, scope: str, subject: str, limit: int) -> bool:
+        """Проверить, исчерпан ли лимит неудач (без увеличения счётчика).
+
+        Args:
+            scope: Группа лимита.
+            subject: Кого считаем.
+            limit: Допустимое число неудач в окне.
+
+        Returns:
+            ``True``, если неудач уже не меньше ``limit``.
+        """
+        raw = await self._redis.get(f"{RATE_LIMIT_KEY_PREFIX}{scope}:{subject}")
+        return raw is not None and int(raw) >= limit
+
+    async def register_failure(self, scope: str, subject: str, window_seconds: int) -> None:
+        """Записать неудачную попытку; окно начинается с первой неудачи.
+
+        Args:
+            scope: Группа лимита.
+            subject: Кого считаем.
+            window_seconds: Длина окна, секунды.
+        """
+        key = f"{RATE_LIMIT_KEY_PREFIX}{scope}:{subject}"
+        async with self._redis.pipeline(transaction=True) as pipe:
+            pipe.incr(key)
+            pipe.expire(key, window_seconds, nx=True)
+            await pipe.execute()

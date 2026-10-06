@@ -69,3 +69,11 @@ LOCAL_CORS_ORIGINS: tuple[str, ...] = ("http://localhost:5173", "http://127.0.0.
 HEALTH_STATUS_DEGRADED = "degraded"
 HEALTH_COMPONENT_OK = "ok"
 HEALTH_COMPONENT_ERROR = "error"
+
+# Приглашения и ссылки входа (docs/04 §2.5, docs/09 §2).
+INVITE_TTL_DAYS = 7
+WEB_LOGIN_TTL_MINUTES = 10
+# Неудачные попытки принять приглашение: 5 за 10 минут на telegram_id (docs/08 §10).
+INVITE_FAILED_ATTEMPTS_LIMIT = 5
+INVITE_FAILED_ATTEMPTS_WINDOW_SECONDS = 10 * 60
+INVITE_FAILURE_SCOPE = "invite_fail"
