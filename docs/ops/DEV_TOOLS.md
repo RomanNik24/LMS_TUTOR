@@ -40,3 +40,9 @@ scripts/dev_tunnel.sh 5173          # Linux / macOS / Git Bash
 Без туннеля фронтенд можно открывать на `http://localhost:5173`, но тогда
 `PUBLIC_BASE_URL=http://localhost:5173`, а кнопка `web_app` в боте не появится
 (Telegram принимает только HTTPS).
+
+## Частая ошибка: `/web` открывает `{"error":{"code":"not_found"…}}`
+
+Ссылка входа строится как `PUBLIC_BASE_URL/login/<токен>`. Если в `.env.local` стоит адрес
+backend (`http://127.0.0.1:8000`), она откроется на API, где такого маршрута нет. Поставьте
+в `PUBLIC_BASE_URL` адрес фронтенда (`http://localhost:5173` или адрес туннеля) и перезапустите backend.
