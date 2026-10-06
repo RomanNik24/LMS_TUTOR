@@ -124,6 +124,27 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      # Типы API берутся из OpenAPI бэкенда: для экспорта нужен Python + uv.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+        working-directory: .
+
+      - name: Sync backend dependencies (frozen lockfile)
+        run: uv sync --frozen
+        working-directory: .
+
+      - name: Check API types are in sync with backend
+        # Падает, если src/api/schema.d.ts не совпадает с OpenAPI бэкенда.
+        # Лечится командой `pnpm gen:api` и коммитом обновлённого файла.
+        run: |
+          pnpm gen:api
+          git diff --exit-code -- src/api/schema.d.ts
+
       - name: Lint
         run: pnpm lint
 
