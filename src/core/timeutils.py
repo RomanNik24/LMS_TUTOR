@@ -12,9 +12,6 @@
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-# Минимальная длина SESSION_SECRET в байтах (требование задачи T1.01).
-SECRET_MIN_BYTES = 32
-
 
 def utcnow() -> datetime:
     """Вернуть текущий момент как aware-datetime в UTC.

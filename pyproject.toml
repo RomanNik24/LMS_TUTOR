@@ -60,6 +60,7 @@ mypy_path = "src"
 packages = ["src"]
 warn_unreachable = true
 disallow_any_generics = true
+plugins = ["pydantic.mypy"]
 show_error_codes = true
 
 [[tool.mypy.overrides]]
@@ -73,3 +74,7 @@ testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: тесты с реальными PostgreSQL/Redis (Testcontainers или service containers)",
+    "security: тесты безопасности и прав доступа",
+]

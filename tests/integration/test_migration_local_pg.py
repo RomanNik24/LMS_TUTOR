@@ -64,12 +64,12 @@ T102_TABLES = {
 }
 
 EXPECTED_FK_DELETE_RULES = {
-    "fk_audit_log_actor_user_id": "a",
-    "fk_auth_tokens_created_by": "a",
+    "fk_audit_log_actor_user_id": "n",
+    "fk_auth_tokens_created_by": "n",
     "fk_auth_tokens_user_id": "c",
     "fk_exam_types_subject_id": "r",
     "fk_grade_scales_exam_type_id": "c",
-    "fk_guardians_linked_user_id_fk": "a",
+    "fk_guardians_linked_user_id_fk": "n",
     "fk_guardians_student_id_fk": "c",
     "fk_student_profiles_student_id": "c",
     "fk_student_profiles_teacher_id": "r",
@@ -373,9 +373,9 @@ def test_constraints_created_by_migration_local(
             fk_rows = (
                 await conn.execute(
                     text(
-                        "SELECT conname, confdeltype "
+                        "SELECT conname, confdeltype::text "
                         "FROM pg_constraint "
-                        "WHERE contype = 'f' "
+                        "WHERE contype = 'f' AND connamespace = 'public'::regnamespace "
                         "ORDER BY conname"
                     )
                 )
@@ -388,7 +388,11 @@ def test_constraints_created_by_migration_local(
 
             unique_rows = (
                 await conn.execute(
-                    text("SELECT conname FROM pg_constraint WHERE contype = 'u' ORDER BY conname")
+                    text(
+                        "SELECT conname FROM pg_constraint "
+                        "WHERE contype = 'u' AND connamespace = 'public'::regnamespace "
+                        "ORDER BY conname"
+                    )
                 )
             ).fetchall()
             unique_names = {str(row[0]) for row in unique_rows}

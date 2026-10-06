@@ -31,10 +31,9 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from scripts.seed_reference import seed
 from sqlalchemy import text
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
-from testcontainers.community.postgres import PostgresContainer
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -84,53 +83,29 @@ def _docker_available() -> bool:
 
 
 pytestmark = pytest.mark.skipif(
-    not _docker_available(),
+    os.environ.get("TEST_USE_SERVICES") != "1" and not _docker_available(),
     reason="Docker недоступен в текущем окружении — интеграционные тесты пропущены",
 )
 
 
-def _container_admin_url(postgres_container: PostgresContainer) -> str:
-    """DSN к административной базе контейнера."""
+def _admin_dsn(postgres_url: str) -> str:
+    """asyncpg-DSN к базе сервиса (из которой пересоздаётся база миграции)."""
 
-    host = postgres_container.get_container_host_ip()
-    port = int(postgres_container.get_exposed_port(5432))
-    return f"postgresql://test:test@{host}:{port}/lms_test"
+    return make_url(postgres_url).set(drivername="postgresql").render_as_string(hide_password=False)
 
 
-def _migration_dsn(postgres_container: PostgresContainer) -> tuple[str, str]:
-    """Строки подключения к тестовой базе."""
+def _migration_dsn(postgres_url: str) -> tuple[str, str]:
+    """Строки подключения к отдельной базе миграции (в той же PostgreSQL)."""
 
-    host = postgres_container.get_container_host_ip()
-    port = int(postgres_container.get_exposed_port(5432))
-
-    sync_url = URL.create(
-        "postgresql+asyncpg",
-        username="test",
-        password="test",  # noqa: S106 - тестовые креды контейнера
-        database=MIGRATION_DB,
-        host=host,
-        port=port,
-    ).render_as_string(hide_password=False)
-
-    async_url = URL.create(
-        "postgresql+asyncpg",
-        username="test",
-        password="test",  # noqa: S106 - тестовые креды контейнера
-        database=MIGRATION_DB,
-        host=host,
-        port=port,
-    ).render_as_string(hide_password=False)
-
-    return sync_url, async_url
+    url = make_url(postgres_url).set(database=MIGRATION_DB).render_as_string(hide_password=False)
+    return url, url
 
 
 @pytest.fixture(scope="module")
-def clean_migration_database(
-    postgres_container: PostgresContainer,
-) -> Iterator[str]:
+def clean_migration_database(postgres_url: str) -> Iterator[str]:
     """Пересоздаёт пустую базу T1.03 для модуля."""
 
-    admin_dsn = _container_admin_url(postgres_container)
+    admin_dsn = _admin_dsn(postgres_url)
 
     async def _recreate() -> None:
         conn = await asyncpg.connect(admin_dsn)
@@ -266,13 +241,13 @@ async def _native_enum_count(engine: AsyncEngine) -> int:
 
 def test_full_migration_cycle_and_seeds(
     clean_migration_database: str,
-    postgres_container: PostgresContainer,
+    postgres_url: str,
 ) -> None:
     """Полный T1.03 цикл: upgrade → check → seed ×2 → downgrade → upgrade."""
 
     del clean_migration_database
 
-    sync_url, async_url = _migration_dsn(postgres_container)
+    sync_url, async_url = _migration_dsn(postgres_url)
     engine = create_async_engine(async_url, poolclass=NullPool)
 
     async def scenario() -> None:

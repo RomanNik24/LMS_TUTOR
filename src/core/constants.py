@@ -32,3 +32,6 @@ SCHEDULE_HORIZON_WEEKS_DEFAULT = 2
 
 # Статус успешного ответа `GET /health`.
 HEALTH_STATUS_OK = "ok"
+
+# Минимальная длина SESSION_SECRET в байтах (требование задачи T1.01).
+SECRET_MIN_BYTES = 32

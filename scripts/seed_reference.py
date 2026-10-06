@@ -10,7 +10,7 @@
 
 Запуск: ``uv run python scripts/seed_reference.py`` (DATABASE_URL из .env).
 
-⚠ Шкалы 2026 ОЖИДАЮТ СВЕРКИ ВЛАДЕЛЬЦЕМ (см. docs/04 §10 и src/db/seeds/reference.py).
+Шкалы 2026 приняты владельцем (ADR 0004, docs/04 §10).
 
 Комментарии на русском согласно docs/06_agent_rules.md.
 """
@@ -112,7 +112,7 @@ async def seed(database_url: str) -> dict[str, int]:
             for ident, code in res.fetchall():
                 exam_type_ids[str(code)] = int(ident)
 
-            # --- grade_scales (шкалы 2026; ожидают сверки владельцем) --------
+            # --- grade_scales (шкалы 2026, ADR 0004) --------
             scale_rows: list[dict[str, object]] = []
             for exam_code, scale in GRADE_SCALES.items():
                 for primary_score, result_value in sorted(scale.items()):
