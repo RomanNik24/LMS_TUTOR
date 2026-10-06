@@ -12,6 +12,10 @@ max_line_length = 100
 [*.py]
 indent_size = 4
 
+# Windows PowerShell 5.1 читает .ps1 без BOM как ANSI и ломает русский текст
+[*.ps1]
+charset = utf-8-bom
+
 [Makefile]
 indent_style = tab
 
