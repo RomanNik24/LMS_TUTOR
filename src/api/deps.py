@@ -26,6 +26,8 @@ from src.core.rate_limit import RateLimiter
 from src.core.session_store import SessionStore
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
 from src.repositories.users import UserRepository
+from src.services.auth import AuthService
+from src.services.profile import ProfileService
 
 
 @lru_cache(maxsize=1)
@@ -136,3 +138,18 @@ def require_role(*roles: UserRole) -> Callable[[CurrentUser], Awaitable[CurrentU
         return user
 
     return _checker
+
+
+def get_auth_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    store: Annotated[SessionStore, Depends(get_session_store)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> AuthService:
+    """Собрать ``AuthService`` на запрос (токен бота — из настроек)."""
+    bot_token = get_settings().bot_token.get_secret_value()
+    return AuthService(session, store, RateLimiter(redis), bot_token)
+
+
+def get_profile_service(session: Annotated[AsyncSession, Depends(get_session)]) -> ProfileService:
+    """Собрать ``ProfileService`` на запрос."""
+    return ProfileService(session)

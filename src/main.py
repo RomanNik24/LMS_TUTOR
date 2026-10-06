@@ -22,8 +22,10 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import get_engine, get_redis, get_session, get_session_factory
+from src.api.v1 import api_router
 from src.core.config import get_settings
 from src.core.constants import (
+    API_V1_PREFIX,
     APP_ENV_LOCAL,
     APP_ENV_PROD,
     HEALTH_COMPONENT_ERROR,
@@ -101,6 +103,7 @@ def create_app(app_env: str | None = None) -> FastAPI:
         )
     app.middleware("http")(RequestIdMiddleware(app).dispatch)
     register_error_handlers(app)
+    app.include_router(api_router, prefix=API_V1_PREFIX)
 
     @app.get(
         "/health",

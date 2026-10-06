@@ -325,6 +325,26 @@ class AuthService:
         """Проверить подпись и срок ``initData`` (см. ``core.security``)."""
         return validate_init_data(init_data, self._bot_token)
 
+    async def authenticate_telegram(self, init_data: str) -> CurrentUser:
+        """Войти по ``initData`` Mini App: проверить подпись и найти активного пользователя.
+
+        Права и роль берутся из БД, а не из данных клиента (docs/09 §2.2).
+
+        Raises:
+            AppError: 401 ``unauthenticated`` — подпись/срок неверны, пользователь
+                не найден или в архиве.
+        """
+        telegram_user = self.validate_init_data(init_data)
+        user = await self._users.get_by_telegram_id(telegram_user.id)
+        if user is None or not user.is_active:
+            raise AppError(texts.UNAUTHENTICATED_TELEGRAM, code="unauthenticated", http_status=401)
+        now = utcnow()
+        user.last_seen_at = now
+        if telegram_user.username is not None:
+            user.telegram_username = telegram_user.username
+        await self._session.commit()
+        return CurrentUser(id=user.id, role=user.role, timezone=user.timezone)
+
     async def create_session(self, user: CurrentUser) -> tuple[str, int]:
         """Создать серверную сессию; вернуть (id для cookie, TTL в секундах)."""
         return await self._sessions.create(user.id, user.role)
