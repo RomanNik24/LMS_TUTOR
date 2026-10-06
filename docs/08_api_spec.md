@@ -168,7 +168,7 @@
 ## 7. Служебные
 | Метод | Путь | Описание |
 |---|---|---|
-| GET | `/health` (вне `/api/v1`) | Проверка БД и Redis |
+| GET | `/health` (вне `/api/v1`) | Проверка БД и Redis. Ответ `{status, database, redis}`; `200` + `status=ok`, при недоступности БД или Redis — `503` + `status=degraded` и `error` у сбойного компонента |
 | POST | `/telegram/webhook/{secret}` (вне `/api/v1`) | Вебхук Telegram; проверка `X-Telegram-Bot-Api-Secret-Token` |
 | GET | `/openapi.json` | Схема. Публично доступна только в `local` и `staging`; на `prod` отключена или закрыта |
 

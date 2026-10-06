@@ -10,6 +10,7 @@ dependencies = [
     "pydantic-settings",
     "python-json-logger",
     "redis",
+    "sentry-sdk>=2.71.0",
     "sqlalchemy[asyncio]",
     "tzdata",
     "uvicorn[standard]",

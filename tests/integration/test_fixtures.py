@@ -37,7 +37,7 @@ async def test_db_session_commit_is_rolled_back_after_test_part2(db_session: Asy
 
 async def test_api_client_reaches_app(api_client: httpx.AsyncClient) -> None:
     """`api_client` ходит в FastAPI без сети."""
-    response = await api_client.get("/health")
+    response = await api_client.get("/openapi.json")
     assert response.status_code == 200
 
 

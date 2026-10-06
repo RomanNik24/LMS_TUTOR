@@ -62,3 +62,10 @@ RATE_LIMIT_WINDOW_SECONDS = 60
 RATE_LIMIT_AUTH_PER_MINUTE = 10
 RATE_LIMIT_USER_PER_MINUTE = 120
 RATE_LIMIT_KEY_PREFIX = "rate:"
+
+# CORS включается только локально (docs/09 §2.3.1): dev-сервер Vite на другом порту.
+LOCAL_CORS_ORIGINS: tuple[str, ...] = ("http://localhost:5173", "http://127.0.0.1:5173")
+# Статусы /health (docs/08 §3).
+HEALTH_STATUS_DEGRADED = "degraded"
+HEALTH_COMPONENT_OK = "ok"
+HEALTH_COMPONENT_ERROR = "error"

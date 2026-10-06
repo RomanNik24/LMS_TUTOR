@@ -4,6 +4,7 @@
 Файл с реальными секретами не коммитится и никогда не выводится в лог.
 """
 
+from functools import lru_cache
 from typing import Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -159,3 +160,9 @@ class Settings(BaseSettings):
                 "APP_ENV=prod: отсутствуют обязательные настройки: " + "; ".join(missing)
             )
         return self
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Вернуть единый экземпляр настроек (читается при первом обращении)."""
+    return Settings()

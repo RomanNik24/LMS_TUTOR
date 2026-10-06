@@ -11,9 +11,9 @@ from typing import Annotated
 
 from fastapi import Cookie, Depends, Request
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
-from src.core.config import Settings
+from src.core.config import get_settings
 from src.core.constants import (
     RATE_LIMIT_AUTH_PER_MINUTE,
     RATE_LIMIT_USER_PER_MINUTE,
@@ -29,10 +29,15 @@ from src.repositories.users import UserRepository
 
 
 @lru_cache(maxsize=1)
+def get_engine() -> AsyncEngine:
+    """Вернуть единый движок БД приложения (создаётся при первом обращении)."""
+    return create_engine(get_settings().database_url)
+
+
+@lru_cache(maxsize=1)
 def get_session_factory() -> SessionFactory:
-    """Вернуть единую фабрику сессий приложения (создаётся при первом обращении)."""
-    settings = Settings()
-    return create_session_factory(create_engine(settings.database_url))
+    """Вернуть единую фабрику сессий приложения."""
+    return create_session_factory(get_engine())
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
