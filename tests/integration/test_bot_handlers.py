@@ -80,7 +80,8 @@ async def test_student_start_greets_by_name_with_web_app_button(
     assert send.text == "Привет, Аня! Расписание и ДЗ — в приложении."
     button = send.reply_markup.keyboard[0][0]
     assert button.text == texts.BOT_OPEN_APP_STUDENT
-    assert button.web_app.url == f"{PUBLIC_BASE_URL}/app/"
+    # Кнопка клавиатуры НЕ web_app: Telegram не передал бы initData (вход не сработал бы)
+    assert button.web_app is None
     commands = harness.session.of("SetMyCommands")[-1]
     assert [c.command for c in commands.commands] == ["start", "app", "web", "logout", "help"]
 
@@ -92,7 +93,9 @@ async def test_staff_start_uses_neutral_tone_and_admin_app(
     send = harness.session.of("SendMessage")[-1]
     assert send.text == texts.BOT_STAFF_GREETING.format(name="Роман")
     assert "Привет" not in send.text
-    assert send.reply_markup.keyboard[0][0].web_app.url == f"{PUBLIC_BASE_URL}/admin/"
+    button = send.reply_markup.keyboard[0][0]
+    assert button.text == texts.BOT_OPEN_APP_STAFF
+    assert button.web_app is None
 
 
 async def test_archived_user_is_treated_as_guest_with_closed_access(
@@ -229,6 +232,19 @@ async def test_app_command_per_role(harness: BotHarness, db_session: AsyncSessio
     assert send.reply_markup.inline_keyboard[0][0].web_app.url == f"{PUBLIC_BASE_URL}/app/"
     await harness.send_text(TG_GUEST, "/app")
     assert harness.session.sent_texts()[-1] == texts.BOT_GUEST_GREETING
+
+
+async def test_open_app_menu_button_sends_inline_web_app_button(
+    harness: BotHarness, db_session: AsyncSession, owner: User
+) -> None:
+    """Текстовая кнопка меню открывает Mini App инлайн-кнопкой (она передаёт initData)."""
+    await _user(db_session, UserRole.STUDENT, "Аня", telegram_id=TG_STUDENT)
+    await harness.send_text(TG_STUDENT, texts.BOT_OPEN_APP_STUDENT)
+    student_markup = harness.session.of("SendMessage")[-1].reply_markup
+    assert student_markup.inline_keyboard[0][0].web_app.url == f"{PUBLIC_BASE_URL}/app/"
+    await harness.send_text(TG_STAFF, texts.BOT_OPEN_APP_STAFF)
+    staff_markup = harness.session.of("SendMessage")[-1].reply_markup
+    assert staff_markup.inline_keyboard[0][0].web_app.url == f"{PUBLIC_BASE_URL}/admin/"
 
 
 async def test_web_command_issues_one_time_link(
