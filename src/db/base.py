@@ -8,6 +8,8 @@ Alembic-миграции (задача T1.03) используют этот же
 Комментарии на русском согласно docs/06_agent_rules.md.
 """
 
+from typing import ClassVar
+
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 
@@ -30,4 +32,4 @@ class Base(DeclarativeBase):
     ``lazy="raise"``, поэтому неявных ленивых загрузок нет (docs/06, A2).
     """
 
-    metadata: MetaData = MetaData(naming_convention=NAMING_CONVENTION)
+    metadata: ClassVar[MetaData] = MetaData(naming_convention=NAMING_CONVENTION)

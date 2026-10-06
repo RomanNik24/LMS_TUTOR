@@ -48,7 +48,6 @@ from enum import StrEnum
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
-    Enum as SqlEnum,
     ForeignKey,
     Identity,
     Index,
@@ -59,6 +58,9 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.dialects.postgresql import BIGINT, BOOLEAN, CHAR, JSONB, VARCHAR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -67,7 +69,7 @@ from src.db.base import Base
 from src.db.mixins import TimestampMixin
 
 
-def enum_varchar(enum_cls: type[StrEnum]) -> SqlEnum[StrEnum]:
+def enum_varchar(enum_cls: type[StrEnum]) -> SqlEnum:
     """Тип «VARCHAR + CHECK» для перечисления предметной области (ADR 0003).
 
     Колонка физически является строкой ``VARCHAR``; допустимые значения
@@ -88,10 +90,14 @@ def enum_varchar(enum_cls: type[StrEnum]) -> SqlEnum[StrEnum]:
         create_constraint=True,
         length=max(len(member.value) for member in enum_cls),
         validate_strings=True,
+        # docs/04 и src/core/enums.py оперируют значениями (.value, строчными),
+        # а не именами членов enum — иначе CHECK и хранимые данные разошлись бы
+        # с документацией (пример: 'owner', а не 'OWNER').
+        values_callable=lambda cls: [member.value for member in cls],
     )
 
 
-class Subject(TimestampMixin["Subject"], Base):
+class Subject(TimestampMixin, Base):
     """Справочник предметов (docs/04 §1.1)."""
 
     __tablename__ = "subjects"
@@ -120,7 +126,7 @@ class Subject(TimestampMixin["Subject"], Base):
     )
 
 
-class ExamType(TimestampMixin["ExamType"], Base):
+class ExamType(TimestampMixin, Base):
     """Тип экзамена; на MVP ровно четыре записи (docs/04 §1.2)."""
 
     __tablename__ = "exam_types"
@@ -169,7 +175,7 @@ class ExamType(TimestampMixin["ExamType"], Base):
     )
 
 
-class GradeScale(TimestampMixin["GradeScale"], Base):
+class GradeScale(TimestampMixin, Base):
     """Шкала перевода первичного балла; одна строка на каждый балл (docs/04 §1.3)."""
 
     __tablename__ = "grade_scales"
@@ -209,7 +215,7 @@ class GradeScale(TimestampMixin["GradeScale"], Base):
     exam_type: Mapped["ExamType"] = relationship(back_populates="grade_scales", lazy="raise")
 
 
-class User(TimestampMixin["User"], Base):
+class User(TimestampMixin, Base):
     """Пользователь системы: owner / manager / student (docs/04 §2.1)."""
 
     __tablename__ = "users"
@@ -226,7 +232,9 @@ class User(TimestampMixin["User"], Base):
         BIGINT(),
         nullable=True,
         unique=True,
-        comment="Telegram ID (BIGINT: значения > 2^31, docs/04 §0); NULL — профиль ждёт приглашение",
+        comment=(
+            "Telegram ID (BIGINT: значения > 2^31, docs/04 §0); NULL — профиль ждёт приглашение"
+        ),
     )
     telegram_username: Mapped[str | None] = mapped_column(
         VARCHAR(64), nullable=True, comment="Для удобства отображения, не для идентификации"
@@ -264,33 +272,52 @@ class User(TimestampMixin["User"], Base):
 
     # 1:1 профиль ученика; cascade — профиль живёт вместе с пользователем.
     student_profile: Mapped["StudentProfile | None"] = relationship(
-        back_populates="user", lazy="raise", uselist=False, cascade="all, delete-orphan"
+        back_populates="user",
+        lazy="raise",
+        uselist=False,
+        cascade="all, delete-orphan",
+        foreign_keys="[StudentProfile.user_id]",
     )
     # Обратная сторона ведущего преподавателя у профилей учеников.
     led_student_profiles: Mapped[list["StudentProfile"]] = relationship(
-        back_populates="teacher", lazy="raise", viewonly=True
+        back_populates="teacher",
+        lazy="raise",
+        viewonly=True,
+        foreign_keys="[StudentProfile.teacher_id]",
     )
     student_subject_links: Mapped[list["StudentSubject"]] = relationship(
         back_populates="student", lazy="raise", viewonly=True
     )
     guardians: Mapped[list["Guardian"]] = relationship(
-        back_populates="student", lazy="raise", viewonly=True
+        back_populates="student",
+        lazy="raise",
+        viewonly=True,
+        foreign_keys="[Guardian.student_id]",
     )
     linked_guardians: Mapped[list["Guardian"]] = relationship(
-        back_populates="user", lazy="raise", viewonly=True
+        back_populates="user",
+        lazy="raise",
+        viewonly=True,
+        foreign_keys="[Guardian.user_id]",
     )
     auth_tokens: Mapped[list["AuthToken"]] = relationship(
-        back_populates="user", lazy="raise", viewonly=True
+        back_populates="user",
+        lazy="raise",
+        viewonly=True,
+        foreign_keys="[AuthToken.user_id]",
     )
     created_tokens: Mapped[list["AuthToken"]] = relationship(
-        back_populates="created_by", lazy="raise", viewonly=True
+        back_populates="creator",
+        lazy="raise",
+        viewonly=True,
+        foreign_keys="[AuthToken.created_by]",
     )
     audit_actions: Mapped[list["AuditLog"]] = relationship(
         back_populates="actor", lazy="raise", viewonly=True
     )
 
 
-class StudentProfile(TimestampMixin["StudentProfile"], Base):
+class StudentProfile(TimestampMixin, Base):
     """Профиль ученика, 1:1 с ``users`` при role = student (docs/04 §2.2)."""
 
     __tablename__ = "student_profiles"
@@ -305,7 +332,9 @@ class StudentProfile(TimestampMixin["StudentProfile"], Base):
         BIGINT(),
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,
-        comment="Ведущий преподаватель (owner/manager); RESTRICT — профиль всегда кому-то принадлежит",
+        comment=(
+            "Ведущий преподаватель (owner/manager); RESTRICT — профиль всегда кому-то принадлежит"
+        ),
     )
     school_class: Mapped[int | None] = mapped_column(
         SmallInteger, nullable=True, comment="Класс (9, 11, …)"
@@ -328,8 +357,14 @@ class StudentProfile(TimestampMixin["StudentProfile"], Base):
 
     __table_args__ = (CheckConstraint("lesson_price >= 0", name="lesson_price_nonneg"),)
 
-    user: Mapped["User"] = relationship(back_populates="student_profile", lazy="raise")
-    teacher: Mapped["User"] = relationship(back_populates="led_student_profiles", lazy="raise")
+    user: Mapped["User"] = relationship(
+        back_populates="student_profile", lazy="raise", foreign_keys="[StudentProfile.user_id]"
+    )
+    teacher: Mapped["User"] = relationship(
+        back_populates="led_student_profiles",
+        lazy="raise",
+        foreign_keys="[StudentProfile.teacher_id]",
+    )
 
 
 class StudentSubject(Base):
@@ -354,12 +389,10 @@ class StudentSubject(Base):
     )
 
     student: Mapped["User"] = relationship(back_populates="student_subject_links", lazy="raise")
-    subject: Mapped["Subject"] = relationship(
-        back_populates="student_subject_links", lazy="raise"
-    )
+    subject: Mapped["Subject"] = relationship(back_populates="student_subject_links", lazy="raise")
 
 
-class Guardian(TimestampMixin["Guardian"], Base):
+class Guardian(TimestampMixin, Base):
     """Родитель/законный представитель; задел, функционала в MVP нет (docs/04 §2.4)."""
 
     __tablename__ = "guardians"
@@ -392,11 +425,15 @@ class Guardian(TimestampMixin["Guardian"], Base):
         comment="Для будущей роли parent; колонка NULL-допустима, при удалении аккаунта — NULL",
     )
 
-    student: Mapped["User"] = relationship(back_populates="guardians", lazy="raise")
-    user: Mapped["User | None"] = relationship(back_populates="linked_guardians", lazy="raise")
+    student: Mapped["User"] = relationship(
+        back_populates="guardians", lazy="raise", foreign_keys="[Guardian.student_id]"
+    )
+    user: Mapped["User | None"] = relationship(
+        back_populates="linked_guardians", lazy="raise", foreign_keys="[Guardian.user_id]"
+    )
 
 
-class AuthToken(TimestampMixin["AuthToken"], Base):
+class AuthToken(TimestampMixin, Base):
     """Приглашения и одноразовые ссылки входа (docs/04 §2.5, docs/09 §2).
 
     Хранится только SHA-256 хэш токена; сам токен — нет. Токен действителен,
@@ -449,8 +486,12 @@ class AuthToken(TimestampMixin["AuthToken"], Base):
         Index("ix_auth_tokens_user_id_purpose", "user_id", "purpose"),
     )
 
-    user: Mapped["User"] = relationship(back_populates="auth_tokens", lazy="raise")
-    creator: Mapped["User | None"] = relationship(back_populates="created_tokens", lazy="raise")
+    user: Mapped["User"] = relationship(
+        back_populates="auth_tokens", lazy="raise", foreign_keys="[AuthToken.user_id]"
+    )
+    creator: Mapped["User | None"] = relationship(
+        back_populates="created_tokens", lazy="raise", foreign_keys="[AuthToken.created_by]"
+    )
 
 
 class AuditLog(Base):
@@ -476,9 +517,7 @@ class AuditLog(Base):
         nullable=False,
         comment="lesson.rescheduled, student.price_changed, invite.created, …",
     )
-    entity_type: Mapped[str] = mapped_column(
-        VARCHAR(50), nullable=False, comment="Тип сущности"
-    )
+    entity_type: Mapped[str] = mapped_column(VARCHAR(50), nullable=False, comment="Тип сущности")
     entity_id: Mapped[int | None] = mapped_column(
         BIGINT(), nullable=True, comment="ID сущности (NULL — если сущность удалена)"
     )

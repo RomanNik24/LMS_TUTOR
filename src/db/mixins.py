@@ -4,16 +4,12 @@
 """
 
 from datetime import datetime
-from typing import TypeVar
 
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-# Потомок декларативной модели: generic-миксин примешивается только к ORM-классам.
-ModelT = TypeVar("ModelT", bound="object")
 
-
-class TimestampMixin[ModelT]:
+class TimestampMixin:
     """Колонки ``created_at`` / ``updated_at`` (docs/04 §0).
 
     Применяется ко всем таблицам этапа T1.02, КРОМЕ:
