@@ -2,9 +2,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
+import { initTelegram } from "./lib/telegram";
 import "./styles/globals.css";
 
-// Точка входа SPA (docs/12 §3). Провайдеры и роутер подключаются в следующих задачах.
+// SDK Telegram инициализируется один раз до отрисовки; вне Telegram — ничего не делает.
+initTelegram();
+
+// Точка входа SPA (docs/12 §3): провайдеры и роутер подключены в App.
 const rootElement = document.getElementById("root");
 if (rootElement === null) {
   throw new Error("В index.html нет элемента #root");
