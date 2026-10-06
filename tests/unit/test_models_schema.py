@@ -1,27 +1,31 @@
 """Схемные юнит-тесты SQLAlchemy-моделей ядра БД (задача T1.02).
 
 Сверяют таблицы, колонки и связи ``src/db/models.py`` с единственным
-источником схемы — ``docs/04_database_schema.md`` (разделы §0 «Общие правила»,
-§1.1–1.3 «Справочники», §2 «Пользователи», §7.2 «Журнал аудита»).
+источником схемы — ``docs/04_database_schema.md`` (разделы §0, §1.1–1.3,
+§2 и §7.2).
 
 Модели реально импортируются из пакета ``src.db``: этот файл падает, если
 модели нельзя собрать на текущем Python или если mapper-конфигурация
-SQLAlchemy завершается ошибкой (неоднозначные FK, разъехавшиеся
-``back_populates`` и т.п.).
+SQLAlchemy завершается ошибкой.
 """
 
 from __future__ import annotations
 
 import importlib
-from typing import Any
+from enum import StrEnum
 
 import pytest
 from sqlalchemy import (
     CheckConstraint,
+    Column,
     DateTime,
     Integer,
     SmallInteger,
+    Table,
     UniqueConstraint,
+)
+from sqlalchemy import (
+    Enum as SqlEnum,
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BIGINT, BOOLEAN, CHAR, JSONB, VARCHAR
@@ -42,8 +46,6 @@ from src.db.models import (
     User,
 )
 
-# Все таблицы этапа T1.02 (docs/04 §1.1–1.3, §2, §7.2). Таблиц будущих
-# этапов (расписание, уроки, ДЗ, пробники, уведомления, витрина) быть НЕ должно.
 EXPECTED_TABLES: set[str] = {
     "subjects",
     "exam_types",
@@ -56,7 +58,6 @@ EXPECTED_TABLES: set[str] = {
     "audit_log",
 }
 
-# Таблицы с PK id BIGINT GENERATED ALWAYS AS IDENTITY (docs/04 §0).
 IDENTITY_PK_TABLES = (
     "subjects",
     "exam_types",
@@ -67,7 +68,6 @@ IDENTITY_PK_TABLES = (
     "audit_log",
 )
 
-# Типовые таблицы (docs/04 §0): created_at/updated_at TIMESTAMPTZ NOT NULL DEFAULT now().
 TIMESTAMPED_TABLES = (
     "subjects",
     "exam_types",
@@ -90,7 +90,6 @@ ALL_MODELS = (
     AuditLog,
 )
 
-# ON DELETE — из docs/04; где docs его не задаёт, см. допущения docstring моделей.
 FOREIGN_KEYS = (
     ("exam_types", "subject_id", "subjects.id", "RESTRICT"),
     ("grade_scales", "exam_type_id", "exam_types.id", "CASCADE"),
@@ -105,7 +104,6 @@ FOREIGN_KEYS = (
     ("audit_log", "actor_user_id", "users.id", "SET NULL"),
 )
 
-# ENUM-колонки в подходе VARCHAR + CHECK (docs/adr/0003).
 ENUM_COLUMNS = (
     ("exam_types", "kind", ExamKind),
     ("exam_types", "result_kind", ExamResultKind),
@@ -114,13 +112,13 @@ ENUM_COLUMNS = (
 )
 
 
-def table_of(name: str) -> Any:
+def table_of(name: str) -> Table:
     """Возвращает Table по имени."""
 
     return Base.metadata.tables[name]
 
 
-def col_of(table_name: str, column_name: str) -> Any:
+def col_of(table_name: str, column_name: str) -> Column:
     """Возвращает Column по имени таблицы и колонки."""
 
     return table_of(table_name).c[column_name]
@@ -137,14 +135,14 @@ def unique_sets(tablename: str) -> list[frozenset[str]]:
 
 
 def server_default_text(table_name: str, column_name: str) -> str | None:
-    """Текст server_default-функции (для text('...')), либо None."""
+    """Текст server_default-функции, либо None."""
 
     arg = col_of(table_name, column_name).server_default.arg
     return getattr(arg, "text", None)
 
 
 def test_all_tables_of_phase_exist_and_no_future_tables() -> None:
-    """Таблиц ровно девять, из будущих этапов ничего не добавлено (T1.02)."""
+    """Таблиц ровно девять, из будущих этапов ничего не добавлено."""
 
     assert set(Base.metadata.tables) == EXPECTED_TABLES
 
@@ -162,7 +160,7 @@ def test_id_bigint_generated_always_identity(tablename: str) -> None:
 
 
 def test_student_profiles_pk_is_user_id() -> None:
-    """Профиль ученика: PK = user_id, 1:1 с users (docs/04 §2.2)."""
+    """Профиль ученика: PK = user_id, 1:1 с users."""
 
     assert list(table_of("student_profiles").primary_key.columns.keys()) == ["user_id"]
     user_id = col_of("student_profiles", "user_id")
@@ -174,7 +172,7 @@ def test_student_profiles_pk_is_user_id() -> None:
 
 
 def test_student_subjects_composite_pk_and_no_timestamps() -> None:
-    """Связующая таблица: составной PK, временных колонок нет (docs/04 §2.3)."""
+    """Связующая таблица: составной PK, временных колонок нет."""
 
     keys = set(table_of("student_subjects").primary_key.columns.keys())
     assert keys == {"student_id", "subject_id"}
@@ -183,7 +181,7 @@ def test_student_subjects_composite_pk_and_no_timestamps() -> None:
 
 
 def test_subjects_columns() -> None:
-    """Колонки subjects (docs/04 §1.1)."""
+    """Колонки subjects."""
 
     assert set(table_of("subjects").c.keys()) == {
         "id",
@@ -218,7 +216,7 @@ def test_unique_constraints_in_doc() -> None:
 
 
 def test_users_telegram_id_nullable_unique() -> None:
-    """telegram_id: BIGINT NULL, повторяющиеся NULL допустимы (docs/04 §2.1)."""
+    """telegram_id: BIGINT NULL, повторяющиеся NULL допустимы."""
 
     telegram_id = col_of("users", "telegram_id")
     assert isinstance(telegram_id.type, BIGINT)
@@ -227,7 +225,7 @@ def test_users_telegram_id_nullable_unique() -> None:
 
 
 def test_integral_and_jsonb_types() -> None:
-    """Точные типы SMALLINT/INTEGER/JSONB/CHAR (docs/04 §1.2, §1.3, §2.5, §7.2)."""
+    """Точные типы SMALLINT/INTEGER/JSONB/CHAR."""
 
     assert isinstance(col_of("exam_types", "max_primary").type, SmallInteger)
     assert isinstance(col_of("grade_scales", "valid_year").type, SmallInteger)
@@ -258,7 +256,7 @@ def test_integral_and_jsonb_types() -> None:
 
 
 def test_server_defaults_from_doc() -> None:
-    """DEFAULT, заданные в docs/04 (хосты хранят в БД, а не в ORM)."""
+    """DEFAULT, заданные в docs/04."""
 
     assert server_default_text("subjects", "is_active") == "true"
     assert server_default_text("users", "is_active") == "true"
@@ -271,7 +269,7 @@ def test_server_defaults_from_doc() -> None:
 
 @pytest.mark.parametrize("tablename", TIMESTAMPED_TABLES, ids=TIMESTAMPED_TABLES)
 def test_created_updated_timestamps(tablename: str) -> None:
-    """created_at/updated_at: TIMESTAMPTZ NOT NULL DEFAULT now() (docs/04 §0)."""
+    """created_at/updated_at: TIMESTAMPTZ NOT NULL DEFAULT now()."""
 
     for column_name in ("created_at", "updated_at"):
         stamp = col_of(tablename, column_name)
@@ -282,7 +280,7 @@ def test_created_updated_timestamps(tablename: str) -> None:
 
 
 def test_audit_log_has_only_created_at() -> None:
-    """Журнал: только created_at, без updated_at (docs/04 §7.2)."""
+    """Журнал: только created_at, без updated_at."""
 
     assert "created_at" in table_of("audit_log").c
     assert "updated_at" not in table_of("audit_log").c
@@ -294,14 +292,19 @@ def test_audit_log_has_only_created_at() -> None:
 
 
 def test_users_and_auth_tokens_time_columns() -> None:
-    """Точечные TIMESTAMPTZ-колонки с флагами NULL (docs/04 §2.1, §2.5)."""
+    """Точечные TIMESTAMPTZ-колонки с флагами NULL."""
 
     for column_name in ("archived_at", "last_seen_at"):
         stamp = col_of("users", column_name)
         assert isinstance(stamp.type, DateTime)
         assert stamp.type.timezone is True
         assert stamp.nullable is True
-    for column_name, nullable in (("expires_at", False), ("used_at", True), ("revoked_at", True)):
+
+    for column_name, nullable in (
+        ("expires_at", False),
+        ("used_at", True),
+        ("revoked_at", True),
+    ):
         stamp = col_of("auth_tokens", column_name)
         assert isinstance(stamp.type, DateTime)
         assert stamp.type.timezone is True
@@ -313,20 +316,25 @@ def test_users_and_auth_tokens_time_columns() -> None:
     ENUM_COLUMNS,
     ids=[f"{table_name}.{colname}" for table_name, colname, _ in ENUM_COLUMNS],
 )
-def test_enum_columns_varchar_check(
-    tablename: str, column_name: str, enum_cls: type[object]
+def test_enum_columns_use_non_native_varchar_check(
+    tablename: str, column_name: str, enum_cls: type[StrEnum]
 ) -> None:
-    """ENUM-колонки: VARCHAR + CHECK по значениям из docs/04 (ADR 0003)."""
+    """ENUM: SQLAlchemy Enum, native_enum=False, VARCHAR + CHECK."""
 
     col = col_of(tablename, column_name)
-    # ADR 0003: физический тип — чистый VARCHAR (без sqlalchemy.Enum),
-    # значения фиксирует CheckConstraint ниже.
-    assert isinstance(col.type, VARCHAR)
-    assert col.type.length == max(len(member.value) for member in enum_cls)  # type: ignore[attr-defined]
+    assert isinstance(col.type, SqlEnum)
+    assert col.type.native_enum is False
+    assert col.type.create_constraint is True
+    assert col.type.name == column_name
+    assert col.type.length == max(len(member.value) for member in enum_cls)
+    assert col.type.enums == [member.value for member in enum_cls]
     assert col.nullable is False
 
-    expected_in = ", ".join(f"'{member.value}'" for member in enum_cls)  # type: ignore[attr-defined]
-    assert f"{column_name} IN ({expected_in})" in table_ddl(tablename)
+    ddl = table_ddl(tablename)
+    assert (
+        f"CONSTRAINT ck_{tablename}_{column_name} CHECK "
+        f"({column_name} IN ({', '.join(repr(member.value) for member in enum_cls)}))"
+    ) in ddl
 
     checks = [
         constraint
@@ -335,10 +343,11 @@ def test_enum_columns_varchar_check(
         and list(constraint.columns.keys()) == [column_name]
     ]
     assert len(checks) == 1
+    assert checks[0].name == f"ck_{tablename}_{column_name}"
 
 
 def test_no_native_postgresql_enum_columns() -> None:
-    """Ни одной нативной PostgreSQL ENUM-колонки (ADR 0003)."""
+    """Ни одной нативной PostgreSQL ENUM-колонки."""
 
     for tablename in Base.metadata.tables:
         for col in table_of(tablename).c:
@@ -346,13 +355,13 @@ def test_no_native_postgresql_enum_columns() -> None:
 
 
 def table_ddl(tablename: str) -> str:
-    """Компилирует CREATE TABLE диалектом PostgreSQL (имена из NAMING_CONVENTION)."""
+    """Компилирует CREATE TABLE диалектом PostgreSQL."""
 
     return str(CreateTable(table_of(tablename)).compile(dialect=postgresql.dialect()))
 
 
 def test_explicit_check_constraints_from_doc() -> None:
-    """CHECK-ограничения ровно из docs/04 (§1.3, §2.2)."""
+    """CHECK-ограничения ровно из docs/04."""
 
     grade_ddl = table_ddl("grade_scales")
     assert "CHECK (primary_score >= 0)" in grade_ddl
@@ -362,7 +371,7 @@ def test_explicit_check_constraints_from_doc() -> None:
 
 
 def test_auth_tokens_covered_index() -> None:
-    """Индекс (user_id, purpose) — единственный явный индекс docs/04 §2.5."""
+    """Индекс (user_id, purpose) — требование docs/04 §2.5."""
 
     indexes = {
         (index.name, frozenset(column.name for column in index.columns))
@@ -387,7 +396,7 @@ def test_foreign_keys_target_and_on_delete(
 
 
 def test_relationships_lazy_raise_and_back_populates() -> None:
-    """Связи: lazy="raise" (нет неявных lazy-загрузок) и согласованный back_populates."""
+    """Связи: lazy="raise" и согласованный back_populates."""
 
     configure_mappers()
     for model in ALL_MODELS:
@@ -399,7 +408,7 @@ def test_relationships_lazy_raise_and_back_populates() -> None:
 
 
 def test_models_import_from_src_db_on_this_python() -> None:
-    """Модели реально импортируются из пакета src.db (чистый Python 3.11)."""
+    """Модели реально импортируются из пакета src.db."""
 
     db = importlib.import_module("src.db")
     for name in (
