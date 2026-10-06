@@ -38,7 +38,7 @@ $script:shown = $false
         Write-Host "  1. В .env.local поставьте PUBLIC_BASE_URL=$url"
         Write-Host "     (бэкенд проверяет Origin изменяющих запросов именно по этому значению)."
         Write-Host "  2. Перезапустите backend (app), чтобы он прочитал новое значение."
-        Write-Host "  3. Кнопку меню dev-бота в BotFather обновите на новый адрес вручную."
+        Write-Host "  3. Кнопку меню бота в BotFather обновите на новый адрес вручную."
         Write-Host "Остановить туннель: Ctrl+C."
     }
 }
