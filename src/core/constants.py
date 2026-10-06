@@ -35,3 +35,55 @@ HEALTH_STATUS_OK = "ok"
 
 # Минимальная длина SESSION_SECRET в байтах (требование задачи T1.01).
 SECRET_MIN_BYTES = 32
+
+# Telegram WebApp initData: максимальный возраст auth_date (docs/09 §2.2) и
+# допустимое расхождение часов для auth_date «из будущего».
+INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60
+INIT_DATA_FUTURE_TOLERANCE_SECONDS = 60
+# Размер случайного токена в байтах для secrets.token_urlsafe (256 бит, docs/09 §2.1).
+TOKEN_BYTES = 32
+
+# Серверные сессии (docs/09 §2.3): cookie с идентификатором, данные — в Redis.
+SESSION_COOKIE_NAME = "session_id"
+SESSION_TTL_STUDENT_SECONDS = 30 * 24 * 60 * 60
+SESSION_TTL_STAFF_SECONDS = 7 * 24 * 60 * 60
+SESSION_KEY_PREFIX = "session:"
+USER_SESSIONS_KEY_PREFIX = "user_sessions:"
+
+# CSRF (docs/09 §2.3.1): изменяющие методы и заголовок-маркер.
+CSRF_UNSAFE_METHODS = frozenset({"POST", "PATCH", "PUT", "DELETE"})
+CSRF_REQUIRED_HEADER = "x-requested-with"
+CSRF_REQUIRED_HEADER_VALUE = "XMLHttpRequest"
+# Webhook Telegram защищён секретом, а не Origin (docs/09 §1).
+CSRF_EXEMPT_PATH_PREFIXES: tuple[str, ...] = ("/telegram/",)
+
+# Rate limiting (docs/08 §10): окно — одна минута.
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_AUTH_PER_MINUTE = 10
+RATE_LIMIT_USER_PER_MINUTE = 120
+RATE_LIMIT_KEY_PREFIX = "rate:"
+
+# CORS включается только локально (docs/09 §2.3.1): dev-сервер Vite на другом порту.
+LOCAL_CORS_ORIGINS: tuple[str, ...] = ("http://localhost:5173", "http://127.0.0.1:5173")
+# Статусы /health (docs/08 §3).
+HEALTH_STATUS_DEGRADED = "degraded"
+HEALTH_COMPONENT_OK = "ok"
+HEALTH_COMPONENT_ERROR = "error"
+
+# Приглашения и ссылки входа (docs/04 §2.5, docs/09 §2).
+INVITE_TTL_DAYS = 7
+WEB_LOGIN_TTL_MINUTES = 10
+# Неудачные попытки принять приглашение: 5 за 10 минут на telegram_id (docs/08 §10).
+INVITE_FAILED_ATTEMPTS_LIMIT = 5
+INVITE_FAILED_ATTEMPTS_WINDOW_SECONDS = 10 * 60
+INVITE_FAILURE_SCOPE = "invite_fail"
+
+# Базовый путь REST API (docs/08 §1).
+API_V1_PREFIX = "/api/v1"
+
+# Бот (docs/05 §4, §7): TTL FSM, допустимые типы апдейтов, префикс приглашения.
+BOT_FSM_TTL_SECONDS = 60 * 60
+BOT_ALLOWED_UPDATES: tuple[str, ...] = ("message", "callback_query", "my_chat_member")
+BOT_INVITE_PAYLOAD_PREFIX = "inv_"
+BOT_WEBHOOK_PATH = "/telegram/webhook"
+BOT_WEBHOOK_AUTH_HEADER = "x-telegram-bot-api-secret-token"

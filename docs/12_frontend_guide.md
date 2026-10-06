@@ -158,7 +158,7 @@ setItem({ ...item, title: "Новое название" });      // измени
 | `pnpm format` | Prettier |
 | `pnpm typecheck` | `tsc --noEmit` (только проверка типов) |
 | `pnpm test` | Vitest (юнит и компонентные тесты) |
-| `pnpm gen:api` | Сгенерировать `src/api/schema.d.ts` из `openapi.json` бэкенда |
+| `pnpm gen:api` | Выгрузить OpenAPI бэкенда (`scripts/export_openapi.py`) и сгенерировать `src/api/schema.d.ts` (нужен `uv`) |
 | `pnpm e2e` | Playwright (после MVP-ядра) |
 
 ### 2.3. Как работает dev-режим

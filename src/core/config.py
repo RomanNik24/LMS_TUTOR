@@ -4,6 +4,7 @@
 Файл с реальными секретами не коммитится и никогда не выводится в лог.
 """
 
+from functools import lru_cache
 from typing import Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -15,6 +16,7 @@ from src.core.constants import (
     APP_ENV_PROD,
     APP_ENVIRONMENTS,
     BOT_MODE_POLLING,
+    BOT_MODE_WEBHOOK,
     BOT_MODES,
     ENV_FILE_NAME,
     S3_REGION_DEFAULT,
@@ -35,6 +37,8 @@ class Settings(BaseSettings):
         database_url: Строка подключения к PostgreSQL (async-драйвер).
         redis_url: Строка подключения к Redis.
         session_secret: Секрет для подписи серверных сессий.
+        session_cookie_secure: Флаг `Secure` у cookie сессии; `false` допустим только
+            в `local` (HTTP без TLS), в `prod` обязателен `true`.
         default_timezone: Часовой пояс по умолчанию (IANA) для новых пользователей.
         bot_token: Токен Telegram-бота от @BotFather.
         bot_mode: Режим бота: `polling` (локально) или `webhook` (сервер).
@@ -61,6 +65,7 @@ class Settings(BaseSettings):
     database_url: str = Field(validation_alias="DATABASE_URL")
     redis_url: str = Field(validation_alias="REDIS_URL")
     session_secret: SecretStr = Field(default=SecretStr(""), validation_alias="SESSION_SECRET")
+    session_cookie_secure: bool = Field(default=True, validation_alias="SESSION_COOKIE_SECURE")
     default_timezone: str = Field(validation_alias="DEFAULT_TIMEZONE")
 
     # --- Telegram-бот (docs/02 §7) ---
@@ -116,6 +121,15 @@ class Settings(BaseSettings):
             raise ValueError(f"BOT_MODE={self.bot_mode!r}: допустимы {', '.join(BOT_MODES)}")
         if self.schedule_horizon_weeks < 1:
             raise ValueError("SCHEDULE_HORIZON_WEEKS должен быть >= 1")
+        if (
+            self.bot_mode == BOT_MODE_WEBHOOK
+            and self.bot_token.get_secret_value().strip()
+            and not (
+                self.webhook_url.strip().startswith("https://")
+                and self.webhook_secret.get_secret_value().strip()
+            )
+        ):
+            raise ValueError("BOT_MODE=webhook: нужны WEBHOOK_URL (https://…) и WEBHOOK_SECRET")
         return self
 
     @model_validator(mode="after")
@@ -135,6 +149,8 @@ class Settings(BaseSettings):
         """
         if self.app_env != APP_ENV_PROD:
             return self
+        if not self.session_cookie_secure:
+            raise ValueError("APP_ENV=prod: SESSION_COOKIE_SECURE должен быть true")
         missing = [
             name
             for name, value in (
@@ -154,3 +170,9 @@ class Settings(BaseSettings):
                 "APP_ENV=prod: отсутствуют обязательные настройки: " + "; ".join(missing)
             )
         return self
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Вернуть единый экземпляр настроек (читается при первом обращении)."""
+    return Settings()

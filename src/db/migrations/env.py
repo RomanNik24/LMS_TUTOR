@@ -35,7 +35,8 @@ from src.db.base import Base
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # disable_existing_loggers=False: миграции не должны отключать логгеры приложения.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 
 def _load_settings() -> Settings:

@@ -52,6 +52,20 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
 uv run alembic upgrade head
 ```
 
+## Типы API для фронтенда
+
+Типы фронтенда генерируются из OpenAPI бэкенда и **не правятся вручную**:
+
+```bash
+cd frontend
+pnpm gen:api    # export_openapi.py -> openapi-typescript -> src/api/schema.d.ts
+```
+
+Скрипт сам выгружает OpenAPI (нужны `uv` и установленные зависимости бэкенда),
+файл `frontend/src/api/schema.d.ts` коммитится. После любого изменения схем или
+эндпоинтов бэкенда запустите `pnpm gen:api` и закоммитьте результат. В CI шаг
+«Check API types are in sync with backend» падает, если файл устарел.
+
 ## Проверка кода
 
 Единая команда запускает все проверки проекта и печатает итог:

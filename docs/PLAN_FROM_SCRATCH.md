@@ -78,7 +78,7 @@
 | Сервер | В разработке всё **локально** (Docker на вашем ПК). VPS/домен/S3 покупаем на этапе 9 (рекомендация: один провайдер в РФ, например Timeweb Cloud) |
 | Доступ к Telegram | Сначала без прокси. `TELEGRAM_PROXY_URL` — только если будут проблемы |
 | Телефон | Mini App открывается только по HTTPS → для тестов используем бесплатный HTTPS-туннель (T1.16) |
-| Бот | `@romchik_infomat_bot` — **будущий боевой**. Для разработки — отдельный dev-бот |
+| Бот | `@romchik_infomat_bot` — **один бот и для разработки, и для боя** (ADR 0009). Реальных учеников до запуска нет. **Перед боевым запуском (T9.10) токен обязательно перевыпускается (`/revoke`), а локальная разработка переходит на отдельный dev-бот** |
 | Шкалы ЕГЭ/ОГЭ | Приняты владельцем как верные (ADR 0004); обновляются ежегодно |
 | Юридическое (ПДн) | После реализации, но **до широкого запуска** (T9.12) |
 | Тон интерфейса | Ученику «ты», персоналу нейтрально (`docs/07` приоритетнее `docs/05`) |
@@ -291,9 +291,9 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 
 **Проверка:** в терминале `git --version`, `gh auth status`, `docker --version` — без ошибок.
 
-### P.4 · Бот для разработки и ваш Telegram ID
+### P.4 · Бот и ваш Telegram ID
 **Кто:** 👤 OWNER
-1. Telegram → `@BotFather` → `/newbot` → любое имя и username, например `romchik_infomat_dev_bot` → получите токен вида `123456:ABC…`.
+1. Telegram → `@BotFather`. Бот `@romchik_infomat_bot` — наш единственный бот на время разработки (ADR 0009): если он уже создан, откройте `/mybots` → ваш бот → `API Token`; если нет — `/newbot` с username `romchik_infomat_bot`. Токен имеет вид `123456:ABC…`.
 2. Telegram → `@userinfobot` → `/start` → запомните число **Id**.
 3. Токен и Id **пока никуда не вписывайте**, храните в менеджере паролей. Вставите сами в `.env.local` на шаге T1.14.
 
@@ -701,9 +701,9 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 ```
 **Проверка:** 🤖 `pnpm test --run` зелёный; 🤖 `grep -rn "window.Telegram" frontend/src | grep -v lib/telegram` → пусто.
 
-### T1.14 · Секреты и dev-бот
+### T1.14 · Секреты и бот
 **Кто:** 👤 OWNER + 🖥️ TERM · **Размер:** S
-**Вы делаете сами:** откройте `.env.local` в редакторе и впишите: `BOT_TOKEN=<токен dev-бота из P.4>`, `OWNER_TELEGRAM_ID=<ваш Id>`, `BOT_MODE=polling`, `SESSION_SECRET=<длинная случайная строка>` (сгенерировать: `python -c "import secrets;print(secrets.token_urlsafe(48))"`), `WEBHOOK_SECRET=<ещё одна случайная строка>`. Токен в чат **не отправляйте**.
+**Вы делаете сами:** откройте `.env.local` в редакторе и впишите: `BOT_TOKEN=<токен бота из P.4>`, `OWNER_TELEGRAM_ID=<ваш Id>`, `BOT_MODE=polling`, `SESSION_SECRET=<длинная случайная строка>` (сгенерировать: `python -c "import secrets;print(secrets.token_urlsafe(48))"`), `WEBHOOK_SECRET=<ещё одна случайная строка>`. Токен в чат **не отправляйте**.
 **Промпт TERM:**
 ```text
 Ты TERM-агент. НЕ открывай и НЕ печатай .env.local целиком. Проверь:
@@ -712,7 +712,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 3) Проверь токен вызовом getMe, в выводе покажи ТОЛЬКО username бота (не токен).
 4) gitleaks detect — без находок.
 ```
-**Проверка:** 🤖 TERM показывает username вашего **dev-бота**. `git status` не показывает `.env.local`.
+**Проверка:** 🤖 TERM показывает username бота (`romchik_infomat_bot`). `git status` не показывает `.env.local`.
 
 ### T1.14a · Скрипт создания тестового ученика
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `chore/t1-14a-dev-student-script` · **Коммит:** `chore: add dev script to create test student`
@@ -730,7 +730,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Ты TERM-агент. Запусти локально: docker compose up -d postgres redis minio; uv run alembic upgrade head; uv run python scripts/seed_reference.py; uv run python scripts/create_owner.py; затем backend (uvicorn) и бот в режиме polling (BOT_MODE=polling), а также frontend dev-сервер. Следи за логами и скажи мне, когда всё готово. Затем дай мне пошаговый сценарий для ручной проверки (ниже) и жди, пока я пройду его, собирая ошибки из логов.
 ```
 **📱 Что проверить вам в Telegram:**
-1. Откройте dev-бота → `/start` → видите меню владельца.
+1. Откройте бота → `/start` → видите меню владельца.
 2. `/help` → список команд.
 3. `/web` → бот присылает одноразовую ссылку (откроется позже на HTTPS — пока проверьте только, что ссылка пришла).
 4. Попросите TERM создать тестового ученика (скрипт `scripts/dev_create_student.py` из задачи T1.14a: создаёт ученика и печатает ссылку-приглашение).
@@ -741,7 +741,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `chore/t1-15a-dev-tunnel-script` · **Коммит:** `chore: add dev tunnel script`
 **Промпт:**
 ```text
-Задача T1.15a (CODE). scripts/dev_tunnel.sh (и .ps1 для Windows): запускает cloudflared quick tunnel на локальный порт (параметр, по умолчанию порт nginx/фронтенда), печатает полученный https-адрес и напоминание: обновить PUBLIC_BASE_URL и допустимый Origin в .env.local, перезапустить app, а кнопку меню dev-бота в BotFather на новый адрес владелец обновляет сам. cloudflared — инструмент разработчика, НЕ зависимость проекта (не добавлять в pyproject/package.json). Если cloudflared не найден — понятное сообщение, как установить.
+Задача T1.15a (CODE). scripts/dev_tunnel.sh (и .ps1 для Windows): запускает cloudflared quick tunnel на локальный порт (параметр, по умолчанию порт nginx/фронтенда), печатает полученный https-адрес и напоминание: обновить PUBLIC_BASE_URL и допустимый Origin в .env.local, перезапустить app, а кнопку меню бота в BotFather на новый адрес владелец обновляет сам. cloudflared — инструмент разработчика, НЕ зависимость проекта (не добавлять в pyproject/package.json). Если cloudflared не найден — понятное сообщение, как установить.
 ```
 **Проверка:** 🤖 `shellcheck scripts/dev_tunnel.sh` без ошибок; скрипт печатает адрес `https://….trycloudflare.com` (проверит TERM в T1.16).
 
@@ -770,14 +770,14 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Кто:** 🖥️ TERM · **Размер:** M
 **Промпт:**
 ```text
-Ты TERM-агент. Подними профиль full (docker compose --profile full up -d --build), примени миграции и сиды одноразовым контейнером, запусти туннель, установи webhook dev-бота на адрес туннеля (BOT_MODE=webhook, секретный путь + заголовок X-Telegram-Bot-Api-Secret-Token, allowed_updates=message,callback_query,my_chat_member). Проверь getWebhookInfo (last_error_message пуст) и /health. Проверь исходящую доступность api.telegram.org с ПК; прокси настраивай ТОЛЬКО если есть проблемы. Результат — docs/ops/LOCAL_FULLSTACK.md (без секретов).
+Ты TERM-агент. Подними профиль full (docker compose --profile full up -d --build), примени миграции и сиды одноразовым контейнером, запусти туннель, установи webhook бота на адрес туннеля (BOT_MODE=webhook, секретный путь + заголовок X-Telegram-Bot-Api-Secret-Token, allowed_updates=message,callback_query,my_chat_member). Проверь getWebhookInfo (last_error_message пуст) и /health. Проверь исходящую доступность api.telegram.org с ПК; прокси настраивай ТОЛЬКО если есть проблемы. Результат — docs/ops/LOCAL_FULLSTACK.md (без секретов).
 ```
-**Проверка:** 📱 `/start` в dev-боте отвечает при работе через webhook. 🤖 `getWebhookInfo` без ошибок.
+**Проверка:** 📱 `/start` в боте отвечает при работе через webhook. 🤖 `getWebhookInfo` без ошибок.
 
 ### T1.19 · Тест Mini App на iOS и Android (главный риск)
 **Кто:** 👤 OWNER + 🖥️ TERM · **Размер:** M
 **📱 Вы:**
-1. На **iPhone** и **Android** откройте dev-бота → кнопка открытия приложения (Mini App по адресу туннеля).
+1. На **iPhone** и **Android** откройте бота → кнопка открытия приложения (Mini App по адресу туннеля).
 2. Проверьте: приложение загрузилось; вход произошёл автоматически; закройте и откройте снова — вход сохранился; светлая и тёмная темы; кнопка «Назад»; отступы у краёв экрана («чёлка»/жесты).
 3. Откройте ссылку из `/web` в обычном браузере телефона → кнопка «Войти» → вход.
 **TERM:** собирает логи nginx/app за время теста.
@@ -1445,7 +1445,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 
 ### T9.10 · Боевая среда (prod)
 **Кто:** 🖥️ TERM + 👤 OWNER · **Размер:** L
-**👤 Вы:** в BotFather настраиваете `@romchik_infomat_bot` (описание «Репетитор по информатике и математике: ОГЭ и ЕГЭ…», аватар, команды), получаете **боевой токен** и сами вносите его в `.env` prod-сервера.
+**👤 Вы:** в BotFather настраиваете `@romchik_infomat_bot` (описание «Репетитор по информатике и математике: ОГЭ и ЕГЭ…», аватар, команды), получаете **боевой токен** и сами вносите его в `.env` prod-сервера. **Обязательно перевыпустите токен (`/revoke`)**: прежний использовался локально при разработке (ADR 0009). После этого локальный `.env.local` с прежним токеном перестаёт работать — для дальнейшей разработки создайте отдельного dev-бота.
 **Промпт TERM:**
 ```text
 Ты TERM-агент. Повтори T9.01 для app.<домен>: ОТДЕЛЬНАЯ БД, ОТДЕЛЬНЫЙ S3-бакет, боевой бот. .env prod (chmod 600), SSL, DNS, webhook, /openapi.json закрыт, alembic upgrade head + сиды (ТОЛЬКО справочники, без демо-данных), создание владельца. Деплой на prod — через CI/CD с ручным подтверждением. Смоук на prod, затем сразу сделай бэкап prod и проверь, что он в бакете.

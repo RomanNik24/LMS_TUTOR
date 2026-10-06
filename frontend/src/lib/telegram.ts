@@ -4,10 +4,13 @@
  * функции этого модуля; ESLint (no-restricted-imports / no-restricted-syntax)
  * запрещает обход этого правила.
  *
- * SDK (@telegram-apps/sdk-react) подключается в T1.x — здесь минимальный
- * типизированный слой без any: известное нам поле описываем явно, остальное
- * остаётся readonly-записью unknown-значений (docs/12 §1.4: неизвестное — unknown).
+ * SDK (@telegram-apps/sdk-react, версии — ADR 0008) используется только здесь:
+ * инициализация, нативная кнопка «Назад», тема. Вне Telegram все функции безопасно
+ * ничего не делают. Типизированный слой без any: известное поле описываем явно,
+ * остальное — unknown (docs/12 §1.4).
  */
+
+import { backButton, init, isTMA, miniApp } from "@telegram-apps/sdk-react";
 
 /** Минимальная часть объекта window.Telegram, которую мы читаем. */
 type TelegramWebAppUser = {
@@ -66,8 +69,24 @@ export function applyTelegramTheme(): "light" | "dark" {
   return theme;
 }
 
+function readSdkColorScheme(): "light" | "dark" | null {
+  try {
+    if (miniApp.isMounted()) {
+      return miniApp.isDark() ? "dark" : "light";
+    }
+  } catch {
+    // SDK недоступен — берём следующий источник темы
+  }
+  return null;
+}
+
 function resolveColorScheme(): "light" | "dark" {
-  // theme читаем через проверку формы (unknown → конкретный тип), без any.
+  // 1) SDK (после initTelegram); 2) theme из window.Telegram — через проверку формы
+  // (unknown → конкретный тип), без any; 3) prefers-color-scheme браузера.
+  const sdkScheme = readSdkColorScheme();
+  if (sdkScheme !== null) {
+    return sdkScheme;
+  }
   const scheme = readThemeColorScheme(window.Telegram?.theme);
   if (scheme !== null) {
     return scheme;
@@ -86,4 +105,51 @@ function readThemeColorScheme(theme: unknown): "light" | "dark" | null {
     return colorScheme;
   }
   return null;
+}
+
+/**
+ * Инициализация SDK при запуске внутри Telegram (вызывается один раз в main.tsx
+ * до отрисовки). Вне Telegram и при любой ошибке SDK приложение продолжает работать.
+ * Возвращает true, если SDK инициализирован.
+ */
+export function initTelegram(): boolean {
+  if (!isTelegramMiniApp() || !isTMA()) {
+    return false;
+  }
+  try {
+    init();
+    if (miniApp.mountSync.isAvailable()) {
+      miniApp.mountSync();
+    }
+    if (miniApp.ready.isAvailable()) {
+      miniApp.ready();
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Показать нативную кнопку «Назад» Telegram и вызвать onBack при нажатии
+ * (docs/12 §5.5). Возвращает функцию отписки: прячет кнопку и снимает обработчик.
+ * Вне Telegram — ничего не делает.
+ */
+export function showBackButton(onBack: () => void): () => void {
+  try {
+    if (!backButton.isSupported()) {
+      return () => undefined;
+    }
+    if (!backButton.isMounted()) {
+      backButton.mount();
+    }
+    backButton.show();
+    const offClick = backButton.onClick(onBack);
+    return () => {
+      offClick();
+      backButton.hide();
+    };
+  } catch {
+    return () => undefined;
+  }
 }

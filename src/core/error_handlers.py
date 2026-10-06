@@ -42,12 +42,13 @@ ERROR_CODE_METHOD_NOT_ALLOWED = "method_not_allowed"
 # без собственной записи в контракте — общий код по имени статуса.
 HTTP_ERROR_CODES: dict[int, str] = {
     400: "bad_request",
-    401: "unauthorized",
+    401: "unauthenticated",
     403: "permission_denied",
     404: ERROR_CODE_NOT_FOUND,
     405: ERROR_CODE_METHOD_NOT_ALLOWED,
     409: "conflict",
     422: ERROR_CODE_VALIDATION,
+    429: "rate_limited",
 }
 
 # Нейтральное сообщение для 500: внутренних деталей не раскрываем.

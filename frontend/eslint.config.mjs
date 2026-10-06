@@ -6,13 +6,18 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist/**", "node_modules/**", "coverage/**"] },
+  { ignores: ["dist/**", "node_modules/**", "coverage/**", "src/api/schema.d.ts"] },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
     /* Конфигурационные JS/MJS-файлы не проходят через TS-парсер: отключаем типизированные правила */
     files: ["**/*.{js,mjs,cjs}"],
     extends: [tseslint.configs.disableTypeChecked],
+  },
+  {
+    /* Node-скрипты (scripts/*.mjs) выполняются в Node, а не в браузере */
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: { ...globals.node } },
   },
   {
     files: ["**/*.{ts,tsx}"],

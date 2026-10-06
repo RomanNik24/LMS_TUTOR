@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   server: {
+    // Туннель для Mini App (scripts/dev_tunnel.*): Vite иначе блокирует незнакомые хосты
+    allowedHosts: [".trycloudflare.com"],
     proxy: {
       // В dev запросы /api идут на локальный бэкенд — CORS не нужен (docs/12 §2.3)
       "/api": {

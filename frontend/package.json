@@ -17,14 +17,17 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:api": "echo \"TODO T1.12: openapi.json -> src/api/schema.d.ts (openapi-typescript)\" && exit 1"
+    "gen:api": "node scripts/gen-api.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "1.4.1",
+    "@tanstack/react-query": "5.104.1",
+    "@telegram-apps/sdk-react": "3.3.9",
     "date-fns": "4.4.0",
     "openapi-fetch": "0.17.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.4"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
