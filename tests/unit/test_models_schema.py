@@ -23,9 +23,6 @@ from sqlalchemy import (
     SmallInteger,
     UniqueConstraint,
 )
-from sqlalchemy import (
-    Enum as SqlEnum,
-)
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import BIGINT, BOOLEAN, CHAR, JSONB, VARCHAR
 from sqlalchemy.dialects.postgresql import ENUM as PostgresEnum
@@ -322,13 +319,11 @@ def test_enum_columns_varchar_check(
     """ENUM-колонки: VARCHAR + CHECK по значениям из docs/04 (ADR 0003)."""
 
     col = col_of(tablename, column_name)
-    assert isinstance(col.type, SqlEnum)
-    assert col.type.native_enum is False
-    assert col.type.enum_class is enum_cls
+    # ADR 0003: физический тип — чистый VARCHAR (без sqlalchemy.Enum),
+    # значения фиксирует CheckConstraint ниже.
+    assert isinstance(col.type, VARCHAR)
     assert col.type.length == max(len(member.value) for member in enum_cls)  # type: ignore[attr-defined]
     assert col.nullable is False
-    # Значения CHECK — строчные .value (docs/04), а не имена членов enum.
-    assert list(col.type.enums) == [member.value for member in enum_cls]  # type: ignore[attr-defined]
 
     expected_in = ", ".join(f"'{member.value}'" for member in enum_cls)  # type: ignore[attr-defined]
     assert f"{column_name} IN ({expected_in})" in table_ddl(tablename)

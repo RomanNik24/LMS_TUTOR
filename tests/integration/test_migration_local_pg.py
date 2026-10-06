@@ -180,14 +180,16 @@ async def _clean_schema_async(dsn: str) -> None:
 def _run_in_fresh_loop(coro_factory: Any) -> None:
     """Выполняет корутину в НОВОМ событийном цикле.
 
-    pytest-asyncio работает в режиме auto, поэтому синхронные тесты уже
-    живут внутри запущенного цикла и прямой asyncio.run() запрещён.
-    Сначала пробуем обычный asyncio.run(), при конфликте — запускаем
-    корутину в отдельном потоке (там цикла нет, run разрешён).
+    pytest-asyncio работает в режиме auto: синхронные тесты могут исполняться
+    внутри уже запущенного цикла, где прямой asyncio.run() запрещён. Поэтому
+    если цикл уже есть — корутина выполняется в отдельном потоке, где цикла
+    нет и asyncio.run() разрешён.
     """
     try:
-        asyncio.run(coro_factory())
+        asyncio.get_running_loop()
     except RuntimeError:
+        asyncio.run(coro_factory())
+    else:
         with ThreadPoolExecutor(max_workers=1) as pool:
             pool.submit(lambda: asyncio.run(coro_factory())).result()
 
@@ -195,8 +197,10 @@ def _run_in_fresh_loop(coro_factory: Any) -> None:
 def _run_in_fresh_loop_probe(coro_factory: Any) -> bool:
     """То же, что _run_in_fresh_loop, но с возвратом значения (bool-probe)."""
     try:
-        return bool(asyncio.run(coro_factory()))
+        asyncio.get_running_loop()
     except RuntimeError:
+        return bool(asyncio.run(coro_factory()))
+    else:
         with ThreadPoolExecutor(max_workers=1) as pool:
             return bool(pool.submit(lambda: asyncio.run(coro_factory())).result())
 
@@ -266,9 +270,13 @@ def test_upgrade_seed_idempotent_downgrade_reupgrade_local(
         assert await _row_count(engine, "exam_types") == 4
 
         # 4) downgrade base полностью удаляет созданное (кроме самой схемы).
+        # Служебная таблица alembic_version сохраняется Alembic и при откате,
+        # важно: НЕ осталось ни одной таблицы предметной области.
         _run_alembic_local(local_test_dsn, "downgrade_base")
         after_downgrade = await _table_names(engine)
-        assert after_downgrade == set(), f"после отката остались: {after_downgrade}"
+        assert after_downgrade <= {"alembic_version"}, (
+            f"после отката остались: {after_downgrade}"
+        )
 
         # 5) Повторный upgrade head после отката проходит без ошибок.
         _run_alembic_local(local_test_dsn, "upgrade_head")

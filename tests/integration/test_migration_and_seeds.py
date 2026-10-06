@@ -21,7 +21,9 @@ from __future__ import annotations
 import asyncio
 import os
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 import asyncpg
 import pytest
@@ -102,7 +104,7 @@ def _migration_dsn(postgres_container: PostgresContainer) -> tuple[str, str]:
         "postgresql+asyncpg",
         username="test",
         password="test",  # noqa: S106 - тестовые креды контейнера
-        dbname=MIGRATION_DB,
+        database=MIGRATION_DB,
         host=host,
         port=port,
     ).render_as_string(hide_password=False)
@@ -110,7 +112,7 @@ def _migration_dsn(postgres_container: PostgresContainer) -> tuple[str, str]:
         "postgresql+asyncpg",
         username="test",
         password="test",  # noqa: S106
-        dbname=MIGRATION_DB,
+        database=MIGRATION_DB,
         host=host,
         port=port,
     ).render_as_string(hide_password=False)
@@ -150,23 +152,49 @@ def _run_alembic(sync_url: str, action: str) -> None:
 
     env.py берёт DATABASE_URL из Settings (переменная окружения) — подменяем
     её на адрес тестовой базы на время команды и возвращаем обратно.
+
+    run_migrations_online() в env.py сама поднимает цикл через asyncio.run(),
+    что запрещено, если цикл уже запущен — поэтому команда выполняется в
+    отдельном потоке (там цикла нет, как в CLI).
     """
-    previous = os.environ.get("DATABASE_URL")
-    os.environ["DATABASE_URL"] = sync_url
+
+    def _command() -> None:
+        previous = os.environ.get("DATABASE_URL")
+        os.environ["DATABASE_URL"] = sync_url
+        try:
+            cfg = Config(str(ROOT / "alembic.ini"))
+            cfg.set_main_option("script_location", str(ROOT / "src/db/migrations"))
+            if action == "upgrade_head":
+                alembic_command.upgrade(cfg, "head")
+            elif action == "downgrade_base":
+                alembic_command.downgrade(cfg, "base")
+            else:  # pragma: no cover - защита от опечатки в тестах
+                raise ValueError(action)
+        finally:
+            if previous is None:
+                os.environ.pop("DATABASE_URL", None)
+            else:
+                os.environ["DATABASE_URL"] = previous
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        pool.submit(_command).result()
+
+
+def _run_in_fresh_loop(coro_factory: Any) -> None:
+    """Выполняет корутину в НОВОМ событийном цикле.
+
+    pytest-asyncio работает в режиме auto: синхронные тесты могут исполняться
+    внутри уже запущенного цикла, где прямой asyncio.run() запрещён. Поэтому
+    если цикл уже есть — корутина выполняется в отдельном потоке, где цикла
+    нет и asyncio.run() разрешён.
+    """
     try:
-        cfg = Config(str(ROOT / "alembic.ini"))
-        cfg.set_main_option("script_location", str(ROOT / "src/db/migrations"))
-        if action == "upgrade_head":
-            alembic_command.upgrade(cfg, "head")
-        elif action == "downgrade_base":
-            alembic_command.downgrade(cfg, "base")
-        else:  # pragma: no cover - защита от опечатки в тестах
-            raise ValueError(action)
-    finally:
-        if previous is None:
-            os.environ.pop("DATABASE_URL", None)
-        else:
-            os.environ["DATABASE_URL"] = previous
+        asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.run(coro_factory())
+    else:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pool.submit(lambda: asyncio.run(coro_factory())).result()
 
 
 async def _table_names(engine: AsyncEngine) -> set[str]:
@@ -252,10 +280,14 @@ def test_full_migration_cycle_and_seeds(
         assert await _row_count(engine, "subjects") == 2
         assert await _row_count(engine, "exam_types") == 4
 
-        # 4) downgrade base полностью удаляет созданное.
+        # 4) downgrade base полностью удаляет созданное (рабочий откат).
+        # Служебная таблица alembic_version сохраняется Alembic и при откате,
+        # важно: НЕ осталось ни одной таблицы предметной области.
         _run_alembic(sync_url, "downgrade_base")
         after_downgrade = await _table_names(engine)
-        assert after_downgrade == set(), f"после отката остались: {after_downgrade}"
+        assert after_downgrade <= {"alembic_version"}, (
+            f"после отката остались: {after_downgrade}"
+        )
 
         # 5) Повторный upgrade head после отката проходит без ошибок.
         _run_alembic(sync_url, "upgrade_head")
@@ -264,6 +296,6 @@ def test_full_migration_cycle_and_seeds(
         assert "btree_gist" in await _extensions(engine)
 
     try:
-        asyncio.run(scenario())
+        _run_in_fresh_loop(scenario)
     finally:
-        asyncio.run(engine.dispose())
+        _run_in_fresh_loop(engine.dispose)
