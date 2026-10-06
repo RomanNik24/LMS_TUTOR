@@ -14,10 +14,15 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import Settings
-from src.core.constants import SESSION_COOKIE_NAME
+from src.core.constants import (
+    RATE_LIMIT_AUTH_PER_MINUTE,
+    RATE_LIMIT_USER_PER_MINUTE,
+    SESSION_COOKIE_NAME,
+)
 from src.core.current_user import CurrentUser
 from src.core.enums import UserRole
 from src.core.exceptions import AppError, PermissionDeniedError
+from src.core.rate_limit import RateLimiter
 from src.core.session_store import SessionStore
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
 from src.repositories.users import UserRepository
@@ -59,9 +64,20 @@ def get_session_store(redis: Annotated[Redis, Depends(get_redis)]) -> SessionSto
     return SessionStore(redis)
 
 
+async def rate_limit_auth(request: Request, redis: Annotated[Redis, Depends(get_redis)]) -> None:
+    """Лимит ``/auth/*``: 10 запросов в минуту на IP (docs/08 §10).
+
+    Подключается к роутеру ``/auth``. За Nginx реальный IP берётся из
+    ``X-Forwarded-For`` — для этого uvicorn запускается с ``--proxy-headers``.
+    """
+    ip = request.client.host if request.client else "unknown"
+    await RateLimiter(redis).hit("auth", ip, RATE_LIMIT_AUTH_PER_MINUTE)
+
+
 async def current_user(
     session: Annotated[AsyncSession, Depends(get_session)],
     store: Annotated[SessionStore, Depends(get_session_store)],
+    redis: Annotated[Redis, Depends(get_redis)],
     session_id: Annotated[str | None, Cookie(alias=SESSION_COOKIE_NAME)] = None,
 ) -> CurrentUser:
     """Определить текущего пользователя: cookie → Redis → пользователь из БД.
@@ -79,7 +95,8 @@ async def current_user(
 
     Raises:
         AppError: 401 ``unauthenticated`` — нет cookie, сессия истекла,
-            пользователь не найден или архивирован.
+            пользователь не найден или архивирован; 429 ``rate_limited`` —
+            больше 120 запросов в минуту от пользователя.
     """
     if not session_id:
         raise _unauthenticated()
@@ -93,6 +110,7 @@ async def current_user(
     if not user.is_active:
         await store.delete_all_for_user(user.id)
         raise _unauthenticated()
+    await RateLimiter(redis).hit("user", str(user.id), RATE_LIMIT_USER_PER_MINUTE)
     return CurrentUser(id=user.id, role=user.role, timezone=user.timezone)
 
 

@@ -49,3 +49,16 @@ SESSION_TTL_STUDENT_SECONDS = 30 * 24 * 60 * 60
 SESSION_TTL_STAFF_SECONDS = 7 * 24 * 60 * 60
 SESSION_KEY_PREFIX = "session:"
 USER_SESSIONS_KEY_PREFIX = "user_sessions:"
+
+# CSRF (docs/09 §2.3.1): изменяющие методы и заголовок-маркер.
+CSRF_UNSAFE_METHODS = frozenset({"POST", "PATCH", "PUT", "DELETE"})
+CSRF_REQUIRED_HEADER = "x-requested-with"
+CSRF_REQUIRED_HEADER_VALUE = "XMLHttpRequest"
+# Webhook Telegram защищён секретом, а не Origin (docs/09 §1).
+CSRF_EXEMPT_PATH_PREFIXES: tuple[str, ...] = ("/telegram/",)
+
+# Rate limiting (docs/08 §10): окно — одна минута.
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_AUTH_PER_MINUTE = 10
+RATE_LIMIT_USER_PER_MINUTE = 120
+RATE_LIMIT_KEY_PREFIX = "rate:"
