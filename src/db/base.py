@@ -13,14 +13,15 @@ from typing import ClassVar
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase
 
-# Соглашение об именах ограничений PostgreSQL. Шаблоны с {table} нужны,
-# чтобы Alembic autogenerate корректно сравнивал ограничения со схемой.
+# Соглашение об именах ограничений PostgreSQL (стандартные ключи SQLAlchemy
+# %(table_name)s и т.п.), чтобы Alembic autogenerate корректно сравнивал
+# ограничения со схемой и имена были детерминированными.
 NAMING_CONVENTION: dict[str, str] = {
-    "ix": "ix_{table}_{column_names}",
-    "uq": "uq_{table}_{column_names}",
-    "ck": "ck_{table}_{constraint_name}",
-    "fk": "fk_{table}_{constraint_name}",
-    "pk": "pk_{table}",
+    "ix": "ix_%(table_name)s_%(column_0_N_name)s",
+    "uq": "uq_%(table_name)s_%(column_0_N_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(constraint_name)s",
+    "pk": "pk_%(table_name)s",
 }
 
 
