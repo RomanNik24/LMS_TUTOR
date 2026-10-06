@@ -35,3 +35,10 @@ HEALTH_STATUS_OK = "ok"
 
 # Минимальная длина SESSION_SECRET в байтах (требование задачи T1.01).
 SECRET_MIN_BYTES = 32
+
+# Telegram WebApp initData: максимальный возраст auth_date (docs/09 §2.2) и
+# допустимое расхождение часов для auth_date «из будущего».
+INIT_DATA_MAX_AGE_SECONDS = 24 * 60 * 60
+INIT_DATA_FUTURE_TOLERANCE_SECONDS = 60
+# Размер случайного токена в байтах для secrets.token_urlsafe (256 бит, docs/09 §2.1).
+TOKEN_BYTES = 32
