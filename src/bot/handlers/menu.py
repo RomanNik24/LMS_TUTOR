@@ -120,6 +120,9 @@ def create_router() -> Router:
     """Создать роутер (новый на каждый ``Dispatcher``: роутер нельзя подключить дважды)."""
     router = Router(name="menu")
     router.message.register(open_app, Command("app"))
+    router.message.register(
+        open_app, F.text.in_({texts.BOT_OPEN_APP_STUDENT, texts.BOT_OPEN_APP_STAFF})
+    )
     router.message.register(web_login, Command("web"))
     router.message.register(help_command, Command("help"))
     router.message.register(logout, Command("logout"))

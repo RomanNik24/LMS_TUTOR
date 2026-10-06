@@ -33,16 +33,22 @@ def app_url(public_base_url: str, role: UserRole) -> str | None:
 
 
 def main_menu(role: UserRole | None, public_base_url: str) -> ReplyKeyboardMarkup:
-    """Главное меню (ReplyKeyboard, постоянное) по состоянию пользователя."""
+    """Главное меню (ReplyKeyboard, постоянное) по состоянию пользователя.
+
+    Кнопка «Открыть приложение» здесь ОБЫЧНАЯ текстовая, а не ``web_app``: Telegram не
+    передаёт ``initData`` Mini App, открытым кнопкой клавиатуры (только инлайн-кнопкой,
+    кнопкой меню и т. п.), и вход в приложение не сработал бы. По нажатию бот присылает
+    инлайн-кнопку ``web_app`` (см. ``open_app_button``).
+    """
+    del public_base_url  # адрес нужен только инлайн-кнопке
     if role is None:
         rows = [
             [KeyboardButton(text=texts.BOT_BUTTON_CATALOG)],
             [KeyboardButton(text=texts.BOT_BUTTON_CONTACT)],
         ]
     else:
-        url = app_url(public_base_url, role)
         label = texts.BOT_OPEN_APP_STUDENT if role == UserRole.STUDENT else texts.BOT_OPEN_APP_STAFF
-        rows = [[KeyboardButton(text=label, web_app=WebAppInfo(url=url))]] if url else []
+        rows = [[KeyboardButton(text=label)]]
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 

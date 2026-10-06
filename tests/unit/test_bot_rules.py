@@ -65,3 +65,16 @@ def test_app_url_requires_https() -> None:
     assert app_url("https://x.example", UserRole.OWNER) == "https://x.example/admin/"
     assert app_url("http://127.0.0.1:8000", UserRole.STUDENT) is None
     assert app_url("", UserRole.STUDENT) is None
+
+
+def test_reply_keyboards_never_use_web_app() -> None:
+    """Telegram не передаёт initData Mini App, открытому кнопкой клавиатуры: вход не работает.
+
+    Поэтому постоянное меню (ReplyKeyboard) не содержит web_app-кнопок; Mini App открывается
+    только инлайн-кнопкой (open_app_button).
+    """
+    from src.bot.keyboards import main_menu
+
+    for role in (None, UserRole.STUDENT, UserRole.MANAGER, UserRole.OWNER):
+        markup = main_menu(role, "https://x.example")
+        assert all(button.web_app is None for row in markup.keyboard for button in row)
