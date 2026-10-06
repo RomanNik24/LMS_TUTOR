@@ -58,9 +58,6 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy import (
-    Enum as SqlEnum,
-)
 from sqlalchemy.dialects.postgresql import BIGINT, BOOLEAN, CHAR, JSONB, VARCHAR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -69,32 +66,72 @@ from src.db.base import Base
 from src.db.mixins import TimestampMixin
 
 
-def enum_varchar(enum_cls: type[StrEnum]) -> SqlEnum:
-    """Тип «VARCHAR + CHECK» для перечисления предметной области (ADR 0003).
+def enum_varchar(enum_cls: type[StrEnum], constraint_name: str) -> CheckConstraint:
+    """Возвращает ограничение «допустимые значения enum» (ADR 0003).
 
-    Колонка физически является строкой ``VARCHAR``; допустимые значения
-    фиксируются ограничением ``CHECK (column IN (...))``. Нативный
-    PostgreSQL ENUM не создаётся (``native_enum=False``); имя ограничения
-    формирует ``NAMING_CONVENTION`` из ``src/db/base.py``.
+    Физический тип колонки при этом — обычный ``VARCHAR`` нужной длины;
+    список значений фиксируется явным ``CheckConstraint`` с именем из
+    ``NAMING_CONVENTION`` (итог: ``ck_<таблица>_<constraint_name>``).
 
     Args:
         enum_cls: Класс-перечисление из ``src/core/enums.py`` — единственный
             источник списка значений для Python и для БД.
+        constraint_name: короткое имя ограничения без префикса таблицы
+            (например ``"role"`` → ``ck_users_role``).
 
     Returns:
-        Готовый к использованию тип колонки SQLAlchemy.
+        Готовое ограничение для ``__table_args__`` модели.
     """
-    return SqlEnum(
-        enum_cls,
-        native_enum=False,
-        create_constraint=True,
-        length=max(len(member.value) for member in enum_cls),
-        validate_strings=True,
-        # docs/04 и src/core/enums.py оперируют значениями (.value, строчными),
-        # а не именами членов enum — иначе CHECK и хранимые данные разошлись бы
-        # с документацией (пример: 'owner', а не 'OWNER').
-        values_callable=lambda cls: [member.value for member in cls],
+    values = ", ".join(f"'{member.value}'" for member in enum_cls)
+    # Имя колонки подставляется через токен %(column_0_name)s: SQLAlchemy
+    # раскроет его в физическое имя колонки при компиляции DDL (например,
+    # "users.role IN (...)"). Ограничение привязано к первой колонке, на
+    # которую оно ссылается (ADR 0003: VARCHAR + CHECK вместо нативного ENUM).
+    return CheckConstraint(
+        f"%(column_0_name)s IN ({values})",
+        name=constraint_name,
+        _create_rule=_skip_if_existing_named_constraint,
     )
+
+
+def _skip_if_existing_named_constraint(inspector, table_name: str) -> bool:
+    """Правило автогенерации Alembic: не создавать дубли enum-CHECK ограничений.
+
+    SQLAlchemy при reflection не сопоставляет отражённые CHECK-ограничения
+    с объектами метаданных (у отражённых имён нет), поэтому autogenerate
+    может повторно предложить уже существующее в БД ограничение — PostgreSQL
+    откажет с DuplicateObjectError. Если в таблице уже есть CHECK вида
+    ``<колонка> IN ('...', '...')`` (т.е. enum-CHECK создан ранее), повторное
+    добавление пропускаем. При создании таблиц с нуля (upgrade head на пустой
+    БД) ограничения создаются обычным порядком — правило влияет только на
+    autogenerate diff против живой схемы.
+    """
+    try:
+        reflected = inspector.get_check_constraints(table_name)
+    except Exception:  # pragma: no cover - отказ инспектора не блокирует diff
+        return True
+    for const in reflected:
+        check_text = (const.get("check") or "").lower()
+        if " in " in check_text and "'" in check_text:
+            # В таблице уже присутствует enum-CHECK («колонка IN ('значения')»)
+            # — новое ограничение с тем же смыслом добавлять не нужно.
+            return False
+    return True
+
+
+def enum_column_type(enum_cls: type[StrEnum]) -> VARCHAR:
+    """VARCHAR-тип для enum-колонки (значения проверяет enum_varchar).
+
+    Нативный PostgreSQL ENUM не создаётся (ADR 0003): CHECK эмулирует
+    перечисление на уровне БД, а колонка остаётся строкой.
+
+    Args:
+        enum_cls: Класс-перечисление из ``src/core/enums.py``.
+
+    Returns:
+        Тип ``VARCHAR`` с длиной по самому длинному значению enum.
+    """
+    return VARCHAR(max(len(member.value) for member in enum_cls))
 
 
 class Subject(TimestampMixin, Base):
@@ -114,7 +151,9 @@ class Subject(TimestampMixin, Base):
     )
 
     # UNIQUE code (docs/04 §1.1). Отдельный индекс не нужен: уникальный индекс
-    # от UNIQUE покрывает поиск по code.
+    # от UNIQUE покрывает поиск по code. Имя даёт NAMING_CONVENTION:
+    # uq_subjects_code (имя-колоночный плейсхолдер «code» недопустим — в БД
+    # имена ограничений уникальны в схеме, см. ADR 0002).
     __table_args__ = (UniqueConstraint("code"),)
 
     # Связи; lazy="raise" — см. docstring модуля.
@@ -141,15 +180,17 @@ class ExamType(TimestampMixin, Base):
     )
     subject_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("subjects.id", ondelete="RESTRICT"),
+        ForeignKey("subjects.id", ondelete="RESTRICT", name="subject_id"),
         nullable=False,
         comment="FK → subjects (справочник не удаляют, пока на него есть ссылки)",
     )
     kind: Mapped[ExamKind] = mapped_column(
-        enum_varchar(ExamKind), nullable=False, comment="Вид экзамена: oge | ege (VARCHAR+CHECK)"
+        enum_column_type(ExamKind),
+        nullable=False,
+        comment="Вид экзамена: oge | ege (VARCHAR+CHECK)",
     )
     result_kind: Mapped[ExamResultKind] = mapped_column(
-        enum_varchar(ExamResultKind),
+        enum_column_type(ExamResultKind),
         nullable=False,
         comment="Результат шкалы: grade_2_5 | test_100 (VARCHAR+CHECK)",
     )
@@ -167,7 +208,13 @@ class ExamType(TimestampMixin, Base):
         BOOLEAN, server_default=text("true"), nullable=False, comment="Тип доступен для выбора"
     )
 
-    __table_args__ = (UniqueConstraint("code"),)
+    __table_args__ = (
+        # ENUM → VARCHAR + CHECK (ADR 0003): имена даёт NAMING_CONVENTION —
+        # ck_exam_types_kind, ck_exam_types_result_kind.
+        enum_varchar(ExamKind, "kind"),
+        enum_varchar(ExamResultKind, "result_kind"),
+        UniqueConstraint("code"),
+    )
 
     subject: Mapped["Subject"] = relationship(back_populates="exam_types", lazy="raise")
     grade_scales: Mapped[list["GradeScale"]] = relationship(
@@ -185,7 +232,7 @@ class GradeScale(TimestampMixin, Base):
     )
     exam_type_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("exam_types.id", ondelete="CASCADE"),
+        ForeignKey("exam_types.id", ondelete="CASCADE", name="exam_type_id"),
         nullable=False,
         comment="FK → exam_types, ON DELETE CASCADE (docs/04 §1.3)",
     )
@@ -202,12 +249,9 @@ class GradeScale(TimestampMixin, Base):
     )
 
     __table_args__ = (
-        UniqueConstraint(
-            "exam_type_id",
-            "valid_year",
-            "primary_score",
-            name="grade_scales_exam_type_id_valid_year_primary_score_key",
-        ),
+        # Имя ограничения формирует NAMING_CONVENTION:
+        # uq_grade_scales_exam_type_id_valid_year_primary_score.
+        UniqueConstraint("exam_type_id", "valid_year", "primary_score"),
         CheckConstraint("primary_score >= 0", name="primary_score_nonneg"),
         # Lead-колонка exam_type_id покрыта уникальным индексом выше.
     )
@@ -224,7 +268,7 @@ class User(TimestampMixin, Base):
         BIGINT(), Identity(always=True), primary_key=True, comment="PK, BIGINT IDENTITY"
     )
     role: Mapped[UserRole] = mapped_column(
-        enum_varchar(UserRole),
+        enum_column_type(UserRole),
         nullable=False,
         comment="Роль: owner | manager | student (VARCHAR+CHECK)",
     )
@@ -271,6 +315,12 @@ class User(TimestampMixin, Base):
     # с многократными NULL (docs/04 §2.1).
 
     # 1:1 профиль ученика; cascade — профиль живёт вместе с пользователем.
+    __table_args__ = (
+        # ENUM → VARCHAR + CHECK (ADR 0003): имя даёт NAMING_CONVENTION —
+        # ck_users_role.
+        enum_varchar(UserRole, "role"),
+    )
+
     student_profile: Mapped["StudentProfile | None"] = relationship(
         back_populates="user",
         lazy="raise",
@@ -324,13 +374,13 @@ class StudentProfile(TimestampMixin, Base):
 
     user_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE", name="student_id"),
         primary_key=True,
         comment="PK и FK → users, ON DELETE CASCADE (docs/04 §2.2)",
     )
     teacher_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        ForeignKey("users.id", ondelete="RESTRICT", name="teacher_id"),
         nullable=False,
         comment=(
             "Ведущий преподаватель (owner/manager); RESTRICT — профиль всегда кому-то принадлежит"
@@ -377,13 +427,13 @@ class StudentSubject(Base):
 
     student_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE", name="student_id"),
         primary_key=True,
         comment="FK → users (ученик), ON DELETE CASCADE",
     )
     subject_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("subjects.id", ondelete="CASCADE"),
+        ForeignKey("subjects.id", ondelete="CASCADE", name="subject_id"),
         primary_key=True,
         comment="FK → subjects, ON DELETE CASCADE (связь live-объектов, docs/04 §0)",
     )
@@ -402,7 +452,9 @@ class Guardian(TimestampMixin, Base):
     )
     student_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        # Имя ограничения уникально в таблице guardians: оба FK ссылаются на
+        # users.id, поэтому колонки различаются суффиксом (student / linked).
+        ForeignKey("users.id", ondelete="CASCADE", name="student_id_fk"),
         nullable=False,
         comment="FK → users (ученик), ON DELETE CASCADE (docs/04 §2.4)",
     )
@@ -420,7 +472,7 @@ class Guardian(TimestampMixin, Base):
     )
     user_id: Mapped[int | None] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("users.id", ondelete="SET NULL", name="linked_user_id_fk"),
         nullable=True,
         comment="Для будущей роли parent; колонка NULL-допустима, при удалении аккаунта — NULL",
     )
@@ -446,13 +498,13 @@ class AuthToken(TimestampMixin, Base):
         BIGINT(), Identity(always=True), primary_key=True, comment="PK, BIGINT IDENTITY"
     )
     purpose: Mapped[AuthTokenPurpose] = mapped_column(
-        enum_varchar(AuthTokenPurpose),
+        enum_column_type(AuthTokenPurpose),
         nullable=False,
         comment="Назначение: invite | web_login (VARCHAR+CHECK)",
     )
     user_id: Mapped[int] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE", name="user_id"),
         nullable=False,
         comment="Для кого токен; FK → users, ON DELETE CASCADE (токен без владельца не нужен)",
     )
@@ -464,7 +516,7 @@ class AuthToken(TimestampMixin, Base):
     )
     created_by: Mapped[int | None] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("users.id", ondelete="SET NULL", name="created_by"),
         nullable=True,
         comment="Кто создал; NULL для web_login; при удалении создателя — NULL",
     )
@@ -481,7 +533,10 @@ class AuthToken(TimestampMixin, Base):
     )
 
     __table_args__ = (
-        # token_hash объявлен с unique=True — UNIQUE-ограничение auth_tokens_token_hash_key.
+        # ENUM → VARCHAR + CHECK (ADR 0003): имя даёт NAMING_CONVENTION —
+        # ck_auth_tokens_purpose.
+        enum_varchar(AuthTokenPurpose, "purpose"),
+        # token_hash объявлен с unique=True — UNIQUE-ограничение uq_auth_tokens_token_hash.
         # Явный индекс (user_id, purpose) — требование docs/04 §2.5.
         Index("ix_auth_tokens_user_id_purpose", "user_id", "purpose"),
     )
@@ -508,7 +563,7 @@ class AuditLog(Base):
     )
     actor_user_id: Mapped[int | None] = mapped_column(
         BIGINT(),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("users.id", ondelete="SET NULL", name="actor_user_id"),
         nullable=True,
         comment="Кто выполнил действие; журнал сохраняется при удалении пользователя (docs/09 §8)",
     )
