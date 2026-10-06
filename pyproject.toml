@@ -8,6 +8,7 @@ dependencies = [
     "asyncpg",
     "fastapi",
     "pydantic-settings",
+    "python-json-logger",
     "redis",
     "sqlalchemy[asyncio]",
     "uvicorn[standard]",
