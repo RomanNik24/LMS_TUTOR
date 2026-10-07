@@ -20,7 +20,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import os
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -36,6 +39,15 @@ FRONTEND_DIR = REPO_ROOT / "frontend"
 
 # Максимум строк вывода команды при сбое, чтобы лог оставался читаемым.
 MAX_OUTPUT_LINES = 40
+
+# Предел времени одного шага. Без него зависший процесс (например, тест, чей дочерний процесс
+# держит вывод) останавливал всю проверку навсегда (аудит 2026-10-08, п. 2). Самый долгий шаг —
+# pytest, около двух минут; запас большой, чтобы медленный ПК не давал ложных FAIL.
+STEP_TIMEOUT_SECONDS = 30 * 60
+# Сколько ждать закрытия вывода после принудительной остановки шага.
+KILL_GRACE_SECONDS = 10
+
+IS_WINDOWS = sys.platform == "win32"
 
 
 # Статусы шага. Через enum, а не строковые константы: ruff (S105) трактует
@@ -60,6 +72,7 @@ class Step:
     command: tuple[str, ...]
     # None — запускать из корня репозитория.
     cwd: Path | None = None
+    timeout: float = STEP_TIMEOUT_SECONDS
 
 
 # Порядок шагов важен: сначала быстрые статические проверки, затем тесты.
@@ -106,23 +119,68 @@ def _run_step(step: Step) -> tuple[Status, float, str]:
     try:
         # S603: команды заданы самим скриптом (список аргументов), а не вводом
         # пользователя, shell=False — инъекции через оболочку невозможны.
-        completed = subprocess.run(  # noqa: S603
+        # При превышении времени шаг останавливается вместе с дочерними процессами
+        # (см. _group_kwargs и _kill_tree).
+        process = subprocess.Popen(  # noqa: S603
             step.command,
             cwd=work_dir,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
             errors="replace",
-            check=False,
             shell=False,
+            **_group_kwargs(),
         )
     except OSError as error:  # pragma: no cover - зависит от окружения
         return Status.FAIL, time.monotonic() - started, f"не удалось запустить: {error}"
 
+    try:
+        output, _ = process.communicate(timeout=step.timeout)
+    except KeyboardInterrupt:
+        # Ctrl+C: шаг в своей группе процессов сам сигнал не получит — останавливаем его.
+        _kill_tree(process)
+        raise
+    except subprocess.TimeoutExpired:
+        _kill_tree(process)
+        try:
+            output, _ = process.communicate(timeout=KILL_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            # Вывод держит процесс вне дерева шага: результат уже ясен, дальше не ждём.
+            output = ""
+        message = f"шаг не завершился за {step.timeout:.0f} с и остановлен"
+        return Status.FAIL, time.monotonic() - started, _tail(f"{output or ''}\n{message}")
+
     elapsed = time.monotonic() - started
-    if completed.returncode != 0:
-        return Status.FAIL, elapsed, _tail((completed.stdout or "") + (completed.stderr or ""))
+    if process.returncode != 0:
+        return Status.FAIL, elapsed, _tail(output or "")
     return Status.PASS, elapsed, ""
+
+
+def _group_kwargs() -> dict[str, bool]:
+    """Параметры запуска шага: в POSIX — своя группа процессов (её останавливает ``killpg``).
+
+    В Windows группа не нужна: ``taskkill /T`` останавливает дерево процессов по PID шага.
+    """
+    if IS_WINDOWS:
+        return {}
+    return {"start_new_session": True}
+
+
+def _kill_tree(process: subprocess.Popen[str]) -> None:
+    """Принудительно остановить шаг вместе с дочерними процессами (только по PID шага)."""
+    if sys.platform == "win32":
+        subprocess.run(  # noqa: S603
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],  # noqa: S607
+            capture_output=True,
+            check=False,
+        )
+    else:
+        # Группа процессов шага совпадает с его PID (start_new_session=True).
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+    with contextlib.suppress(OSError):
+        process.kill()
 
 
 def _print_header(title: str) -> None:
