@@ -33,6 +33,14 @@ FROM nginx:1.28-alpine AS runtime
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 COPY nginx/snippets/ /etc/nginx/snippets/
+# Шаблоны с переменными окружения: штатный entrypoint образа nginx при старте подставляет
+# значения (envsubst) и пишет готовые файлы в /etc/nginx/<тот же путь без .template>.
+# Подставляется только S3_PUBLIC_ENDPOINT (адрес подписанных ссылок хранилища для CSP img-src);
+# по умолчанию пусто — картинки только со своего домена.
+COPY nginx/templates/ /etc/nginx/templates/
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx \
+    NGINX_ENVSUBST_FILTER=^S3_PUBLIC_ENDPOINT\$ \
+    S3_PUBLIC_ENDPOINT=""
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

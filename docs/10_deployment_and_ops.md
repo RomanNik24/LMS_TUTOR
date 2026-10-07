@@ -38,7 +38,7 @@
 - `location /` → статика; `try_files $uri /index.html` (поддержка маршрутов SPA).
 - Кеш: файлы с хэшем в имени (`/assets/*`) кешируются надолго (`Cache-Control: public, max-age=31536000, immutable`); `index.html` не кешируется (`no-cache`), чтобы обновления доходили сразу.
 - `client_max_body_size 12m` (загрузка файлов ДЗ до 10 МБ).
-- Заголовки безопасности: HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Content-Security-Policy` (разрешить только свой домен; `frame-ancestors` — домены Telegram, чтобы Mini App открывался; точный список уточняется при тестировании в Telegram).
+- Заголовки безопасности: HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Content-Security-Policy` (разрешить только свой домен; `frame-ancestors` — домены Telegram, чтобы Mini App открывался; точный список уточняется при тестировании в Telegram). Исключение — `img-src`: фото ДЗ открываются по подписанной ссылке хранилища, поэтому разрешён публичный адрес S3 (`S3_PUBLIC_ENDPOINT`); он подставляется в шаблон `nginx/templates/snippets/security-headers.conf.template` при старте контейнера nginx (переменная окружения сервиса `nginx`).
 - Сжатие gzip/brotli для статики. WebSocket не нужен.
 
 ## 4. Домен и SSL

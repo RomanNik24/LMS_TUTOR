@@ -1,0 +1,19 @@
+# Заголовки безопасности (docs/09, docs/10 §3). Подключается в каждый location, где есть
+# свои add_header: иначе nginx не наследует заголовки уровня server.
+# HSTS здесь НЕТ: TLS локально завершается туннелем, HSTS и SSL-блок добавляются в T9.02.
+#
+# Это шаблон: при старте контейнера образ nginx подставляет ${S3_PUBLIC_ENDPOINT} (envsubst,
+# только эта переменная — NGINX_ENVSUBST_FILTER в frontend/Dockerfile) и пишет готовый файл
+# в /etc/nginx/snippets/security-headers.conf.
+
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "no-referrer" always;
+
+# CSP: только свой домен (шрифты, скрипты и картинки самохостятся, docs/09 §1).
+# img-src: фото решений ДЗ показываются по подписанной ссылке хранилища (docs/09 §4), а она ведёт
+# на публичный адрес S3 (S3_PUBLIC_ENDPOINT), то есть на другой origin. Без него браузер
+# блокировал фото на экране проверки (аудит 2026-10-08, п. 3).
+# frame-ancestors: Mini App открывается во встроенном окне Telegram; для веб-клиентов Telegram
+# разрешаем их домены. X-Frame-Options не ставим: он конфликтует с frame-ancestors.
+# Точный список доменов уточняется при проверке на iOS/Android и в Telegram Web (T1.19).
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: ${S3_PUBLIC_ENDPOINT}; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org" always;
