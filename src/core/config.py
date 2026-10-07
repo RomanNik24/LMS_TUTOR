@@ -92,6 +92,8 @@ class Settings(BaseSettings):
     s3_region: str = Field(default=S3_REGION_DEFAULT, validation_alias="S3_REGION")
 
     # --- Мониторинг ошибок ---
+    # Healthchecks: адрес пинга, который раз в 5 минут вызывает воркер (docs/10 §8). Пусто — выкл.
+    healthcheck_url: str = Field(default="", validation_alias="HEALTHCHECK_URL")
     sentry_dsn: SecretStr = Field(default=SecretStr(""), validation_alias="SENTRY_DSN")
 
     # --- Расписание ---

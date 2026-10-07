@@ -56,6 +56,7 @@ from src.schemas.schedule import (
     TemplateUpdate,
 )
 from src.services.auth import STAFF_ROLES
+from src.services.notification_events import NotificationEvents
 
 AUDIT_LESSON_CREATED = "lesson.created"
 AUDIT_LESSON_RESCHEDULED = "lesson.rescheduled"
@@ -89,6 +90,7 @@ class ScheduleService:
         self._users = UserRepository(session)
         self._subjects = SubjectRepository(session)
         self._lessons = LessonRepository(session)
+        self._events = NotificationEvents(session)
         self._profiles = StudentProfileRepository(session)
         self._audit = AuditLogRepository(session)
 
@@ -150,6 +152,7 @@ class ScheduleService:
         self._require_staff(actor)
         lesson = await self._load_scheduled(lesson_id)
         old = {"start_at": lesson.start_at.isoformat(), "end_at": lesson.end_at.isoformat()}
+        old_start = lesson.start_at
         async with self._overlap_guard():
             lesson.start_at = data.start_at
             lesson.end_at = data.end_at
@@ -167,6 +170,13 @@ class ScheduleService:
                     "end_at": data.end_at.isoformat(),
                 },
             },
+        )
+        await self._events.lesson_rescheduled(
+            lesson.id,
+            await self._lessons.participant_ids(lesson.id),
+            await self._lessons.subject_code(lesson.subject_id),
+            old_start,
+            data.start_at,
         )
         await self._session.commit()
         return await self._build_item(lesson)
@@ -210,6 +220,13 @@ class ScheduleService:
             entity_type=AUDIT_ENTITY_LESSON,
             entity_id=lesson.id,
             data={"reason": data.reason, "billable": len(billable)},
+        )
+        await self._events.lesson_cancelled(
+            lesson.id,
+            sorted(member_ids),
+            await self._lessons.subject_code(lesson.subject_id),
+            lesson.start_at,
+            now,
         )
         await self._session.commit()
         return await self._build_item(lesson)

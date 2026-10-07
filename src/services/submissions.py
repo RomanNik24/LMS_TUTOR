@@ -13,6 +13,8 @@
 - commit выполняет только этот сервис, один публичный метод = одна транзакция.
 """
 
+from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core import texts
@@ -21,8 +23,14 @@ from src.core.enums import AssignmentStatus, HomeworkFileRole, SubmissionType, U
 from src.core.exceptions import BusinessRuleError, NotFoundError, PermissionDeniedError
 from src.core.timeutils import utcnow
 from src.db.models import HomeworkAssignment
-from src.repositories.homework import HomeworkAssignmentRepository, HomeworkFileRepository
+from src.repositories.homework import (
+    HomeworkAssignmentRepository,
+    HomeworkFileRepository,
+    HomeworkRepository,
+)
+from src.repositories.users import UserRepository
 from src.schemas.homework import SubmissionItem, SubmitRequest
+from src.services.notification_events import NotificationEvents
 
 SUBMITTABLE = frozenset({AssignmentStatus.ASSIGNED, AssignmentStatus.NEEDS_REVISION})
 
@@ -39,6 +47,9 @@ class SubmissionService:
         self._session = session
         self._assignments = HomeworkAssignmentRepository(session)
         self._files = HomeworkFileRepository(session)
+        self._homeworks = HomeworkRepository(session)
+        self._users = UserRepository(session)
+        self._events = NotificationEvents(session)
 
     async def submit_files(
         self, actor: CurrentUser, assignment_id: int, data: SubmitRequest
@@ -103,6 +114,7 @@ class SubmissionService:
         assignment.submitted_at = now
         assignment.student_comment = data.student_comment
         assignment.updated_at = now
+        await self._notify_staff(assignment, now)
         await self._session.commit()
         return SubmissionItem(
             assignment_id=assignment.id,
@@ -111,4 +123,13 @@ class SubmissionService:
             submitted_at=now,
             on_time=now <= assignment.original_due_at,
             files_count=files_count,
+        )
+
+    async def _notify_staff(self, assignment: HomeworkAssignment, submitted_at: datetime) -> None:
+        homework = await self._homeworks.get_by_id(assignment.homework_id)
+        student = await self._users.get_by_id(assignment.student_id)
+        if homework is None or student is None:  # внешние ключи это исключают; защита от гонки
+            return
+        await self._events.homework_submitted(
+            assignment.id, homework.title, student.display_name, submitted_at
         )

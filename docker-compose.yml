@@ -4,13 +4,38 @@
 # разработке backend запускается на хосте (uvicorn), иначе он займёт порт 8000 и запустит
 # второй polling того же бота.
 # Профиль `full` (T1.17): app + nginx со сборкой фронтенда (http://127.0.0.1:8080).
-# Worker и scheduler появятся на более поздних этапах roadmap.
+# Профили `dev` и `full` (T5.04) добавляют worker и scheduler (TaskIQ): `docker compose --profile dev up -d`.
+# scheduler ровно один и без реплик: два планировщика поставят каждую задачу дважды.
 # Продакшен-окружение настраивается отдельно (docker-compose.prod.yml) — не здесь.
 #
 # Все пароли и ключи ниже — безопасные тестовые значения для локальной
 # разработки. Реальные секреты живут только в .env.local (не коммитится).
 
 name: my-lms-local
+
+# Общие настройки фоновых процессов (worker и scheduler): тот же образ и окружение, что у `app`.
+x-background: &background
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - .env.local
+  environment:
+    DATABASE_URL: postgresql+asyncpg://lms:lms_dev_password@postgres:5432/lms
+    REDIS_URL: redis://redis:6379/0
+    S3_ENDPOINT: http://minio:9000
+    S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://127.0.0.1:9000}
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  # Healthcheck образа проверяет HTTP-порт API, а у фонового процесса его нет.
+  healthcheck:
+    disable: true
+  # Время на корректное завершение текущей задачи после SIGTERM.
+  stop_grace_period: 30s
+  restart: unless-stopped
 
 services:
   # --- PostgreSQL 16 (docs/02 §2.3) ---
@@ -153,6 +178,20 @@ services:
     depends_on:
       app:
         condition: service_healthy
+
+  # --- Воркер фоновых задач TaskIQ (docs/03 §9) ---
+  worker:
+    <<: *background
+    profiles: ["dev", "full"]
+    container_name: my-lms-worker
+    command: ["taskiq", "worker", "src.worker.broker:broker", "src.worker.tasks", "--workers", "1"]
+
+  # --- Планировщик TaskIQ: СТРОГО один экземпляр (не масштабировать, не добавлять реплики) ---
+  scheduler:
+    <<: *background
+    profiles: ["dev", "full"]
+    container_name: my-lms-scheduler
+    command: ["taskiq", "scheduler", "src.worker.broker:scheduler", "src.worker.tasks"]
 
 volumes:
   postgres_data:
