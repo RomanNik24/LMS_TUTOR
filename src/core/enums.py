@@ -112,6 +112,26 @@ class NotificationStatus(StrEnum):
     SKIPPED = "skipped"
 
 
+class NotificationType(StrEnum):
+    """Тип уведомления: `notifications.type` (docs/05 §6.1–6.2).
+
+    В БД колонка — обычный VARCHAR(50) без CHECK (docs/04 §7.1): новый тип не требует миграции.
+    """
+
+    LESSON_REMINDER = "lesson_reminder"
+    HOMEWORK_DEADLINE = "homework_deadline"
+    HOMEWORK_GRADED = "homework_graded"
+    HOMEWORK_RETURNED = "homework_returned"
+    HOMEWORK_ASSIGNED = "homework_assigned"
+    LESSON_CANCELLED = "lesson_cancelled"
+    LESSON_RESCHEDULED = "lesson_rescheduled"
+    HOMEWORK_SUBMITTED = "homework_submitted"
+    HOMEWORK_EXPIRED = "homework_expired"
+    LESSON_UNMARKED = "lesson_unmarked"
+    MORNING_DIGEST = "morning_digest"
+    STUDENT_JOINED = "student_joined"
+
+
 def values(enum_cls: type[StrEnum]) -> tuple[str, ...]:
     """Вернуть кортеж строковых значений enum.
 

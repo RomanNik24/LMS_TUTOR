@@ -51,6 +51,7 @@ from src.db.models.homework import (
     HomeworkFile,
     HomeworkMaterial,
 )
+from src.db.models.notifications import Notification
 from src.db.models.reference import ExamType, GradeScale, Subject
 from src.db.models.schedule import (
     Lesson,
@@ -73,6 +74,7 @@ __all__ = [
     "HomeworkMaterial",
     "Lesson",
     "LessonParticipant",
+    "Notification",
     "ScheduleTemplate",
     "ScheduleTemplateParticipant",
     "StudentProfile",
