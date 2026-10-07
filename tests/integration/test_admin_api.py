@@ -325,8 +325,11 @@ async def test_owner_manages_staff_and_last_owner_is_protected(
     assert promoted.status_code == 200
     assert promoted.json()["role"] == "owner"
     assert len(await _actions(db_session, "staff.role_changed")) == 1
+    missing = await owner.patch("/api/v1/admin/staff/999999", json={"display_name": "X"})
+    assert missing.status_code == 404
     # менеджер стал владельцем: теперь понизить исходного владельца уже можно
     demoted = await owner.patch(f"/api/v1/admin/staff/{owner_id}", json={"role": "manager"})
     assert demoted.status_code == 200
-    student_as_staff = await owner.patch("/api/v1/admin/staff/999999", json={"display_name": "X"})
-    assert student_as_staff.status_code == 404
+    # понижение удалило сессии владельца и сменило роль: прежняя сессия больше не действует
+    after = await owner.get("/api/v1/admin/staff")
+    assert after.status_code == 401
