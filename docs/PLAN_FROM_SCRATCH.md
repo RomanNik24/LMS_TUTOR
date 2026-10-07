@@ -850,6 +850,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T2.05 (CODE). StudentLayout (нижняя панель по docs/07 §7.1), AdminLayout (мобильный список + десктопный сайдбар, docs/07 §7.2), PageHeader, StatusBadge (по таблице docs/07 §6.6), EmptyState, ErrorState (кнопка «Повторить»), PageSkeleton, компоненты ui/ (кнопка, поля, карточка, tabs, диалог/шторка, тост) строго по docs/07 §6 и токенам; lib/texts.ts пополни словарём docs/07 §8.2; админ-часть через React.lazy. Тесты: RequireRole, StatusBadge (все статусы), смоук-рендер layouts при 360 и 1280 px.
 ```
 **Проверка:** 🤖 `pnpm test --run` зелёный. 👁 `pnpm dev` → в браузере (DevTools → режим телефона 360 px) виден каркас с нижней панелью.
+**Статус:** ✅ layouts (`src/layouts/`), общие компоненты (`components/common/`), `components/ui/`, словарь `texts.ts`, админка через `React.lazy`; тесты: StatusBadge (14 статусов), ui, layouts при 360/800/1280 px, гарды ролей. Пакеты UI — ADR 0011.
 
 ### T2.06 · Фронтенд: админ — ученики и сотрудники
 **Кто:** 💻 CODE · **Размер:** L (разбить на список / карточка / форма+приглашение / сотрудники) · **Ветка:** `feature/t2-06-admin-students-ui` · **Коммит:** `feat(frontend): add admin students and staff screens`

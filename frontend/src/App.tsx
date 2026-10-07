@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router-dom";
 
 import { createQueryClient } from "@/api/queryClient";
 import { applyTelegramTheme } from "@/lib/telegram";
+import { Toaster } from "@/components/ui/sonner";
 import { createAppRouter } from "@/router";
 
 /**
@@ -19,6 +20,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <Toaster />
     </QueryClientProvider>
   );
 }

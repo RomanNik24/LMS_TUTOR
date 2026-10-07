@@ -47,6 +47,16 @@
   --color-danger-fg: var(--danger-fg);
   --color-hero-foreground: var(--hero-foreground);
 
+  /* Бренд и нейтральные для бейджей и бокового меню (docs/07 §6.6, §7.2) */
+  --color-ink: var(--gray-900);
+  --color-brand-black: var(--brand-black);
+  --color-brand-white: var(--brand-white);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-light: var(--brand-green-light);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-600: var(--gray-600);
+
   --font-display: var(--font-display);
   --font-heading: var(--font-heading);
   --font-body: var(--font-body);
