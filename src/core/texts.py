@@ -58,6 +58,14 @@ LESSON_STUDENTS_DUPLICATE = "Один ученик указан дважды."
 LESSON_UNKNOWN_SUBJECT = "Неизвестный предмет."
 LESSON_INVALID_TEACHER = "Урок может вести только активный владелец или менеджер."
 
+LESSON_NOT_FOUND = "Урок не найден."
+LESSON_NOT_SCHEDULED = "Урок уже проведён или отменён: его нельзя изменить."
+LESSON_ALREADY_COMPLETED = "Урок уже отмечен как проведённый."
+LESSON_MARKS_MISMATCH = "Отметьте всех участников урока: ни больше, ни меньше."
+LESSON_NOT_PARTICIPANT = "Этот ученик не участвует в уроке."
+LESSON_MARK_PENDING = "Посещаемость должна быть «был», «не пришёл» или «отменено»."
+LESSON_CANCEL_REASON_TOO_LONG = "Причина отмены не длиннее 255 символов."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."

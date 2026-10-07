@@ -1,5 +1,7 @@
 """Репозиторий профилей учеников (задача T1.06, docs/04 §2.2)."""
 
+from collections.abc import Sequence
+
 from sqlalchemy import func, select
 
 from src.core.enums import UserRole
@@ -60,3 +62,12 @@ class StudentProfileRepository(BaseRepository[StudentProfile]):
         )
         rows = (await self._session.execute(page_stmt)).all()
         return [(user, profile) for user, profile in rows], total
+
+    async def prices_for(self, student_ids: Sequence[int]) -> dict[int, int]:
+        """Текущая цена занятия (рубли) для нескольких учеников одним запросом."""
+        if not student_ids:
+            return {}
+        stmt = select(StudentProfile.user_id, StudentProfile.lesson_price).where(
+            StudentProfile.user_id.in_(list(student_ids))
+        )
+        return {row[0]: row[1] for row in (await self._session.execute(stmt)).all()}

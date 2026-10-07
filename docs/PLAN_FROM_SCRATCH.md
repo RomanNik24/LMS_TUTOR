@@ -944,6 +944,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Тесты: смена цены после отметки не меняет сумму; нельзя завершить отменённый урок; повторная отметка; ученик не может вызвать эти методы.
 ```
 **Проверка:** 🤖 тесты зелёные; 👁 в списке тестов есть `price_snapshot_not_changed_after_price_update`.
+**Статус:** ✅ `ScheduleService.reschedule_lesson / cancel_lesson / complete_lesson`, схемы `LessonReschedule`, `LessonCancel`, `LessonComplete`; `price_snapshot` фиксируется в момент отметки (для «был» и для отмеченных «засчитать»), повторная отметка запрещена (`lesson_already_completed`), отмена и отметка требуют всех участников и роль персонала; тесты в `tests/integration/test_schedule_service.py` (в т. ч. `test_price_snapshot_not_changed_after_price_update`). Уведомления участникам о переносе и отмене появятся с таблицей `notifications` (этап 7); аудит пишется уже сейчас.
 
 ### T3.06 · Шаблоны расписания и генерация
 **Кто:** 💻 CODE · **Размер:** L · **Ветка:** `feature/t3-06-templates` · **Коммит:** `feat(schedule): add templates and idempotent generation`
