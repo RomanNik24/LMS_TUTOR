@@ -25,7 +25,7 @@ pytestmark = pytest.mark.security
 
 @pytest.fixture
 async def client(
-    db_session: AsyncSession, redis_client: aioredis.Redis
+    db_session: AsyncSession, redis_client: aioredis.Redis, app_settings_env: None
 ) -> AsyncIterator[httpx.AsyncClient]:
     await redis_client.flushdb()
     app = FastAPI()

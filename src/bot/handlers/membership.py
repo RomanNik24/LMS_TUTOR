@@ -3,8 +3,7 @@
 from aiogram import Router
 from aiogram.types import ChatMemberUpdated
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.core.timeutils import utcnow
-from src.repositories.users import UserRepository
+from src.services.profile import ProfileService
 
 _KICKED = "kicked"
 _MEMBER = "member"
@@ -15,12 +14,7 @@ async def my_chat_member(event: ChatMemberUpdated, session: AsyncSession) -> Non
     status = event.new_chat_member.status
     if status not in (_KICKED, _MEMBER):
         return
-    user = await UserRepository(session).get_by_telegram_id(event.from_user.id)
-    if user is None:
-        return
-    user.bot_blocked = status == _KICKED
-    user.updated_at = utcnow()
-    await session.commit()
+    await ProfileService(session).set_bot_blocked(event.from_user.id, status == _KICKED)
 
 
 def create_router() -> Router:

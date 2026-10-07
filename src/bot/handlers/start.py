@@ -13,9 +13,10 @@ from src.core.config import Settings
 from src.core.constants import BOT_INVITE_PAYLOAD_PREFIX
 from src.core.current_user import CurrentUser
 from src.core.exceptions import AppError
+from src.core.security import hash_token
 from src.services.auth import AuthService, InviteAcceptResult, InviteAcceptStatus
 
-_FSM_TOKEN = "invite_token"  # noqa: S105 - ключ данных FSM, не секрет
+_FSM_TOKEN_HASH = "invite_token_hash"  # noqa: S105 - ключ данных FSM, не секрет
 _FSM_USERNAME = "telegram_username"
 
 
@@ -88,7 +89,7 @@ async def _accept_invite(
         return
     if result.status == InviteAcceptStatus.RELINK_REQUIRED:
         await state.set_state(ConfirmRelinkState.waiting_confirm)
-        await state.update_data({_FSM_TOKEN: token, _FSM_USERNAME: username})
+        await state.update_data({_FSM_TOKEN_HASH: hash_token(token), _FSM_USERNAME: username})
         await message.answer(texts.BOT_RELINK_CONFIRM, reply_markup=keyboards.relink_confirm())
         return
     await state.clear()
@@ -106,14 +107,16 @@ async def relink_yes(
     """Подтверждение перепривязки: старая привязка снимается."""
     await callback.answer()
     data = await state.get_data()
-    token = data.get(_FSM_TOKEN)
+    token_hash = data.get(_FSM_TOKEN_HASH)
     message = callback.message
-    if not isinstance(token, str) or not isinstance(message, Message):
+    if not isinstance(token_hash, str) or not isinstance(message, Message):
         await state.clear()
         return
     await state.clear()
     try:
-        result = await auth.confirm_relink(token, callback.from_user.id, data.get(_FSM_USERNAME))
+        result = await auth.confirm_relink_by_hash(
+            token_hash, callback.from_user.id, data.get(_FSM_USERNAME)
+        )
     except AppError as error:
         await message.answer(error.message)
         return

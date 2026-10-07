@@ -19,8 +19,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.current_user import CurrentUser
 from src.core.rate_limit import RateLimiter
 from src.core.session_store import SessionStore
-from src.repositories.users import UserRepository
 from src.services.auth import AuthService
+from src.services.profile import ProfileService
 
 SessionScope = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 Handler = Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]]
@@ -29,24 +29,31 @@ Handler = Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]]
 class DbSessionMiddleware(BaseMiddleware):
     """Открывает сессию БД на апдейт и создаёт ``AuthService``."""
 
-    def __init__(self, scope: SessionScope, redis: Redis, bot_token: str) -> None:
+    def __init__(
+        self, scope: SessionScope, redis: Redis, bot_token: str, session_secret: str = ""
+    ) -> None:
         """Сохранить зависимости.
 
         Args:
             scope: Фабрика контекста сессии (``session_scope`` или подмена в тестах).
             redis: Клиент Redis.
             bot_token: Токен бота (для ``AuthService``).
+            session_secret: ``SESSION_SECRET`` (ключи сессий в Redis).
         """
         self._scope = scope
         self._redis = redis
         self._bot_token = bot_token
+        self._session_secret = session_secret
 
     async def __call__(self, handler: Handler, event: TelegramObject, data: dict[str, Any]) -> Any:
         """Выполнить хэндлер внутри единицы работы."""
         async with self._scope() as session:
             data["session"] = session
             data["auth"] = AuthService(
-                session, SessionStore(self._redis), RateLimiter(self._redis), self._bot_token
+                session,
+                SessionStore(self._redis, self._session_secret),
+                RateLimiter(self._redis),
+                self._bot_token,
             )
             return await handler(event, data)
 
@@ -62,11 +69,11 @@ class AuthMiddleware(BaseMiddleware):
         display_name: str | None = None
         access_closed = False
         if telegram_user is not None:
-            user = await UserRepository(session).get_by_telegram_id(telegram_user.id)
-            if user is not None and user.is_active:
-                current_user = CurrentUser(id=user.id, role=user.role, timezone=user.timezone)
-                display_name = user.display_name
-            elif user is not None:
+            account = await ProfileService(session).find_account_by_telegram_id(telegram_user.id)
+            if account is not None and account.is_active:
+                current_user = account.user
+                display_name = account.display_name
+            elif account is not None:
                 access_closed = True
         data["current_user"] = current_user
         data["display_name"] = display_name

@@ -10,6 +10,8 @@ TTL — скользящий: 30 дней для ученика, 7 дней дл
 смена роли, смена telegram_id») ведётся множество сессий пользователя.
 """
 
+import hashlib
+import hmac
 import json
 from dataclasses import dataclass
 
@@ -22,7 +24,7 @@ from src.core.constants import (
     USER_SESSIONS_KEY_PREFIX,
 )
 from src.core.enums import UserRole
-from src.core.security import hash_token, new_token
+from src.core.security import new_token
 
 
 @dataclass(frozen=True)
@@ -43,8 +45,14 @@ def session_ttl_seconds(role: UserRole) -> int:
     return SESSION_TTL_STUDENT_SECONDS if role == UserRole.STUDENT else SESSION_TTL_STAFF_SECONDS
 
 
-def _session_key(session_id: str) -> str:
-    return SESSION_KEY_PREFIX + hash_token(session_id)
+def _session_key(session_id: str, secret: str) -> str:
+    """Ключ сессии в Redis: HMAC-SHA256 идентификатора с ключом ``SESSION_SECRET``.
+
+    Без секрета дамп Redis не позволяет подобрать ключи по украденным cookie, а смена
+    ``SESSION_SECRET`` делает все существующие сессии недействительными (docs/09 §8).
+    """
+    digest = hmac.new(secret.encode("utf-8"), session_id.encode("utf-8"), hashlib.sha256)
+    return SESSION_KEY_PREFIX + digest.hexdigest()
 
 
 def _user_sessions_key(user_id: int) -> str:
@@ -54,13 +62,15 @@ def _user_sessions_key(user_id: int) -> str:
 class SessionStore:
     """Хранилище сессий поверх ``redis.asyncio.Redis``."""
 
-    def __init__(self, redis: Redis) -> None:
-        """Сохранить клиента Redis.
+    def __init__(self, redis: Redis, secret: str = "") -> None:
+        """Сохранить клиента Redis и секрет ключей.
 
         Args:
             redis: Асинхронный клиент Redis (``decode_responses`` не обязателен).
+            secret: ``SESSION_SECRET``; в ``local`` может быть пустым.
         """
         self._redis = redis
+        self._secret = secret
 
     async def create(self, user_id: int, role: UserRole) -> tuple[str, int]:
         """Создать сессию.
@@ -74,7 +84,7 @@ class SessionStore:
         """
         session_id = new_token()
         ttl = session_ttl_seconds(role)
-        key = _session_key(session_id)
+        key = _session_key(session_id, self._secret)
         index_key = _user_sessions_key(user_id)
         payload = json.dumps({"user_id": user_id, "ttl": ttl})
         async with self._redis.pipeline(transaction=True) as pipe:
@@ -95,7 +105,7 @@ class SessionStore:
         """
         if not session_id:
             return None
-        key = _session_key(session_id)
+        key = _session_key(session_id, self._secret)
         raw = await self._redis.get(key)
         if raw is None:
             return None
@@ -111,7 +121,7 @@ class SessionStore:
 
     async def delete(self, session_id: str) -> None:
         """Удалить одну сессию (выход, ``POST /auth/logout``)."""
-        key = _session_key(session_id)
+        key = _session_key(session_id, self._secret)
         raw = await self._redis.get(key)
         await self._redis.delete(key)
         if raw is None:

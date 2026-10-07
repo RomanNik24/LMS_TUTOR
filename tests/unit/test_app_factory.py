@@ -74,11 +74,15 @@ def test_scrub_event_removes_sensitive_data() -> None:
             "data": {"init_data": "secret"},
             "cookies": {"session_id": "abc"},
             "query_string": "tgWebAppData=secret",
+            "url": "https://x.example/telegram/webhook/abcdef0123456789",
             "headers": {"Cookie": "session_id=abc", "X-Request-ID": "r1", "Authorization": "x"},
         },
         "user": {"id": 1},
     }
     scrubbed = scrub_event(event, {})
     assert scrubbed is not None
-    assert scrubbed["request"] == {"headers": {"X-Request-ID": "r1"}}
+    assert scrubbed["request"] == {
+        "url": "https://x.example/telegram/webhook/***",
+        "headers": {"X-Request-ID": "r1"},
+    }
     assert "user" not in scrubbed

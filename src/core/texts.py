@@ -23,6 +23,27 @@ UNAUTHENTICATED_TELEGRAM = (
     "Не удалось войти. Открой приложение через бота или запроси ссылку входа командой /web."
 )
 
+OWNER_CANNOT_UNLINK = (
+    "Владелец не может отвязать свой Telegram: войти снова будет нельзя. "
+    "Для смены аккаунта обратитесь к администратору сервера."
+)
+OWNER_DISPLAY_NAME = "Владелец"
+
+# --- Общие ошибки API (docs/08 §1) ---
+API_UNAUTHENTICATED = "Требуется вход."
+API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."
+API_CSRF_REJECTED = "Запрос отклонён."
+API_INTERNAL_ERROR = "Произошла внутренняя ошибка. Попробуйте позже."
+API_NOT_FOUND = "Ресурс не найден."
+API_VALIDATION_FAILED = "Ошибка валидации данных."
+API_NOT_FOUND_DEFAULT = "Не найдено."
+API_PERMISSION_DENIED = "Недостаточно прав для этого действия."
+API_CONFLICT_DEFAULT = "Конфликт с текущим состоянием данных."
+API_BUSINESS_RULE_DEFAULT = "Действие нарушает правило сервиса."
+ME_TIMEZONE_UNKNOWN = "Неизвестный часовой пояс (нужен IANA, например Europe/Moscow)"
+ME_NAME_BLANK = "Имя не может быть пустым"
+ME_UPDATE_EMPTY = "Укажите timezone или display_name"
+
 # --- Бот: приветствия и меню (docs/05 §2–§3, docs/07 §8.3; ученику «ты», персоналу нейтрально) ---
 BOT_GUEST_GREETING = (
     "Привет! Это бот репетитора Романа: информатика и математика, ОГЭ и ЕГЭ. "

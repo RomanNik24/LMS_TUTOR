@@ -272,6 +272,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description Ошибка валидации (details.fields) */
             422: {
                 headers: {
@@ -312,6 +321,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Не найдено */
@@ -372,6 +390,15 @@ export interface operations {
             };
             /** @description Нет или истекла сессия / неверные данные входа */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -474,6 +501,15 @@ export interface operations {
             };
             /** @description Нет или истекла сессия / неверные данные входа */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

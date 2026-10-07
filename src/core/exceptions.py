@@ -14,6 +14,8 @@
 from collections.abc import Mapping, Sequence
 from typing import Union
 
+from src.core import texts
+
 # Тип значения в `details`: JSON-совместимое произвольное значение.
 # Вводится псевдоним (а не `Any`), чтобы прикладной код и тесты не
 # использовали `Any` напрямую (требование задач: «any не использовать»).
@@ -73,7 +75,7 @@ class NotFoundError(AppError):
 
     def __init__(
         self,
-        message: str = "Не найдено.",
+        message: str = texts.API_NOT_FOUND_DEFAULT,
         *,
         code: str = "not_found",
         details: dict[str, DetailValue] | None = None,
@@ -86,7 +88,7 @@ class PermissionDeniedError(AppError):
 
     def __init__(
         self,
-        message: str = "Недостаточно прав для этого действия.",
+        message: str = texts.API_PERMISSION_DENIED,
         *,
         code: str = "permission_denied",
         details: dict[str, DetailValue] | None = None,
@@ -102,7 +104,7 @@ class ValidationError(AppError):
 
     def __init__(
         self,
-        message: str = "Ошибка валидации данных.",
+        message: str = texts.API_VALIDATION_FAILED,
         *,
         code: str = "validation_error",
         details: dict[str, DetailValue] | None = None,
@@ -119,7 +121,7 @@ class ConflictError(AppError):
 
     def __init__(
         self,
-        message: str = "Конфликт с текущим состоянием данных.",
+        message: str = texts.API_CONFLICT_DEFAULT,
         *,
         code: str = "conflict",
         details: dict[str, DetailValue] | None = None,
@@ -136,7 +138,7 @@ class BusinessRuleError(AppError):
 
     def __init__(
         self,
-        message: str = "Действие нарушает правило сервиса.",
+        message: str = texts.API_BUSINESS_RULE_DEFAULT,
         *,
         code: str = "business_rule_violation",
         details: dict[str, DetailValue] | None = None,

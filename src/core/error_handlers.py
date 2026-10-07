@@ -26,6 +26,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from src.core import texts
 from src.core.constants import REQUEST_ID_HEADER
 from src.core.exceptions import AppError, DetailValue
 from src.core.logging import get_request_id
@@ -52,10 +53,10 @@ HTTP_ERROR_CODES: dict[int, str] = {
 }
 
 # Нейтральное сообщение для 500: внутренних деталей не раскрываем.
-INTERNAL_ERROR_MESSAGE = "Произошла внутренняя ошибка. Попробуйте позже."
+INTERNAL_ERROR_MESSAGE = texts.API_INTERNAL_ERROR
 
 # Сообщение для 404 по несуществующему пути (несогласованный URL клиента).
-NOT_FOUND_MESSAGE = "Ресурс не найден."
+NOT_FOUND_MESSAGE = texts.API_NOT_FOUND
 
 
 def error_response(
@@ -127,7 +128,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     return error_response(
         http_status=422,
         code=ERROR_CODE_VALIDATION,
-        message="Ошибка валидации данных.",
+        message=texts.API_VALIDATION_FAILED,
         details={"fields": fields},
         request_id=get_request_id(request),
     )

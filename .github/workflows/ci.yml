@@ -73,8 +73,7 @@ jobs:
           enable-cache: true # кэш uv настраивается внутри экшена
 
       - name: Set up Python
-        # Версию берёт из requires-python в pyproject.toml (>=3.11); на ubuntu-latest
-        # ставит актуальный стабильный CPython и прописывает его в PATH для `uv run`.
+        # 3.12 — та же версия, что в Dockerfile (pyproject допускает >=3.11).
         run: uv python install 3.12
 
       - name: Sync dependencies (frozen lockfile)
@@ -155,8 +154,7 @@ jobs:
         run: pnpm test --run
 
       - name: Security audit (high+)
-        # Аудит не блокирует workflow: падать должен только на high/critical.
-        continue-on-error: true
+        # Падает только на уязвимостях уровня high и critical (moderate и ниже не блокируют).
         run: pnpm audit --audit-level=high
 
       - name: Build

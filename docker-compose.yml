@@ -1,5 +1,8 @@
 # Локальная инфраструктура разработки MY_LMS (задача T0.07, docs/10 §1).
-# Только postgres / redis / minio / minio-init / app.
+# Инфраструктура: postgres / redis / minio / minio-init (запускается по умолчанию).
+# Backend `app` — только в профиле `full` (`docker compose --profile full up`): при обычной
+# разработке backend запускается на хосте (uvicorn), иначе он займёт порт 8000 и запустит
+# второй polling того же бота.
 # Worker, scheduler и nginx появятся на более поздних этапах roadmap.
 # Продакшен-окружение настраивается отдельно (docker-compose.prod.yml) — не здесь.
 #
@@ -102,8 +105,9 @@ services:
         echo "Bucket lms-files создан, anonymous access отсутствует"
     restart: "no"
 
-  # --- Backend-приложение (собирается из корневого Dockerfile) ---
+  # --- Backend-приложение (собирается из корневого Dockerfile), профиль `full` ---
   app:
+    profiles: ["full"]
     build:
       context: .
       dockerfile: Dockerfile
@@ -111,6 +115,12 @@ services:
     env_file:
       # Локальные настройки и тестовые секреты; файл не коммитится в Git.
       - .env.local
+    environment:
+      # Внутри контейнера 127.0.0.1 — это сам контейнер: адреса сервисов берутся из сети
+      # compose и перекрывают значения из .env.local (они рассчитаны на backend на хосте).
+      DATABASE_URL: postgresql+asyncpg://lms:lms_dev_password@postgres:5432/lms
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://minio:9000
     ports:
       # Порт API — только на localhost (nginx появится позже, docs/10 §3).
       - "127.0.0.1:8000:8000"

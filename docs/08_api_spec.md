@@ -12,7 +12,7 @@
 | Идентификаторы | Целые числа |
 | Имена полей | `snake_case` (как в Python). Фронтенд использует их как есть |
 | Аутентификация | Cookie сессии (`HttpOnly`, `Secure`, `SameSite=Lax`). Токены в заголовках не передаются |
-| CSRF | Изменяющие запросы (`POST/PATCH/PUT/DELETE`) обязаны иметь заголовок `X-Requested-With: XMLHttpRequest` и корректный `Origin` |
+| CSRF | Изменяющие запросы (`POST/PATCH/PUT/DELETE`) обязаны иметь заголовок `X-Requested-With: XMLHttpRequest` и корректный `Origin`; иначе `403 permission_denied` (`details.reason`: `csrf_header` или `csrf_origin`) |
 | Пагинация | Query `limit` (по умолчанию 50, максимум 200) и `offset`. Ответ: `{"items": [...], "total": N, "limit": L, "offset": O}` |
 | Фильтры по периоду | Query `from` и `to` (даты или ISO-время), период не более 1 года |
 | Версионирование | Ломающие изменения → `/api/v2`; добавление необязательных полей — без смены версии |
@@ -92,7 +92,7 @@
 | POST | `/admin/students/{id}/restore` | Вернуть из архива |
 | POST | `/admin/students/{id}/invitations` | Создать/перевыпустить приглашение. Ответ: `{ "url": "https://t.me/<bot>?start=inv_<token>", "expires_at": "..." }` (токен показывается только в этот момент) |
 | DELETE | `/admin/invitations/{id}` | Отозвать приглашение |
-| POST | `/admin/students/{id}/unlink-telegram` | Снять привязку Telegram |
+| POST | `/admin/students/{id}/unlink-telegram` | Снять привязку Telegram (владельцу отвязать самого себя нельзя: 400 `owner_cannot_unlink`) |
 | GET | `/admin/students/{id}/report?from=&to=` | Отчёт по ученику (ДЗ, пробники, посещаемость); для `owner` + финансы ученика |
 
 ### 5.3. Сотрудники (только `owner`)
@@ -213,7 +213,7 @@
 
 Все методы принимают `actor: CurrentUser` первым аргументом и проверяют права. Один метод = одна транзакция.
 
-- **AuthService:** `create_invite`, `accept_invite`, `confirm_relink`, `revoke_invite`, `create_web_login_link`, `consume_web_login`, `validate_init_data`, `create_session`, `delete_sessions`, `unlink_telegram`.
+- **AuthService:** `create_invite`, `accept_invite`, `confirm_relink` (и `confirm_relink_by_hash` для бота), `revoke_invite`, `create_web_login_link`, `consume_web_login`, `validate_init_data`, `create_session`, `delete_sessions`, `unlink_telegram`.
 - **StudentService / StaffService:** `create_student`, `update_student`, `archive/restore`, `list_students`, `get_student_card` (разные DTO по роли), `create_staff`, `change_role`.
 - **ScheduleService:** `create_lesson`, `reschedule_lesson`, `cancel_lesson`, `complete_lesson`, `list_lessons`, `create_template`, `update_template`, `deactivate_template`, `generate_lessons(horizon_weeks)`.
 - **HomeworkService:** `create_homework`, `add_assignees`, `submit_files`, `submit_self_reported`, `grade_assignment`, `return_for_revision`, `extend_deadline`, `expire_due_assignments`, `list_assignments`, `list_review_queue`.

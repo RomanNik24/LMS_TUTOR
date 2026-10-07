@@ -58,7 +58,7 @@ async def redis_clean(redis_client: aioredis.Redis) -> aioredis.Redis:
 
 @pytest.fixture
 async def client(
-    db_session: AsyncSession, redis_clean: aioredis.Redis
+    db_session: AsyncSession, redis_clean: aioredis.Redis, app_settings_env: None
 ) -> AsyncIterator[httpx.AsyncClient]:
     transport = httpx.ASGITransport(app=_build_app(db_session, redis_clean))
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
@@ -184,6 +184,13 @@ async def test_session_id_is_not_stored_in_redis_in_plain(redis_clean: aioredis.
     session_id, _ = await SessionStore(redis_clean).create(1, UserRole.OWNER)
     keys = [k async for k in redis_clean.scan_iter("*")]
     assert all(session_id not in str(k) for k in keys)
+
+
+async def test_session_is_not_readable_with_another_secret(redis_clean: aioredis.Redis) -> None:
+    """Смена SESSION_SECRET делает прежние сессии недействительными (docs/09 §8)."""
+    session_id, _ = await SessionStore(redis_clean, "secret-a" * 4).create(1, UserRole.OWNER)
+    assert await SessionStore(redis_clean, "secret-a" * 4).get(session_id) is not None
+    assert await SessionStore(redis_clean, "secret-b" * 4).get(session_id) is None
 
 
 def test_cookie_flags() -> None:

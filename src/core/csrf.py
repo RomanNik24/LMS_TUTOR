@@ -13,6 +13,7 @@ from urllib.parse import urlsplit
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from src.core import texts
 from src.core.constants import (
     CSRF_EXEMPT_PATH_PREFIXES,
     CSRF_REQUIRED_HEADER,
@@ -21,8 +22,6 @@ from src.core.constants import (
 )
 from src.core.error_handlers import error_response
 from src.core.logging import get_request_id
-
-CSRF_REJECTED_MESSAGE = "Запрос отклонён."
 
 
 def origin_of(url: str) -> str:
@@ -65,7 +64,7 @@ class CsrfMiddleware:
         response = error_response(
             http_status=403,
             code="permission_denied",
-            message=CSRF_REJECTED_MESSAGE,
+            message=texts.API_CSRF_REJECTED,
             details={"reason": reason},
             request_id=get_request_id(Request(scope)),
         )

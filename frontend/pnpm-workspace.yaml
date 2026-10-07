@@ -3,3 +3,8 @@
 onlyBuiltDependencies:
   - esbuild
   - msw
+
+# Безопасность: SDK Telegram тянет valibot < 1.2.0 с уязвимостью ReDoS (GHSA-vqpr-j7v3-hqw9).
+# Принудительно ставим исправленную версию; переопределение можно убрать, когда SDK обновит зависимость.
+overrides:
+  valibot: 1.5.0

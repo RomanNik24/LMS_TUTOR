@@ -408,6 +408,18 @@ async def test_student_can_unlink_self_but_not_others(
     await service.unlink_telegram(_actor(mine), mine.id)
 
 
+async def test_owner_cannot_unlink_self(
+    service: AuthService, db_session: AsyncSession, owner: User
+) -> None:
+    """Владелец без привязки не смог бы войти снова: самоотвязка запрещена."""
+    telegram_id = owner.telegram_id
+    with pytest.raises(BusinessRuleError) as raised:
+        await service.unlink_telegram(_actor(owner), owner.id)
+    assert raised.value.code == "owner_cannot_unlink"
+    await db_session.refresh(owner)
+    assert owner.telegram_id == telegram_id
+
+
 async def test_manager_cannot_unlink_owner(
     service: AuthService, db_session: AsyncSession, owner: User
 ) -> None:

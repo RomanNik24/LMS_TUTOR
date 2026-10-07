@@ -22,6 +22,8 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,
+        // X-Forwarded-For: backend считает лимиты по реальному IP клиента, а не по 127.0.0.1
+        xfwd: true,
       },
     },
   },

@@ -11,10 +11,11 @@ PostgreSQL/Redis на машине разработчика — тесты ра�
 """
 
 import os
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TypeVar
 
 import asyncpg
 import httpx
@@ -23,6 +24,7 @@ import redis.asyncio as aioredis
 import time_machine
 from alembic import command as alembic_command
 from alembic.config import Config
+from docker.errors import DockerException
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
@@ -56,26 +58,51 @@ def _required_env(name: str) -> str:
     return value
 
 
+ContainerT = TypeVar("ContainerT", PostgresContainer, RedisContainer)
+
+
+def _start_or_skip(create: Callable[[], ContainerT]) -> ContainerT:
+    """Создать и запустить контейнер; без Docker интеграционные тесты пропускаются.
+
+    Клиент Docker создаётся уже в конструкторе контейнера, поэтому в ``try`` — оба шага.
+    В CI (TEST_USE_SERVICES=1) контейнеры не нужны, поэтому тихого пропуска там не бывает.
+    """
+    try:
+        container = create()
+        container.start()
+        return container
+    except DockerException as error:
+        pytest.skip(f"Docker недоступен ({type(error).__name__}): интеграционные тесты пропущены")
+
+
 @pytest.fixture(scope="session")
 def postgres_container() -> Iterator[PostgresContainer]:
     """Поднимает контейнер PostgreSQL 16 на всю сессию тестов.
 
     Используется только без TEST_USE_SERVICES=1; в CI адрес берётся из окружения.
     """
-    with PostgresContainer(
-        image=POSTGRES_IMAGE,
-        username="test",
-        password="test",  # noqa: S106
-        dbname=TEST_DB_NAME,
-    ) as postgres:
+    postgres = _start_or_skip(
+        lambda: PostgresContainer(
+            image=POSTGRES_IMAGE,
+            username="test",
+            password="test",  # noqa: S106
+            dbname=TEST_DB_NAME,
+        )
+    )
+    try:
         yield postgres
+    finally:
+        postgres.stop()
 
 
 @pytest.fixture(scope="session")
 def redis_container() -> Iterator[RedisContainer]:
     """Поднимает контейнер Redis 7 на всю сессию тестов (без TEST_USE_SERVICES=1)."""
-    with RedisContainer(image=REDIS_IMAGE) as redis:
+    redis = _start_or_skip(lambda: RedisContainer(image=REDIS_IMAGE))
+    try:
         yield redis
+    finally:
+        redis.stop()
 
 
 @pytest.fixture(scope="session")
@@ -204,6 +231,25 @@ async def db_session(migrated_postgres_url: str) -> AsyncIterator[AsyncSession]:
                 await outer.rollback()
     finally:
         await engine.dispose()
+
+
+@pytest.fixture
+def app_settings_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Минимальное окружение для ``get_settings()`` в тестах, что собирают свои FastAPI-приложения.
+
+    Зависимости API читают ``SESSION_SECRET`` из настроек, а CI не имеет ``.env.local``.
+    """
+    from src.core import config as config_module  # noqa: PLC0415 - импорт только при необходимости
+
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5432/db")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("DEFAULT_TIMEZONE", "UTC")
+    # Пустой секрет (допустим в local) совпадает с ``SessionStore(redis)`` в тестах без секрета.
+    monkeypatch.setenv("SESSION_SECRET", "")
+    config_module.get_settings.cache_clear()
+    yield
+    config_module.get_settings.cache_clear()
 
 
 @pytest.fixture

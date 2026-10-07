@@ -46,7 +46,8 @@ class Settings(BaseSettings):
         webhook_secret: Секрет заголовка `X-Telegram-Bot-Api-Secret-Token`.
         owner_telegram_id: Числовой Telegram ID владельца (роль `owner`).
         teacher_contact_url: Ссылка на контакт преподавателя для учеников.
-        public_base_url: Публичный базовый URL backend (ссылки входа, вебхуки).
+        public_base_url: Публичный адрес приложения (фронтенда): ссылки входа `/login/<токен>`,
+            кнопка Mini App, проверка `Origin` в CSRF. Вебхук Telegram строится от `webhook_url`.
         s3_endpoint / s3_bucket / s3_access_key / s3_secret_key / s3_region:
             Параметры S3-совместимого хранилища приватных файлов (docs/10 §5).
         sentry_dsn: DSN Sentry; пусто — интеграция отключена.

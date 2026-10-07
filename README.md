@@ -10,8 +10,9 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
 
 ## Локальный запуск инфраструктуры
 
-Локальные PostgreSQL, Redis, MinIO и backend поднимаются через Docker Compose
-(`docker-compose.yml`). Продакшен-деплой описывается отдельно (см. `docs/10`)
+Локальные PostgreSQL, Redis и MinIO поднимаются через Docker Compose
+(`docker-compose.yml`), а backend и frontend при разработке запускаются на хосте
+(см. «Запуск для разработки» ниже). Продакшен-деплой описывается отдельно (см. `docs/10`)
 и здесь не рассматривается.
 
 1. Скопируйте шаблон настроек и заполните локальные значения
@@ -21,10 +22,10 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
    cp .env.example .env.local
    ```
 
-2. Поднимите инфраструктуру и приложение:
+2. Поднимите инфраструктуру:
 
    ```bash
-   docker compose up -d --build
+   docker compose up -d postgres redis minio minio-init
    ```
 
 3. Проверьте состояние сервисов (все должны быть `healthy`,
@@ -34,14 +35,30 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
    docker compose ps
    ```
 
-4. Проверьте, что приложение отвечает:
-
-   ```bash
-   curl http://127.0.0.1:8000/health
-   ```
+Сервис `app` (backend в контейнере) входит в профиль `full`:
+`docker compose --profile full up -d --build`. Не запускайте его вместе с backend на хосте:
+оба займут порт 8000, а при заданном `BOT_TOKEN` получится два polling одного бота.
 
 Остановить окружение: `docker compose down` (с удалением томов данных —
 `docker compose down -v`).
+
+## Запуск для разработки
+
+Нужны Docker, `uv`, Node 22 и `pnpm`. После шагов выше (инфраструктура поднята, `.env.local` заполнен):
+
+```bash
+uv sync                                        # зависимости backend
+uv run alembic upgrade head                    # миграции
+uv run python scripts/seed_reference.py        # справочники (идемпотентно)
+uv run python scripts/create_owner.py          # владелец по OWNER_TELEGRAM_ID
+uv run uvicorn src.main:app --reload           # backend на 127.0.0.1:8000 (+ бот в polling)
+cd frontend && pnpm install && pnpm dev        # frontend на http://localhost:5173
+curl http://127.0.0.1:8000/health              # {"status":"ok",...}
+```
+
+`PUBLIC_BASE_URL` в `.env.local` — адрес фронтенда (`http://localhost:5173`). Mini App открывается
+только по HTTPS: туннель (`scripts/dev_tunnel.*`) и тестовый ученик (`scripts/dev_create_student.py`)
+описаны в [docs/ops/DEV_TOOLS.md](docs/ops/DEV_TOOLS.md).
 
 ## База данных и миграции
 
