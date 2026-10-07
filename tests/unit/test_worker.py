@@ -38,6 +38,14 @@ def test_broker_is_redis_list_queue_and_scheduler_reads_task_labels(
     assert any(isinstance(source, LabelScheduleSource) for source in scheduler.sources)
 
 
+def test_broker_has_no_read_timeout_for_blocking_pop(worker: SimpleNamespace) -> None:
+    """Регрессия: redis-py 8 ставит socket_timeout=5, и простаивающий воркер падал каждые ~12 с."""
+    kwargs = worker.broker.broker.connection_pool.connection_kwargs
+    assert kwargs["socket_timeout"] is None
+    assert kwargs["socket_connect_timeout"] == 5
+    assert kwargs["socket_keepalive"] is True
+
+
 def test_heartbeat_is_scheduled_every_five_minutes(worker: SimpleNamespace) -> None:
     task = worker.tasks.heartbeat
     assert task.task_name == "heartbeat"

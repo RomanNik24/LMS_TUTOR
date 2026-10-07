@@ -145,3 +145,6 @@ DIGEST_LOCAL_HOUR = 8
 DIGEST_TOP_ITEMS = 5
 DIGEST_LESSON_LINES = 15
 CRON_EVERY_HOUR = "0 * * * *"
+
+# Подключение брокера воркера к Redis: ожидание соединения (чтение блокирующее, без таймаута)
+REDIS_CONNECT_TIMEOUT_SECONDS = 5

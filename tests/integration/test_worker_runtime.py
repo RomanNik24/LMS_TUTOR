@@ -15,6 +15,8 @@ from taskiq import Context, TaskiqState
 
 ROOT = Path(__file__).resolve().parents[2]
 WAIT_SECONDS = 30
+# Дольше пяти секунд: столько redis-py 8 по умолчанию ждёт ответ, пока воркер простаивает
+IDLE_SECONDS = 9
 
 
 async def hc_server() -> tuple[TestServer, list[str], asyncio.Event]:
@@ -56,13 +58,24 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
         "src.worker.tasks",
         "--workers",
         "1",
-        "--no-configure-logging",
         cwd=ROOT,
         env=env,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
+    seen: list[str] = []
+
+    async def wait_until_listening() -> None:
+        assert process.stdout is not None
+        async for raw in process.stdout:
+            seen.append(raw.decode())
+            if "Listening started" in seen[-1]:
+                return
+
     try:
+        await asyncio.wait_for(wait_until_listening(), WAIT_SECONDS)
+        # воркер простаивает дольше таймаута чтения по умолчанию и обязан остаться живым
+        await asyncio.sleep(IDLE_SECONDS)
         for name, value in env.items():
             monkeypatch.setenv(name, value)
         from src.core import config as config_module  # noqa: PLC0415
@@ -83,15 +96,18 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
     finally:
         process.send_signal(signal.SIGTERM)
         try:
-            output, _ = await asyncio.wait_for(process.communicate(), WAIT_SECONDS)
+            rest, _ = await asyncio.wait_for(process.communicate(), WAIT_SECONDS)
         except TimeoutError:
             process.kill()
-            output, _ = await process.communicate()
-            pytest.fail(f"Воркер не завершился по SIGTERM: {output.decode()[-500:]}")
+            rest, _ = await process.communicate()
+            pytest.fail(f"Воркер не завершился по SIGTERM: {rest.decode()[-500:]}")
         finally:
             await server.close()
             config_module.get_settings.cache_clear()
-    assert process.returncode == 0, output.decode()[-800:]
+    output = "".join(seen) + rest.decode()
+    assert process.returncode == 0, output[-800:]
+    assert "is dead" not in output
+    assert "TimeoutError" not in output
 
 
 async def test_task_session_dependency_gives_working_database_session(
