@@ -60,6 +60,11 @@ T102_TABLES = {
     "schedule_template_participants",
     "lessons",
     "lesson_participants",
+    "homeworks",
+    "homework_materials",
+    "homework_assignments",
+    "homework_extensions",
+    "homework_files",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -75,6 +80,15 @@ EXPECTED_CHECK_NAMES = {
     "ck_lessons_end_after_start",
     "ck_lesson_participants_attendance",
     "ck_lesson_participants_price_snapshot_nonneg",
+    "ck_homeworks_kind",
+    "ck_homeworks_due_mode",
+    "ck_homeworks_max_score_positive",
+    "ck_homeworks_mock_exam_needs_exam_type",
+    "ck_homework_assignments_status",
+    "ck_homework_assignments_submission_type",
+    "ck_homework_assignments_extensions_count_range",
+    "ck_homework_assignments_score_nonneg",
+    "ck_homework_files_role",
 }
 
 

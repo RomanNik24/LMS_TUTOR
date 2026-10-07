@@ -44,6 +44,13 @@
 
 from src.db.models._enum import enum_varchar
 from src.db.models.audit import AuditLog
+from src.db.models.homework import (
+    Homework,
+    HomeworkAssignment,
+    HomeworkExtension,
+    HomeworkFile,
+    HomeworkMaterial,
+)
 from src.db.models.reference import ExamType, GradeScale, Subject
 from src.db.models.schedule import (
     Lesson,
@@ -59,6 +66,11 @@ __all__ = [
     "ExamType",
     "GradeScale",
     "Guardian",
+    "Homework",
+    "HomeworkAssignment",
+    "HomeworkExtension",
+    "HomeworkFile",
+    "HomeworkMaterial",
     "Lesson",
     "LessonParticipant",
     "ScheduleTemplate",

@@ -60,6 +60,11 @@ EXPECTED_TABLES: set[str] = {
     "schedule_template_participants",
     "lessons",
     "lesson_participants",
+    "homeworks",
+    "homework_materials",
+    "homework_assignments",
+    "homework_extensions",
+    "homework_files",
 }
 
 IDENTITY_PK_TABLES = (

@@ -999,10 +999,12 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Замечания TERM и их исправление:** (1) nginx отдавал 502 после `up -d --build` — адрес backend теперь разрешается на каждый запрос (переменная в `proxy-app.conf` и резолвер Docker); (2) шаблон с датой окончания заполняется на весь период (до 52 недель), правка шаблона сохраняет уже сгенерированный срок, а не сокращает его до горизонта; (3) в `docs/08` `lesson_overlap` оставлен только как 409.
 
 ### 🚪 Ворота G3 — приёмка владельцем
-- [ ] 📱 Шаблон «вт/пт 17:00» создаёт уроки на горизонт, повторная генерация без дублей
-- [ ] 📱 Пересечение запрещено, групповой урок работает
-- [ ] 📱 Отметили урок проведённым → в `price_snapshot` цена на тот момент (проверит TERM SQL-запросом)
-- [ ] 📱 Время у ученика в его поясе
+- [x] 📱 Шаблон «вт/пт 17:00» создаёт уроки на горизонт, повторная генерация без дублей
+- [x] 📱 Пересечение запрещено, групповой урок работает
+- [x] 📱 Отметили урок проведённым → в `price_snapshot` цена на тот момент (проверит TERM SQL-запросом)
+- [x] 📱 Время у ученика в его поясе
+
+**Статус:** ✅ принято владельцем (проверка на телефоне пройдена, отчёт TERM — `docs/ops/SMOKE_STAGE3.md`).
 
 ---
 
@@ -1018,6 +1020,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T4.01 (CODE). Модели и НОВАЯ ревизия Alembic (с downgrade) для: homeworks, homework_materials, homework_assignments, homework_extensions, homework_files — строго по docs/04 §5 (статусы, due_mode, max_score, extensions_count 0..2, UNIQUE (homework_id, student_id), CHECK-и, индексы). Тест соответствия метаданных docs/04.
 ```
 **Проверка:** 🤖 тесты зелёные; `alembic heads` — одна голова.
+**Статус:** ✅ модели `src/db/models/homework.py` (5 таблиц), ревизия `c4d2e5f7a8b9` (downgrade проверен, одна голова); CHECK: `max_score > 0`, `mock_exam` требует `exam_type_id`, `extensions_count 0..2`, `score >= 0`; `UNIQUE (homework_id, student_id)`; индекс `(homework_id)` отдельно не создан (его покрывает UNIQUE); тесты `tests/unit/test_homework_models.py`, `tests/integration/test_homework_constraints.py`; проверено на реальных PostgreSQL 16 и Redis (596 тестов).
 
 ### T4.02 · Проверка миграции ДЗ на реальной БД
 **Кто:** 🖥️ TERM · **Размер:** S
