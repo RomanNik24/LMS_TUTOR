@@ -108,6 +108,12 @@ ASSIGNMENT_NOT_SUBMITTABLE = "Работа уже сдана или провер
 SUBMISSION_NO_FILES = "Загрузите хотя бы один файл или нажмите «Сделал»."
 STUDENT_COMMENT_TOO_LONG = "Комментарий не длиннее 2000 символов."
 
+SCORE_OUT_OF_RANGE = "Балл должен быть целым числом от 0 до {max_score}."
+ASSIGNMENT_NOT_GRADABLE = "Эту работу пока нельзя оценить: ученик ещё не сдал её."
+ASSIGNMENT_NOT_RETURNABLE = "Вернуть на доработку можно только сданную работу."
+RETURN_COMMENT_REQUIRED = "Напишите, что нужно доработать."
+RETURN_DUE_NOT_FOUND = "У ученика нет запланированного урока: выберите новый срок вручную."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."

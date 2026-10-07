@@ -161,3 +161,55 @@ class SubmissionItem(BaseModel):
     submitted_at: datetime
     on_time: bool
     files_count: int
+
+
+class GradeRequest(BaseModel):
+    """Оценка работы: целый балл и необязательный комментарий.
+
+    Границу ``0..max_score`` проверяет сервис (400 ``score_out_of_range``), а не схема: так любой
+    выход за пределы — одна и та же понятная ошибка.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    score: int
+    comment: str | None = Field(default=None, max_length=STUDENT_COMMENT_MAX_LENGTH)
+
+    @field_validator("comment")
+    @classmethod
+    def _comment(cls, value: str | None) -> str | None:
+        return None if value is None or not value.strip() else value.strip()
+
+
+class ReturnRequest(BaseModel):
+    """Возврат на доработку: что исправить и (необязательно) новый срок.
+
+    Без ``new_due_at`` срок — начало ближайшего запланированного урока ученика.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    comment: str = Field(min_length=1, max_length=STUDENT_COMMENT_MAX_LENGTH)
+    new_due_at: AwareDatetime | None = None
+
+    @field_validator("comment")
+    @classmethod
+    def _comment(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError(texts.RETURN_COMMENT_REQUIRED)
+        return stripped
+
+
+class GradeItem(BaseModel):
+    """Итог проверки выдачи: статус, балл, процент и срок."""
+
+    assignment_id: int
+    status: AssignmentStatus
+    score: int | None
+    max_score: int
+    score_percent: int | None
+    graded_at: datetime | None
+    graded_after_expiry: bool
+    teacher_comment: str | None
+    due_at: datetime
