@@ -28,6 +28,8 @@ BOT_MODES: tuple[str, ...] = (BOT_MODE_POLLING, BOT_MODE_WEBHOOK)
 
 # Значения по умолчанию для необязательных настроек (docs/02 §7).
 S3_REGION_DEFAULT = "us-east-1"
+# Подписанная ссылка на файл живёт 10 минут (docs/09: файлы отдаются только по временной ссылке).
+S3_PRESIGN_TTL_SECONDS = 600
 SCHEDULE_HORIZON_WEEKS_DEFAULT = 2
 
 # Статус успешного ответа `GET /health`.

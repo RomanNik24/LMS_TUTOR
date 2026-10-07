@@ -1035,6 +1035,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T4.03 (CODE). Добавь aioboto3 (есть в docs/02; boto3 ЗАПРЕЩЁН). Абстракция хранилища: put, delete, presign_get (TTL 10 минут); ключи homework/{assignment_id}/{uuid}.{ext} и materials/{homework_id}/{uuid}.{ext}; настройки из S3_*. Тесты с моком клиента + интеграционный тест против MinIO (маркер integration).
 ```
 **Проверка:** 🤖 `uv run pytest -m integration -q` (MinIO запущен) зелёный.
+**Статус:** ✅ `src/core/storage.py` (`S3Storage`: `put`, `delete`, `presign_get` на 10 минут; ключи `homework/{id}/{uuid}.{ext}` и `materials/{id}/{uuid}.{ext}`, расширение проверяется), зависимости `aioboto3` и (dev) `moto[server]`, настройка `S3_PUBLIC_ENDPOINT` (подписанные ссылки должны открываться с телефона, а `127.0.0.1` ему недоступен); тесты `tests/unit/test_storage.py` с подменой клиента и `tests/integration/test_storage_s3.py` против S3 API (по умолчанию мок-сервер `moto`, против MinIO — через `S3_TEST_*`). Официальный образ MinIO в CI недоступен, поэтому настоящий MinIO и истечение ссылки по TTL проверяет TERM в T4.04.
 
 ### T4.04 · Реальная проверка хранилища
 **Кто:** 🖥️ TERM · **Размер:** S
