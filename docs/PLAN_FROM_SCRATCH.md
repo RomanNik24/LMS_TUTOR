@@ -1158,6 +1158,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Читать:** `docs/04` §7.1, `docs/05` §6.
 **Промпт:** `Задача T5.01 (CODE). Модель notifications по docs/04 §7.1 (статусы, dedup_key UNIQUE, send_after, attempts, payload) и новая ревизия Alembic с downgrade. Тест соответствия.`
 **Проверка:** 🤖 тесты зелёные; TERM проверит на реальной БД в T5.08.
+**Статус:** ✅ модель `src/db/models/notifications.py` (`Notification`: `user_id` с `ON DELETE CASCADE`, `type` VARCHAR(50), `payload` JSONB, `dedup_key` UNIQUE, `is_urgent`, `scheduled_for`, `status` pending/sent/failed/skipped с CHECK, `attempts`, `sent_at`, `last_error`, `created_at`/`updated_at`; индекс `(status, scheduled_for)`), `NotificationType` в `src/core/enums.py` (12 типов из docs/05 §6; в БД без CHECK, как в docs/04), ревизия Alembic `d5e6f7a8b9c0` с downgrade (upgrade, `alembic check`, downgrade и повторный upgrade проверены на локальной PostgreSQL); поле называется `scheduled_for` по docs/04 §7.1 (в тексте задачи — `send_after`; источник истины — схема БД); тесты `tests/unit/test_notification_model.py`, `tests/integration/test_notification_constraints.py` (значения по умолчанию, уникальность `dedup_key`, CHECK статуса, FK, каскад), обновлены тесты списков таблиц и голов миграций.
 
 ### T5.02 · `Notifier` и `TelegramNotifier`
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t5-02-notifier` · **Коммит:** `feat(notify): add notifier interface and telegram implementation`

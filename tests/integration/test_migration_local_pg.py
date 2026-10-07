@@ -70,6 +70,7 @@ T102_TABLES = {
     "homework_assignments",
     "homework_extensions",
     "homework_files",
+    "notifications",
 }
 
 EXPECTED_FK_DELETE_RULES = {
@@ -106,6 +107,7 @@ EXPECTED_FK_DELETE_RULES = {
     "fk_homework_extensions_created_by": "r",
     "fk_homework_files_assignment_id": "c",
     "fk_homework_files_uploaded_by": "r",
+    "fk_notifications_user_id": "c",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -130,6 +132,7 @@ EXPECTED_CHECK_NAMES = {
     "ck_homework_assignments_extensions_count_range",
     "ck_homework_assignments_score_nonneg",
     "ck_homework_files_role",
+    "ck_notifications_status",
 }
 
 
@@ -449,6 +452,7 @@ def test_constraints_created_by_migration_local(
                 "uq_auth_tokens_token_hash",
                 "uq_lessons_template_id_start_at",
                 "uq_homework_assignments_homework_id_student_id",
+                "uq_notifications_dedup_key",
                 "uq_grade_scales_exam_type_id_valid_year_primary_score",
             }
 

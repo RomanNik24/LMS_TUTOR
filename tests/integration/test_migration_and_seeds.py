@@ -65,6 +65,7 @@ T102_TABLES = {
     "homework_assignments",
     "homework_extensions",
     "homework_files",
+    "notifications",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -89,6 +90,7 @@ EXPECTED_CHECK_NAMES = {
     "ck_homework_assignments_extensions_count_range",
     "ck_homework_assignments_score_nonneg",
     "ck_homework_files_role",
+    "ck_notifications_status",
 }
 
 
