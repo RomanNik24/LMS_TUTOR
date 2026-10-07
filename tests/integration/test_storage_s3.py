@@ -32,10 +32,12 @@ def storage() -> Iterator[S3Storage]:
             region=REGION,
         )
         return
-    server = ThreadedMotoServer(port=0)
+    # Только loopback: по умолчанию moto слушает 0.0.0.0 и возвращает этот адрес, а подключиться
+    # на 0.0.0.0 нельзя (ошибка на Windows). Порт 0 — свободный порт выбирает система.
+    server = ThreadedMotoServer(ip_address="127.0.0.1", port=0, verbose=False)
     server.start()
-    host, port = server.get_host_and_port()
-    url = f"http://{host}:{port}"
+    _, port = server.get_host_and_port()
+    url = f"http://127.0.0.1:{port}"
     bucket = f"lms-test-{uuid.uuid4().hex[:8]}"
     httpx.put(f"{url}/{bucket}")  # создать bucket: S3 API CreateBucket
     try:
