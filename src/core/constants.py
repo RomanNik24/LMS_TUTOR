@@ -148,3 +148,6 @@ CRON_EVERY_HOUR = "0 * * * *"
 
 # Подключение брокера воркера к Redis: ожидание соединения (чтение блокирующее, без таймаута)
 REDIS_CONNECT_TIMEOUT_SECONDS = 5
+
+# Имя очереди TaskIQ в Redis (можно переопределить WORKER_QUEUE_NAME, например в тестах)
+WORKER_QUEUE_NAME_DEFAULT = "taskiq"

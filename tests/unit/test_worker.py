@@ -46,6 +46,14 @@ def test_broker_has_no_read_timeout_for_blocking_pop(worker: SimpleNamespace) ->
     assert kwargs["socket_keepalive"] is True
 
 
+def test_queue_name_comes_from_settings(
+    worker: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert worker.broker.broker.queue_name == "taskiq"
+    custom = worker.broker.create_broker("redis://localhost:6379/0", "taskiq-other")
+    assert custom.queue_name == "taskiq-other"
+
+
 def test_heartbeat_is_scheduled_every_five_minutes(worker: SimpleNamespace) -> None:
     task = worker.tasks.heartbeat
     assert task.task_name == "heartbeat"

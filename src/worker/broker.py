@@ -21,7 +21,7 @@ from taskiq_redis import ListQueueBroker
 
 from src.bot.client import build_bot
 from src.core.config import get_settings
-from src.core.constants import REDIS_CONNECT_TIMEOUT_SECONDS
+from src.core.constants import REDIS_CONNECT_TIMEOUT_SECONDS, WORKER_QUEUE_NAME_DEFAULT
 from src.core.sentry import init_sentry
 from src.db.session import create_engine, create_session_factory
 
@@ -33,7 +33,7 @@ STATE_SESSION_FACTORY = "session_factory"
 STATE_BOT = "bot"
 
 
-def create_broker(redis_url: str) -> ListQueueBroker:
+def create_broker(redis_url: str, queue_name: str = WORKER_QUEUE_NAME_DEFAULT) -> ListQueueBroker:
     """Создать брокер очереди на Redis.
 
     Воркер ждёт задачи блокирующим ``BRPOP`` без таймаута. Клиент redis-py 8 по умолчанию
@@ -44,16 +44,19 @@ def create_broker(redis_url: str) -> ListQueueBroker:
 
     Args:
         redis_url: Адрес Redis (``REDIS_URL``).
+        queue_name: Имя очереди (``WORKER_QUEUE_NAME``): все процессы стенда берут её из настроек.
     """
     return ListQueueBroker(
         redis_url,
+        queue_name=queue_name,
         socket_timeout=None,
         socket_connect_timeout=REDIS_CONNECT_TIMEOUT_SECONDS,
         socket_keepalive=True,
     )
 
 
-broker = create_broker(get_settings().redis_url)
+_settings = get_settings()
+broker = create_broker(_settings.redis_url, _settings.worker_queue_name)
 scheduler = TaskiqScheduler(broker=broker, sources=[LabelScheduleSource(broker)])
 
 

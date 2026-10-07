@@ -22,6 +22,7 @@ from src.core.constants import (
     S3_REGION_DEFAULT,
     SCHEDULE_HORIZON_WEEKS_DEFAULT,
     SECRET_MIN_BYTES,
+    WORKER_QUEUE_NAME_DEFAULT,
 )
 
 
@@ -94,6 +95,11 @@ class Settings(BaseSettings):
     # --- Мониторинг ошибок ---
     # Healthchecks: адрес пинга, который раз в 5 минут вызывает воркер (docs/10 §8). Пусто — выкл.
     healthcheck_url: str = Field(default="", validation_alias="HEALTHCHECK_URL")
+    # Очередь фоновых задач в Redis. Планировщик и воркеры одного стенда должны использовать одно
+    # имя; тесты и второй стенд на том же Redis задают своё, чтобы не перехватывать чужие задачи.
+    worker_queue_name: str = Field(
+        default=WORKER_QUEUE_NAME_DEFAULT, validation_alias="WORKER_QUEUE_NAME"
+    )
     sentry_dsn: SecretStr = Field(default=SecretStr(""), validation_alias="SENTRY_DSN")
 
     # --- Расписание ---

@@ -5,6 +5,7 @@ import importlib
 import os
 import signal
 import sys
+import uuid
 from pathlib import Path
 
 import pytest
@@ -35,10 +36,46 @@ async def hc_server() -> tuple[TestServer, list[str], asyncio.Event]:
     return server, hits, arrived
 
 
+def read_log(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
+
+
+async def wait_for_log(path: Path, marker: str) -> None:
+    """Дождаться строки в журнале воркера (журнал в файле, а не в канале, см. stop_worker)."""
+    async with asyncio.timeout(WAIT_SECONDS):
+        while marker not in read_log(path):  # noqa: ASYNC110 - опрос файла, событий нет
+            await asyncio.sleep(0.2)
+
+
+async def stop_worker(process: asyncio.subprocess.Process) -> None:
+    """Остановить воркер вместе с дочерними процессами.
+
+    POSIX: SIGTERM, процесс обязан завершиться сам и с кодом 0 (корректное завершение).
+    Windows: сигналов нет, ``TerminateProcess`` убил бы только родителя, а дочерний процесс
+    воркера остался бы жить и держать порты и файлы, поэтому дерево убивается ``taskkill /T``.
+    """
+    if process.returncode is not None:
+        return
+    if sys.platform == "win32":
+        killer = await asyncio.create_subprocess_exec(
+            "taskkill", "/PID", str(process.pid), "/T", "/F", stdout=asyncio.subprocess.DEVNULL
+        )
+        await killer.wait()
+    else:
+        process.send_signal(signal.SIGTERM)
+    try:
+        await asyncio.wait_for(process.wait(), WAIT_SECONDS)
+    except TimeoutError:
+        process.kill()
+        await process.wait()
+        pytest.fail("Воркер не завершился после сигнала остановки")
+
+
 async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
-    redis_url: str, migrated_postgres_url: str, monkeypatch: pytest.MonkeyPatch
+    redis_url: str, migrated_postgres_url: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     server, hits, arrived = await hc_server()
+    log_path = tmp_path / "worker.log"
     env = {
         **os.environ,
         "APP_ENV": "local",
@@ -48,32 +85,29 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
         "SESSION_SECRET": "",
         "HEALTHCHECK_URL": str(server.make_url("/ping/runtime-check")),
         "SENTRY_DSN": "",
+        # своя очередь: даже на общем Redis тестовый воркер не заберёт задачи рабочего стенда
+        "WORKER_QUEUE_NAME": f"taskiq-test-{uuid.uuid4().hex}",
     }
-    process = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-m",
-        "taskiq",
-        "worker",
-        "src.worker.broker:broker",
-        "src.worker.tasks",
-        "--workers",
-        "1",
-        cwd=ROOT,
-        env=env,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
-    seen: list[str] = []
-
-    async def wait_until_listening() -> None:
-        assert process.stdout is not None
-        async for raw in process.stdout:
-            seen.append(raw.decode())
-            if "Listening started" in seen[-1]:
-                return
-
+    # журнал в файл: канал наследуют дочерние процессы воркера, и на Windows его закрытие
+    # не наступало бы, пока жив любой из них (так тест и зависал)
+    with log_path.open("wb") as log:
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "taskiq",
+            "worker",
+            "src.worker.broker:broker",
+            "src.worker.tasks",
+            "--workers",
+            "1",
+            cwd=ROOT,
+            env=env,
+            stdout=log,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+    config_module = None
     try:
-        await asyncio.wait_for(wait_until_listening(), WAIT_SECONDS)
+        await wait_for_log(log_path, "Listening started")
         # воркер простаивает дольше таймаута чтения по умолчанию и обязан остаться живым
         await asyncio.sleep(IDLE_SECONDS)
         for name, value in env.items():
@@ -94,18 +128,13 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
             await client.shutdown()
         assert hits == ["/ping/runtime-check"]
     finally:
-        process.send_signal(signal.SIGTERM)
-        try:
-            rest, _ = await asyncio.wait_for(process.communicate(), WAIT_SECONDS)
-        except TimeoutError:
-            process.kill()
-            rest, _ = await process.communicate()
-            pytest.fail(f"Воркер не завершился по SIGTERM: {rest.decode()[-500:]}")
-        finally:
-            await server.close()
+        await stop_worker(process)
+        await server.close()
+        if config_module is not None:
             config_module.get_settings.cache_clear()
-    output = "".join(seen) + rest.decode()
-    assert process.returncode == 0, output[-800:]
+    output = read_log(log_path)
+    if sys.platform != "win32":
+        assert process.returncode == 0, output[-800:]
     assert "is dead" not in output
     assert "TimeoutError" not in output
 
