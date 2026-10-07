@@ -450,4 +450,17 @@ async def test_operation_ids_are_stable(app: FastAPI) -> None:
         "generate_lessons",
         "update_schedule_template",
         "deactivate_schedule_template",
+        # домашние задания (T4.11)
+        "list_homework",
+        "create_homework",
+        "get_homework",
+        "add_homework_assignees",
+        "upload_homework_material",
+        "list_assignments",
+        "list_review_queue",
+        "get_assignment",
+        "grade_assignment",
+        "return_assignment",
+        "extend_assignment",
+        "upload_review_file",
     }

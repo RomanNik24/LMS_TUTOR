@@ -231,3 +231,11 @@ class ExtensionItem(BaseModel):
     new_due_at: datetime
     extensions_count: int
     extensions_left: int
+
+
+PERCENT = 100
+
+
+def score_percent(score: int | None, max_score: int) -> int | None:
+    """Процент от максимума (округление до целого); ``None``, если оценки ещё нет."""
+    return None if score is None else round(score * PERCENT / max_score)

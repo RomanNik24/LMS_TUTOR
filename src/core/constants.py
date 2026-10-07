@@ -64,6 +64,9 @@ RATE_LIMIT_WINDOW_SECONDS = 60
 RATE_LIMIT_AUTH_PER_MINUTE = 10
 RATE_LIMIT_USER_PER_MINUTE = 120
 RATE_LIMIT_KEY_PREFIX = "rate:"
+# Загрузка файлов: не больше 30 за 10 минут на пользователя (docs/08 §10).
+RATE_LIMIT_UPLOAD_COUNT = 30
+RATE_LIMIT_UPLOAD_WINDOW_SECONDS = 600
 
 # CORS включается только локально (docs/09 §2.3.1): dev-сервер Vite на другом порту.
 LOCAL_CORS_ORIGINS: tuple[str, ...] = ("http://localhost:5173", "http://127.0.0.1:5173")
