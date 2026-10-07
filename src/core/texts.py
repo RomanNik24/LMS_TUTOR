@@ -267,3 +267,24 @@ NOTIFY_BUTTON_OPEN_ADMIN = "Открыть Admin App"
 def local_when(moment: datetime) -> str:
     """Момент в поясе получателя: «вт, 14 окт, 17:00» (аргумент уже локальный)."""
     return f"{short_date(moment.date())}, {moment:%H:%M}"
+
+
+# --- Утренняя сводка персоналу (docs/05 §6.3) ---
+DIGEST_TITLE = "☀ Сводка на {date}"
+DIGEST_LESSONS = "Уроки сегодня ({count}):"
+DIGEST_LESSON_LINE = "• {time} {subject}: {students}"
+DIGEST_REVIEW = "ДЗ на проверку: {count}"
+DIGEST_REVIEW_LINE = "• {student} — {title}"
+DIGEST_UNSUBMITTED = "Не сдано к сегодняшним урокам ({count}):"
+DIGEST_UNSUBMITTED_LINE = "• {student} — {title}, срок {due}"
+DIGEST_UNMARKED = "Уроки без отметки ({count}):"
+DIGEST_UNMARKED_LINE = "• {when}, {subject}"
+DIGEST_DEADLINES = "Дедлайны ближайших 24 часов ({count}):"
+DIGEST_DEADLINE_LINE = "• {student} — {title}, {due}"
+DIGEST_MORE = "…и ещё {count}"
+DIGEST_EARNED = "Заработано в этом месяце: {amount} ₽"
+
+
+def money(amount: int) -> str:
+    """Сумма в рублях с пробелом между тысячами: ``12 500``."""
+    return f"{amount:,}".replace(",", "\u00a0")

@@ -16,11 +16,13 @@ from src.core.config import Settings
 from src.core.constants import (
     CRON_EVERY_5_MINUTES,
     CRON_EVERY_15_MINUTES,
+    CRON_EVERY_HOUR,
     CRON_EVERY_MINUTE,
     CRON_LESSON_GENERATION,
     CRON_LINKS_CLEANUP,
     HEARTBEAT_CRON,
 )
+from src.services.digest import DigestService
 from src.services.expiry import ExpiryService
 from src.services.maintenance import MaintenanceService
 from src.services.notification_dispatch import NotificationDispatcher
@@ -102,3 +104,9 @@ async def generate_scheduled_lessons(context: Ctx, session: Session) -> int:
 async def cleanup_tokens(session: Session) -> int:
     """Удалить истёкшие приглашения и ссылки входа (ежедневно в 03:30 UTC)."""
     return await MaintenanceService(session).cleanup_tokens()
+
+
+@broker.task(task_name="send_morning_digest", schedule=[{"cron": CRON_EVERY_HOUR}])
+async def send_morning_digest(session: Session) -> int:
+    """Поставить утреннюю сводку сотрудникам, у которых сейчас 08:00 по их часовому поясу."""
+    return await DigestService(session).send_morning_digests()

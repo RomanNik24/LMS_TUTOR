@@ -411,6 +411,7 @@ def test_every_periodic_task_has_its_schedule(tasks: SimpleNamespace) -> None:
         "notify_unmarked_lessons": "*/15 * * * *",
         "generate_scheduled_lessons": "0 3 * * *",
         "cleanup_tokens": "30 3 * * *",
+        "send_morning_digest": "0 * * * *",
     }
     scheduled = {
         task.task_name: task.labels["schedule"][0]["cron"]
@@ -463,6 +464,7 @@ async def test_expire_and_generation_tasks_run_on_empty_database(
     assert await tasks.module.generate_lesson_reminders.original_func(db_session) == 0
     assert await tasks.module.generate_homework_reminders.original_func(db_session) == 0
     assert await tasks.module.notify_unmarked_lessons.original_func(db_session) == 0
+    assert await tasks.module.send_morning_digest.original_func(db_session) == 0
     context = SimpleNamespace(state={"settings": SimpleNamespace(schedule_horizon_weeks=2)})
     assert await tasks.module.generate_scheduled_lessons.original_func(context, db_session) == 0
 
