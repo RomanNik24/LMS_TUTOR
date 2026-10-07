@@ -3,15 +3,7 @@
  * Админская часть подгружается лениво (React.lazy): ученику её код не нужен.
  * Разделы без данных показывают «пустое состояние» (`SectionPlaceholder`) — их заменят экраны этапов 2–8.
  */
-import {
-  BookOpen,
-  CalendarDays,
-  ClipboardCheck,
-  ClipboardList,
-  LineChart,
-  Sun,
-  Wallet,
-} from "lucide-react";
+import { BookOpen, ClipboardCheck, ClipboardList, LineChart, Sun, Wallet } from "lucide-react";
 import { Suspense, lazy } from "react";
 import { createBrowserRouter, createMemoryRouter, Navigate } from "react-router-dom";
 import type { RouteObject } from "react-router-dom";
@@ -22,6 +14,8 @@ import { HelloPage } from "@/features/auth/pages/HelloPage";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
+import { StudentLessonPage } from "@/features/schedule/StudentLessonPage";
+import { StudentSchedulePage } from "@/features/schedule/StudentSchedulePage";
 import { SchedulePage } from "@/features/schedule/SchedulePage";
 import { StaffPage } from "@/features/staff/StaffPage";
 import { StudentCardPage } from "@/features/students/StudentCardPage";
@@ -53,16 +47,8 @@ const studentRoutes: RouteObject = {
       children: [
         { index: true, element: <Navigate to="schedule" replace /> },
         { path: "profile", element: <ProfilePage /> },
-        {
-          path: "schedule",
-          element: (
-            <SectionPlaceholder
-              icon={CalendarDays}
-              title={texts.empty.studentSchedule.title}
-              text={texts.empty.studentSchedule.text}
-            />
-          ),
-        },
+        { path: "schedule", element: <StudentSchedulePage /> },
+        { path: "schedule/:lessonId", element: <StudentLessonPage /> },
         {
           path: "homework",
           element: (

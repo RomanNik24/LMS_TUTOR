@@ -161,3 +161,8 @@ export function upcomingWeekdayKeys(
 export function daysBetween(fromKey: string, toKey: string): number {
   return Math.round((parseDayKey(toKey).getTime() - parseDayKey(fromKey).getTime()) / MS_IN_DAY);
 }
+
+/** Сколько минут осталось до момента (отрицательное — момент уже прошёл). Берёт текущее время. */
+export function minutesUntil(isoUtc: string): number {
+  return Math.ceil((new Date(isoUtc).getTime() - Date.now()) / 60_000);
+}
