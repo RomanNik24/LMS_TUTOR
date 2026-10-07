@@ -7,6 +7,7 @@
 
 from redis.asyncio import Redis
 
+from src.core import texts
 from src.core.constants import RATE_LIMIT_KEY_PREFIX, RATE_LIMIT_WINDOW_SECONDS
 from src.core.exceptions import AppError
 
@@ -36,7 +37,7 @@ class RateLimiter:
             count, _ = await pipe.execute()
         if int(count) > limit:
             raise AppError(
-                "Слишком много запросов. Попробуйте позже.",
+                texts.API_RATE_LIMITED,
                 code="rate_limited",
                 http_status=429,
             )

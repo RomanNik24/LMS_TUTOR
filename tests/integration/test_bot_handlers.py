@@ -297,6 +297,16 @@ async def test_logout_requires_confirmation_then_unlinks(
     assert harness.session.of("AnswerCallbackQuery")
 
 
+async def test_owner_logout_is_refused(
+    harness: BotHarness, db_session: AsyncSession, owner: User
+) -> None:
+    """Владелец не может отвязать Telegram: войти снова было бы нельзя."""
+    await harness.press(TG_STAFF, keyboards.CALLBACK_LOGOUT_YES)
+    assert harness.session.sent_texts()[-1] == texts.OWNER_CANNOT_UNLINK
+    await db_session.refresh(owner)
+    assert owner.telegram_id == TG_STAFF
+
+
 async def test_logout_cancel(harness: BotHarness, db_session: AsyncSession) -> None:
     student = await _user(db_session, UserRole.STUDENT, "Аня", telegram_id=TG_STUDENT)
     await harness.press(TG_STUDENT, keyboards.CALLBACK_LOGOUT_NO)

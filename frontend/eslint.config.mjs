@@ -5,6 +5,20 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+/* Селекторы no-restricted-syntax вынесены в константы, чтобы переопределять правило
+   для lib/telegram.ts, не теряя запрет dangerouslySetInnerHTML. */
+const TELEGRAM_ACCESS_SELECTOR = {
+  selector:
+    "MemberExpression[object.property.name='Telegram'], MemberExpression > Identifier[name='Telegram']",
+  message: "Доступ к window.Telegram разрешён только в src/lib/telegram.ts (docs/06 B3).",
+};
+
+/* JSX-атрибут dangerouslySetInnerHTML: no-restricted-properties его не видит */
+const DANGEROUS_HTML_SELECTOR = {
+  selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+  message: "dangerouslySetInnerHTML запрещён (docs/06 B5). React экранирует JSX сам.",
+};
+
 export default tseslint.config(
   { ignores: ["dist/**", "node_modules/**", "coverage/**", "src/api/schema.d.ts"] },
   js.configs.recommended,
@@ -80,14 +94,10 @@ export default tseslint.config(
           ],
         },
       ],
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector:
-            "MemberExpression[object.property.name='Telegram'], MemberExpression > Identifier[name='Telegram']",
-          message: "Доступ к window.Telegram разрешён только в src/lib/telegram.ts (docs/06 B3).",
-        },
-      ],
+      "no-restricted-syntax": ["error", TELEGRAM_ACCESS_SELECTOR, DANGEROUS_HTML_SELECTOR],
+
+      /* Без console.*: ошибки идут в Sentry, а не в консоль (docs/06 B5, docs/09 §4) */
+      "no-console": "error",
     },
   },
   {
@@ -95,7 +105,7 @@ export default tseslint.config(
     files: ["src/lib/telegram.ts"],
     rules: {
       "no-restricted-imports": "off",
-      "no-restricted-syntax": "off",
+      "no-restricted-syntax": ["error", DANGEROUS_HTML_SELECTOR],
     },
   },
   {

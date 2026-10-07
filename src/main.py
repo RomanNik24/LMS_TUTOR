@@ -45,7 +45,7 @@ from src.schemas.health import HealthResponse
 from src.services.bootstrap import ensure_owner_from_settings
 
 # Логи — JSON в stdout, request_id из контекста запроса (docs/09 §4).
-setup_logging()
+setup_logging(os.environ.get("APP_ENV", APP_ENV_LOCAL))
 logger = logging.getLogger(__name__)
 
 

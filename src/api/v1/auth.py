@@ -1,7 +1,7 @@
 """Роутер ``/auth/*`` (docs/08 §2): вход через Telegram и по ссылке, выход.
 
-Роутеры тонкие: разбор запроса → вызов сервиса → ответ. На весь роутер
-действует лимит 10 запросов в минуту на IP (docs/08 §10).
+Роутеры тонкие: разбор запроса → вызов сервиса → ответ. Лимит 10 запросов в минуту на IP
+(docs/08 §10) действует на ``/auth/telegram`` и ``/auth/link``.
 """
 
 from typing import Annotated
@@ -25,7 +25,7 @@ from src.schemas.auth import LinkLoginRequest, MeResponse, TelegramLoginRequest
 from src.services.auth import AuthService
 from src.services.profile import ProfileService
 
-router = APIRouter(prefix="/auth", tags=["auth"], dependencies=[Depends(rate_limit_auth)])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 async def _login(
@@ -45,7 +45,8 @@ async def _login(
     response_model=MeResponse,
     summary="Вход через Telegram Mini App (initData)",
     operation_id="auth_telegram_login",
-    responses=error_responses(401, 422, 429),
+    responses=error_responses(401, 403, 422, 429),
+    dependencies=[Depends(rate_limit_auth)],
 )
 async def telegram_login(
     body: TelegramLoginRequest,
@@ -63,7 +64,8 @@ async def telegram_login(
     response_model=MeResponse,
     summary="Вход по одноразовой ссылке из бота (/web)",
     operation_id="auth_link_login",
-    responses=error_responses(404, 409, 422, 429),
+    responses=error_responses(403, 404, 409, 422, 429),
+    dependencies=[Depends(rate_limit_auth)],
 )
 async def link_login(
     body: LinkLoginRequest,
@@ -81,7 +83,7 @@ async def link_login(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Выход: удалить текущую сессию",
     operation_id="auth_logout",
-    responses=error_responses(401, 429),
+    responses=error_responses(401, 403, 429),
 )
 async def logout(
     response: Response,

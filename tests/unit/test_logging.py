@@ -166,3 +166,26 @@ def test_setup_logging_is_idempotent() -> None:
     setup_logging(app_env="local")
     setup_logging(app_env="prod")
     assert len(logging.getLogger().handlers) == 1
+
+
+def test_webhook_path_secret_is_redacted_in_access_log(log_buffer: io.StringIO) -> None:
+    """Секретный сегмент пути вебхука не попадает в лог (uvicorn.access)."""
+    logging.getLogger("uvicorn.access").info(
+        '%s - "%s %s HTTP/%s" %d',
+        "127.0.0.1:1",
+        "POST",
+        "/telegram/webhook/0123456789abcdef0123456789abcdef",
+        "1.1",
+        200,
+    )
+    output = log_buffer.getvalue()
+    assert "0123456789abcdef" not in output
+    assert "/telegram/webhook/***" in output
+
+
+def test_noisy_libraries_are_quiet(log_buffer: io.StringIO) -> None:
+    """asyncio и HTTP-клиенты не пишут DEBUG-шум; в prod — только WARNING."""
+    assert logging.getLogger("asyncio").getEffectiveLevel() == logging.INFO
+    setup_logging(app_env="prod")
+    assert logging.getLogger().level == logging.INFO
+    assert logging.getLogger("httpx").getEffectiveLevel() == logging.WARNING

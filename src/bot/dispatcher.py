@@ -58,7 +58,9 @@ def create_dispatcher(
     )
     dispatcher = Dispatcher(storage=fsm_storage, settings=settings)
     bot_token = settings.bot_token.get_secret_value()
-    dispatcher.update.outer_middleware(DbSessionMiddleware(scope, redis, bot_token))
+    dispatcher.update.outer_middleware(
+        DbSessionMiddleware(scope, redis, bot_token, settings.session_secret.get_secret_value())
+    )
     dispatcher.update.outer_middleware(AuthMiddleware())
     dispatcher.errors.register(on_error)
     # Порядок важен: menu содержит универсальный fallback и идёт последним.

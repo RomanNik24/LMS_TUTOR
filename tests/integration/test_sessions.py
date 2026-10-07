@@ -186,6 +186,13 @@ async def test_session_id_is_not_stored_in_redis_in_plain(redis_clean: aioredis.
     assert all(session_id not in str(k) for k in keys)
 
 
+async def test_session_is_not_readable_with_another_secret(redis_clean: aioredis.Redis) -> None:
+    """Смена SESSION_SECRET делает прежние сессии недействительными (docs/09 §8)."""
+    session_id, _ = await SessionStore(redis_clean, "secret-a" * 4).create(1, UserRole.OWNER)
+    assert await SessionStore(redis_clean, "secret-a" * 4).get(session_id) is not None
+    assert await SessionStore(redis_clean, "secret-b" * 4).get(session_id) is None
+
+
 def test_cookie_flags() -> None:
     from fastapi import Response
 

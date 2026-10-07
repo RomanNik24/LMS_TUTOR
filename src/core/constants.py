@@ -87,3 +87,5 @@ BOT_ALLOWED_UPDATES: tuple[str, ...] = ("message", "callback_query", "my_chat_me
 BOT_INVITE_PAYLOAD_PREFIX = "inv_"
 BOT_WEBHOOK_PATH = "/telegram/webhook"
 BOT_WEBHOOK_AUTH_HEADER = "x-telegram-bot-api-secret-token"
+# Маска секретного сегмента пути вебхука в логах и Sentry (docs/09 §4).
+WEBHOOK_PATH_REDACTED = BOT_WEBHOOK_PATH + "/***"

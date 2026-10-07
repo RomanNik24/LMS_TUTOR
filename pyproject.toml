@@ -77,6 +77,10 @@ testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    # fastapi.testclient в тестах ошибок и логов: предупреждение библиотеки, не ошибка проекта.
+    "ignore:Using .httpx. with .starlette.testclient. is deprecated",
+]
 markers = [
     "integration: тесты с реальными PostgreSQL/Redis (Testcontainers или service containers)",
     "security: тесты безопасности и прав доступа",

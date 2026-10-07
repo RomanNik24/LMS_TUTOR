@@ -43,7 +43,7 @@ from src.repositories.auth_tokens import AuthTokenRepository
 from src.repositories.users import UserRepository
 
 STAFF_ROLES = frozenset({UserRole.OWNER, UserRole.MANAGER})
-OWNER_DISPLAY_NAME = "Владелец"
+OWNER_DISPLAY_NAME = texts.OWNER_DISPLAY_NAME
 
 AUDIT_INVITE_CREATED = "invite.created"
 AUDIT_INVITE_REVOKED = "invite.revoked"
@@ -192,7 +192,9 @@ class AuthService:
             NotFoundError: ``invite_invalid`` — нет/просрочен/отозван.
             ConflictError: ``invite_already_used``; ``telegram_already_linked``.
         """
-        return await self._accept(token, telegram_id, telegram_username, confirmed=False)
+        return await self._accept(
+            hash_token(token), telegram_id, telegram_username, confirmed=False
+        )
 
     async def confirm_relink(
         self, token: str, telegram_id: int, telegram_username: str | None = None
@@ -201,10 +203,19 @@ class AuthService:
 
         Те же ошибки, что у ``accept_invite``.
         """
-        return await self._accept(token, telegram_id, telegram_username, confirmed=True)
+        return await self.confirm_relink_by_hash(hash_token(token), telegram_id, telegram_username)
+
+    async def confirm_relink_by_hash(
+        self, token_hash: str, telegram_id: int, telegram_username: str | None = None
+    ) -> InviteAcceptResult:
+        """То же, что ``confirm_relink``, но по SHA-256 токена.
+
+        Бот хранит в FSM (Redis) только хэш: сам токен в Redis не попадает (docs/09 §2.1).
+        """
+        return await self._accept(token_hash, telegram_id, telegram_username, confirmed=True)
 
     async def _accept(
-        self, token: str, telegram_id: int, username: str | None, *, confirmed: bool
+        self, token_hash: str, telegram_id: int, username: str | None, *, confirmed: bool
     ) -> InviteAcceptResult:
         subject = str(telegram_id)
         if await self._limiter.is_blocked(
@@ -212,7 +223,9 @@ class AuthService:
         ):
             raise AppError(texts.TOO_MANY_ATTEMPTS, code="rate_limited", http_status=429)
         try:
-            return await self._accept_checked(token, telegram_id, username, confirmed=confirmed)
+            return await self._accept_checked(
+                token_hash, telegram_id, username, confirmed=confirmed
+            )
         except (NotFoundError, ConflictError):
             await self._session.rollback()
             await self._limiter.register_failure(
@@ -221,10 +234,10 @@ class AuthService:
             raise
 
     async def _accept_checked(
-        self, token: str, telegram_id: int, username: str | None, *, confirmed: bool
+        self, token_hash: str, telegram_id: int, username: str | None, *, confirmed: bool
     ) -> InviteAcceptResult:
         now = utcnow()
-        record = await self._tokens.get_by_hash(hash_token(token), for_update=True)
+        record = await self._tokens.get_by_hash(token_hash, for_update=True)
         if record is None or record.purpose != AuthTokenPurpose.INVITE:
             raise _invalid_invite()
         if record.used_at is not None:
@@ -430,6 +443,9 @@ class AuthService:
     @staticmethod
     def _ensure_can_unlink(actor: CurrentUser, target: User) -> None:
         if actor.id == target.id:
+            # Владелец без привязки не сможет войти: ensure_owner уже не перепривяжет его.
+            if target.role == UserRole.OWNER:
+                raise BusinessRuleError(texts.OWNER_CANNOT_UNLINK, code="owner_cannot_unlink")
             return
         if actor.role not in STAFF_ROLES:
             raise PermissionDeniedError()

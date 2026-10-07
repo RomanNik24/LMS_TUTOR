@@ -34,7 +34,11 @@ async def ensure_owner_from_settings(
     if settings.owner_telegram_id is None:
         return False
     async with session_scope(factory) as session:
-        service = AuthService(session, SessionStore(redis), RateLimiter(redis))
+        service = AuthService(
+            session,
+            SessionStore(redis, settings.session_secret.get_secret_value()),
+            RateLimiter(redis),
+        )
         had_owner = await service.has_owner()
         await service.ensure_owner(settings.owner_telegram_id)
     if not had_owner:

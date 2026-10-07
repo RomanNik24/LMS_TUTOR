@@ -12,6 +12,7 @@ from sentry_sdk.types import Event, Hint
 
 from src.core.config import Settings
 from src.core.constants import APP_ENV_LOCAL
+from src.core.logging import redact_webhook_path
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,9 @@ def scrub_event(event: Event, hint: Hint) -> Event | None:
         request.pop("data", None)
         request.pop("cookies", None)
         request.pop("query_string", None)
+        url = request.get("url")
+        if isinstance(url, str):
+            request["url"] = redact_webhook_path(url)
         headers = request.get("headers")
         if isinstance(headers, dict):
             request["headers"] = {

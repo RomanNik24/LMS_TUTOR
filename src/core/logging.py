@@ -15,6 +15,7 @@
 """
 
 import logging
+import re
 import sys
 import uuid
 from contextvars import ContextVar
@@ -24,7 +25,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 
-from src.core.constants import REQUEST_ID_HEADER
+from src.core.constants import BOT_WEBHOOK_PATH, REQUEST_ID_HEADER, WEBHOOK_PATH_REDACTED
 
 # Контекст текущего запроса: RequestIdMiddleware проставляет request_id,
 # логгер читает его при форматировании любой записи этого запроса.
@@ -86,6 +87,28 @@ class NoPIIFilter(logging.Filter):
         return True
 
 
+_WEBHOOK_PATH_RE = re.compile(re.escape(BOT_WEBHOOK_PATH) + r"/[^/\s?\"']+")
+
+
+def redact_webhook_path(text: str) -> str:
+    """Заменить секретный сегмент пути вебхука на ``***`` (он выводится из ``WEBHOOK_SECRET``)."""
+    return _WEBHOOK_PATH_RE.sub(WEBHOOK_PATH_REDACTED, text)
+
+
+class WebhookPathFilter(logging.Filter):
+    """Маскирует секретный сегмент пути вебхука в сообщениях и аргументах (``uvicorn.access``)."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Подменить сообщение и строковые аргументы; запись не отбрасывается."""
+        if isinstance(record.msg, str):
+            record.msg = redact_webhook_path(record.msg)
+        if isinstance(record.args, tuple):
+            record.args = tuple(
+                redact_webhook_path(arg) if isinstance(arg, str) else arg for arg in record.args
+            )
+        return True
+
+
 class RequestIdFilter(logging.Filter):
     """Добавляет `request_id` текущего запроса в каждую запись лога."""
 
@@ -128,12 +151,18 @@ def setup_logging(app_env: str = "local") -> None:
         )
     )
     handler.addFilter(NoPIIFilter())
+    handler.addFilter(WebhookPathFilter())
     handler.addFilter(RequestIdFilter())
 
     root = logging.getLogger()
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(level)
+    # Служебный шум библиотек: asyncio и HTTP-клиенты в DEBUG не нужны нигде,
+    # а в staging/prod сторонним библиотекам достаточно WARNING.
+    third_party_level = logging.INFO if app_env == "local" else logging.WARNING
+    for name in ("asyncio", "httpx", "httpcore", "sqlalchemy.engine"):
+        logging.getLogger(name).setLevel(third_party_level)
 
     # Логи uvicorn/fastapi идут через наш root-хендлер своим не нужны.
     for noisy in ("uvicorn", "uvicorn.access", "uvicorn.error"):

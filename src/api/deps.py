@@ -13,6 +13,7 @@ from fastapi import Cookie, Depends, Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+from src.core import texts
 from src.core.config import get_settings
 from src.core.constants import (
     RATE_LIMIT_AUTH_PER_MINUTE,
@@ -25,7 +26,6 @@ from src.core.exceptions import AppError, PermissionDeniedError
 from src.core.rate_limit import RateLimiter
 from src.core.session_store import SessionStore
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
-from src.repositories.users import UserRepository
 from src.services.auth import AuthService
 from src.services.profile import ProfileService
 
@@ -57,7 +57,7 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 def _unauthenticated() -> AppError:
     """401 ``unauthenticated`` (docs/08 §1): нет или истекла сессия."""
-    return AppError("Требуется вход.", code="unauthenticated", http_status=401)
+    return AppError(texts.API_UNAUTHENTICATED, code="unauthenticated", http_status=401)
 
 
 def get_redis(request: Request) -> Redis:
@@ -68,7 +68,7 @@ def get_redis(request: Request) -> Redis:
 
 def get_session_store(redis: Annotated[Redis, Depends(get_redis)]) -> SessionStore:
     """Вернуть хранилище сессий."""
-    return SessionStore(redis)
+    return SessionStore(redis, get_settings().session_secret.get_secret_value())
 
 
 async def rate_limit_auth(request: Request, redis: Annotated[Redis, Depends(get_redis)]) -> None:
@@ -110,15 +110,15 @@ async def current_user(
     data = await store.get(session_id)
     if data is None:
         raise _unauthenticated()
-    user = await UserRepository(session).get_by_id(data.user_id)
-    if user is None:
+    account = await ProfileService(session).find_account(data.user_id)
+    if account is None:
         await store.delete(session_id)
         raise _unauthenticated()
-    if not user.is_active:
-        await store.delete_all_for_user(user.id)
+    if not account.is_active:
+        await store.delete_all_for_user(account.user.id)
         raise _unauthenticated()
-    await RateLimiter(redis).hit("user", str(user.id), RATE_LIMIT_USER_PER_MINUTE)
-    return CurrentUser(id=user.id, role=user.role, timezone=user.timezone)
+    await RateLimiter(redis).hit("user", str(account.user.id), RATE_LIMIT_USER_PER_MINUTE)
+    return account.user
 
 
 def require_role(*roles: UserRole) -> Callable[[CurrentUser], Awaitable[CurrentUser]]:

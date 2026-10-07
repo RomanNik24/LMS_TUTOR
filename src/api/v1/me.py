@@ -33,7 +33,7 @@ async def get_me(
     response_model=MeResponse,
     summary="Изменить часовой пояс или имя",
     operation_id="update_me",
-    responses=error_responses(401, 422, 429),
+    responses=error_responses(401, 403, 422, 429),
 )
 async def update_me(
     body: MeUpdateRequest,

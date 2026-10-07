@@ -39,7 +39,7 @@
 1. Вы   → TERM: промпт «СТАРТ» (§3.2)          → рабочая ветка сбрасывается на актуальный main (новые ветки не создаются)
 2. Вы   → CODE: промпт задачи из этого плана   → CODE пишет код + тесты, выдаёт отчёт
 3. Вы   → TERM: промпт «ФИНИШ» (§3.3)          → TERM запускает проверки, коммитит, пушит, открывает PR, ждёт CI
-4. Вы   проверяете по блоку «Проверка» задачи (§4) → нажимаете Squash and merge
+4. Вы   проверяете по блоку «Проверка» задачи (§4) → нажимаете Squash and merge (рекомендуется для чистой истории; технически не ограничено)
 5. Вы   → TERM: «Задача влита, вернись на main и обнови» → СТОП, следующая задача
 ```
 
@@ -71,7 +71,7 @@
 | Основа | Строим **с нуля по `docs/`**. Старый код не переносим |
 | Репозиторий | Создаёте вы, **public** на время разработки. Реальные данные учеников — только после перевода в private (T9.01) |
 | Секреты | Токен бота и ваш Telegram ID вставляете **только вы** и **только** в локальный `.env.local`. Агентам, в чат и в Git — никогда |
-| Защита `main` | Если GitHub не даст включить — работаем по правилу «**только через PR, merge только вы при зелёном CI**» |
+| Защита `main` | **Не настраивается** (решение владельца): ни branch protection, ни rulesets, ни обязательных проверок на GitHub. Остаётся рабочее правило: изменения идут через PR, merge делаете вы после зелёного CI; прямых коммитов и force-push в `main` нет |
 | Миграции | В `src/db/migrations/` (как в `docs/03`), `alembic.ini` в корне |
 | Зависимости | Агенты берут **актуальные стабильные и совместимые** версии (проверяют сами через `uv`/`pnpm`), список версий записывают в ADR |
 | Sentry | В разработке выключен (пустой `SENTRY_DSN`). Подключаем на сервере (T9.07) |
@@ -345,15 +345,14 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Ты TERM-агент. Это ЕДИНСТВЕННЫЙ раз, когда коммит идёт напрямую в main (репозиторий пустой).
 1) Запусти gitleaks detect --no-git (если gitleaks не установлен — установи с моего разрешения). Должно быть без находок.
 2) git add -A; убедись, что в индексе нет .env*; git commit -m "chore: initial commit with docs and root files"; git push -u origin main.
-3) Через gh настрой репозиторий: разрешить ТОЛЬКО squash merge, автоудаление веток после merge, включить Dependabot alerts и secret scanning (если доступны).
-4) Попробуй включить защиту main / ruleset: обязательный PR и обязательные проверки CI (проверки пока не существуют — включи только «require pull request, запрет force push»). Если недоступно — запиши об этом и ничего больше не делай.
+3) Через gh настрой репозиторий: автоудаление веток после merge, включить Dependabot alerts и secret scanning (если доступны). Способ слияния не ограничивай и защиту `main` / rulesets НЕ включай (решение владельца).
 5) Создай метки: bug, feature, docs, ops, blocked, needs-owner, security; вехи: Milestone A (скелет живёт), B (рабочее ядро), C (MVP готов).
-6) Создай docs/ops/REPO_SETTINGS.md с итогом (что включено, что нет, правило «только через PR, merge делает владелец при зелёном CI») и закоммить его через ветку docs/t0-03-repo-settings и PR.
+6) Создай docs/ops/REPO_SETTINGS.md с итогом (что включено, что нет, правило «через PR, merge делает владелец при зелёном CI», защита `main` не настраивается) и закоммить его через ветку docs/t0-03-repo-settings и PR.
 Секретов в выводе не показывай.
 ```
 **Проверка:**
 - 🤖 `git log --oneline` — один коммит (+ PR с настройками).
-- 👁 На GitHub в Settings → General → Pull Requests: включён только «Allow squash merging»; «Automatically delete head branches» включено.
+- 👁 На GitHub в Settings → General → Pull Requests: «Automatically delete head branches» включено.
 - 👁 В репозитории видны `docs/`, `LICENSE`, `README.md`, `.gitignore`. Файлов `.env*` нет.
 
 ### T0.04 · QWEN.md и разрешение противоречий в документации
@@ -511,9 +510,9 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Кто:** 🖥️ TERM · **Размер:** S
 **Промпт:**
 ```text
-Ты TERM-агент. 1) После merge T0.13 включи для main обязательные проверки backend, frontend, secrets (если ruleset/защита доступны; иначе запиши в docs/ops/REPO_SETTINGS.md, что правило соблюдается вручную). 2) Установи pre-commit (uv run pre-commit install) и выполни pre-commit run --all-files — покажи результат. 3) Если автоисправления изменили файлы — закоммить отдельной веткой "style: apply pre-commit autofix" через PR. 4) Обнови docs/ops/REPO_SETTINGS.md.
+Ты TERM-агент. 1) Защиту main и обязательные проверки НЕ включай (решение владельца); в docs/ops/REPO_SETTINGS.md зафиксируй, что правило «merge только при зелёном CI» соблюдается вручную. 2) Установи pre-commit (uv run pre-commit install) и выполни pre-commit run --all-files — покажи результат. 3) Если автоисправления изменили файлы — закоммить отдельной веткой "style: apply pre-commit autofix" через PR. 4) Обнови docs/ops/REPO_SETTINGS.md.
 ```
-**Проверка:** 🤖 `pre-commit run --all-files` — все `Passed`. 👁 Сделайте тестовый PR с ошибкой (или попросите TERM) → красный крестик блокирует merge/вы видите красный статус.
+**Проверка:** 🤖 `pre-commit run --all-files` — все `Passed`. 👁 Сделайте тестовый PR с ошибкой (или попросите TERM) → на PR виден красный статус (GitHub merge не блокирует: смотрите на статус сами).
 
 ### 🚪 Ворота G0 — «Основа готова»
 **Чек-лист приёмки владельца:**
@@ -760,6 +759,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Промпт:**
 ```text
 Задача T1.17 (CODE).
+0) Уже сделано в Dockerfile: uvicorn запускается с `--proxy-headers`; nginx обязан передавать `X-Forwarded-For`/`X-Forwarded-Proto` (`proxy_set_header`), иначе лимит `/auth/*` станет общим на всех. Сервис `app` в compose уже в профиле `full` и ходит к БД/Redis/MinIO по именам сервисов.
 1) nginx/conf.d/default.conf: / → статика SPA (try_files $uri /index.html); /api/, /telegram/, /health → app:8000; client_max_body_size 12m; кэш /assets/* (immutable); index.html — no-cache; gzip; заголовки безопасности (X-Content-Type-Options nosniff, Referrer-Policy no-referrer, CSP только со своим доменом, frame-ancestors для доменов Telegram — уточни по документации Telegram). TLS здесь не настраивай (завершается туннелем; SSL-блок и HSTS — в T9.02).
 2) frontend/Dockerfile (multi-stage: pnpm build → nginx), профиль compose "full": app + worker(пока не нужен — не добавляй) + nginx со сборкой фронтенда.
 3) Опиши запуск в README.

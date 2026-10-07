@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from src.core import texts
 from src.core.enums import UserRole
 
 DISPLAY_NAME_MAX_LENGTH = 150
@@ -55,9 +56,7 @@ class MeUpdateRequest(BaseModel):
         try:
             ZoneInfo(value)
         except (ZoneInfoNotFoundError, ValueError) as error:
-            raise ValueError(
-                "Неизвестный часовой пояс (нужен IANA, например Europe/Moscow)"
-            ) from error
+            raise ValueError(texts.ME_TIMEZONE_UNKNOWN) from error
         return value
 
     @field_validator("display_name")
@@ -67,11 +66,11 @@ class MeUpdateRequest(BaseModel):
             return None
         stripped = value.strip()
         if not stripped:
-            raise ValueError("Имя не может быть пустым")
+            raise ValueError(texts.ME_NAME_BLANK)
         return stripped
 
     @model_validator(mode="after")
     def _at_least_one_field(self) -> "MeUpdateRequest":
         if self.timezone is None and self.display_name is None:
-            raise ValueError("Укажите timezone или display_name")
+            raise ValueError(texts.ME_UPDATE_EMPTY)
         return self
