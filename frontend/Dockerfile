@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1
+# Образ фронтенда: сборка SPA (pnpm build) → Nginx со статикой и прокси на backend
+# (docs/10 §3, задача T1.17). Контекст сборки — КОРЕНЬ репозитория (нужен каталог nginx/):
+#   docker build -f frontend/Dockerfile .
+# В Compose это делает сервис `nginx` (профиль `full`).
+
+# ---------- Этап build: pnpm install --frozen-lockfile → pnpm build ----------
+# Node 22 — та же линия, что в CI (.github/workflows/ci.yml) и frontend/.nvmrc.
+FROM node:22-slim AS build
+
+# pnpm берётся из packageManager в package.json (corepack), версия не плавает.
+RUN corepack enable
+
+WORKDIR /app
+
+# Сначала манифесты и lock: слой с зависимостями пересобирается только при их изменении.
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY frontend/ ./
+
+# Публичные значения VITE_* вшиваются в сборку (секретов во фронтенде нет, docs/02 §7).
+ARG VITE_BOT_USERNAME=""
+ENV VITE_BOT_USERNAME=${VITE_BOT_USERNAME}
+
+# pnpm build = tsc --noEmit && vite build → /app/dist
+RUN pnpm build
+
+# ---------- Этап runtime: Nginx со статикой ----------
+FROM nginx:1.28-alpine AS runtime
+
+# Стандартный default.conf образа заменяется нашим; snippets подключаются через include.
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/snippets/ /etc/nginx/snippets/
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+# /health проксируется на backend: «healthy» значит, что работают и Nginx, и app.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health"]

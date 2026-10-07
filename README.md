@@ -42,6 +42,30 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
 Остановить окружение: `docker compose down` (с удалением томов данных —
 `docker compose down -v`).
 
+## Полный локальный стек (профиль `full`)
+
+Профиль `full` поднимает backend (`app`) и Nginx со сборкой фронтенда — так же, как будет на сервере.
+Nginx слушает `http://127.0.0.1:8080`: раздаёт SPA и проксирует `/api/`, `/telegram/`, `/health` на `app`.
+Адреса БД, Redis и MinIO для контейнера `app` задаёт `docker-compose.yml` (по именам сервисов).
+
+```bash
+# останови backend на хосте: app займёт порт 8000, а второй polling бота не нужен
+docker compose --env-file .env.local --profile full up -d --build
+docker compose --profile full ps              # postgres, redis, minio, app, nginx — healthy
+curl http://127.0.0.1:8080/health             # через Nginx → app
+docker compose --profile full exec app alembic upgrade head   # миграции (разово)
+docker compose --profile full exec app python scripts/seed_reference.py
+docker compose --profile full exec app python scripts/create_owner.py
+```
+
+- `VITE_BOT_USERNAME` (username бота без `@`) вшивается в сборку фронтенда: задайте его в `.env.local`
+  (или переменной окружения) до `--build`.
+- `PUBLIC_BASE_URL` в `.env.local` — адрес, по которому открывают приложение: `http://127.0.0.1:8080`
+  или адрес туннеля (`scripts/dev_tunnel.sh 8080`).
+- Конфигурация Nginx — `nginx/conf.d/default.conf` и `nginx/snippets/`. Заголовки безопасности
+  (CSP, `nosniff`, `Referrer-Policy`) уже включены; TLS и HSTS добавляются на сервере (T9.02).
+- Остановить: `docker compose --profile full down`.
+
 ## Запуск для разработки
 
 Нужны Docker, `uv`, Node 22 и `pnpm`. После шагов выше (инфраструктура поднята, `.env.local` заполнен):
