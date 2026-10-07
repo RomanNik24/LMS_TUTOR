@@ -54,3 +54,29 @@ class UserRepository(BaseRepository[User]):
         """
         stmt = select(User).where(User.role == role).order_by(User.id).limit(1)
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def lock_active_owner_ids(self) -> list[int]:
+        """Заблокировать (``FOR UPDATE``) и вернуть id активных владельцев.
+
+        Блокировка нужна, чтобы два одновременных понижения или архивации не оставили систему
+        без владельца: второй запрос дождётся первого и увидит уже одного владельца.
+        """
+        stmt = (
+            select(User.id)
+            .where(User.role == UserRole.OWNER, User.is_active.is_(True))
+            .order_by(User.id)
+            .with_for_update()
+        )
+        return list((await self._session.execute(stmt)).scalars())
+
+    async def list_staff(self, *, include_archived: bool) -> list[User]:
+        """Сотрудники (owner и manager) по алфавиту имени.
+
+        Args:
+            include_archived: Включать ли архивных.
+        """
+        stmt = select(User).where(User.role.in_([UserRole.OWNER, UserRole.MANAGER]))
+        if not include_archived:
+            stmt = stmt.where(User.is_active.is_(True))
+        stmt = stmt.order_by(User.display_name, User.id)
+        return list((await self._session.execute(stmt)).scalars())

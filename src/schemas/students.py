@@ -10,8 +10,6 @@
 """
 
 from typing import Self
-from urllib.parse import urlsplit
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -24,6 +22,7 @@ from src.core.constants import (
 from src.core.enums import UserRole
 from src.schemas.auth import DISPLAY_NAME_MAX_LENGTH
 from src.schemas.roles import audience_config
+from src.schemas.validators import clean_name, https_url, iana_timezone
 
 SCHOOL_CLASS_MIN = 1
 SCHOOL_CLASS_MAX = 11
@@ -75,34 +74,6 @@ class StudentCardOwner(StudentCardManager):
 # ------------------------------------------------------------------ запросы (вход)
 
 
-def _https_url(value: str | None) -> str | None:
-    """Ссылка профиля: только ``https://``; пустая строка означает «нет ссылки»."""
-    if value is None:
-        return None
-    stripped = value.strip()
-    if not stripped:
-        return None
-    parts = urlsplit(stripped)
-    if parts.scheme != "https" or not parts.netloc:
-        raise ValueError(texts.STUDENT_URL_NOT_HTTPS)
-    return stripped
-
-
-def _iana_timezone(value: str) -> str:
-    try:
-        ZoneInfo(value)
-    except (ZoneInfoNotFoundError, ValueError) as error:
-        raise ValueError(texts.ME_TIMEZONE_UNKNOWN) from error
-    return value
-
-
-def _clean_name(value: str) -> str:
-    stripped = value.strip()
-    if not stripped:
-        raise ValueError(texts.ME_NAME_BLANK)
-    return stripped
-
-
 class StudentCreate(BaseModel):
     """Создание профиля ученика (docs/08 §5.2).
 
@@ -122,9 +93,9 @@ class StudentCreate(BaseModel):
     lesson_price: int | None = Field(default=None, ge=0, le=LESSON_PRICE_MAX)
     teacher_id: int | None = None
 
-    _name = field_validator("display_name")(_clean_name)
-    _tz = field_validator("timezone")(_iana_timezone)
-    _urls = field_validator("video_url", "board_url")(_https_url)
+    _name = field_validator("display_name")(clean_name)
+    _tz = field_validator("timezone")(iana_timezone)
+    _urls = field_validator("video_url", "board_url")(https_url)
 
 
 class StudentUpdate(BaseModel):
@@ -146,17 +117,17 @@ class StudentUpdate(BaseModel):
     lesson_price: int | None = Field(default=None, ge=0, le=LESSON_PRICE_MAX)
     teacher_id: int | None = None
 
-    _urls = field_validator("video_url", "board_url")(_https_url)
+    _urls = field_validator("video_url", "board_url")(https_url)
 
     @field_validator("display_name")
     @classmethod
     def _name(cls, value: str | None) -> str | None:
-        return None if value is None else _clean_name(value)
+        return None if value is None else clean_name(value)
 
     @field_validator("timezone")
     @classmethod
     def _tz(cls, value: str | None) -> str | None:
-        return None if value is None else _iana_timezone(value)
+        return None if value is None else iana_timezone(value)
 
     @model_validator(mode="after")
     def _check_fields(self) -> Self:
