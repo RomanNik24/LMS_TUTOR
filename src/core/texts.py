@@ -79,6 +79,17 @@ TEMPLATE_FIELD_NOT_NULLABLE = "Это поле нельзя очистить."
 TEMPLATE_NO_PARTICIPANTS = "У шаблона должен остаться хотя бы один участник."
 TEMPLATE_HORIZON_INVALID = "Горизонт генерации — от 1 до 52 недель."
 
+# --- Файлы ДЗ (docs/09, T4.05) ---
+FILE_UNSUPPORTED = "Этот тип файла не поддерживается. Загрузите JPEG, PNG, HEIC или PDF."
+FILE_TOO_LARGE = "Файл слишком большой: не больше 10 МБ."
+FILE_EMPTY = "Файл пустой."
+FILES_LIMIT = "Можно загрузить не больше 10 файлов."
+FILE_NOT_FOUND = "Файл не найден."
+ASSIGNMENT_NOT_FOUND = "Выдача не найдена."
+HOMEWORK_NOT_FOUND = "Задание не найдено."
+ASSIGNMENT_NOT_EDITABLE = "Файлы нельзя менять: работа уже проверена или срок вышел."
+FILE_DEFAULT_NAME = "файл"
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."

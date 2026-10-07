@@ -1055,6 +1055,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Тесты: подмена расширения (.jpg с содержимым .exe → 415 unsupported_file_type), > 10 МБ → 413 file_too_large, 11-й файл, чужой файл → 404, HEIC конвертируется.
 ```
 **Проверка:** 🤖 тесты зелёные; 👁 в PR есть тестовые файлы-образцы небольшого размера (<100 КБ).
+**Статус:** ✅ `src/core/file_types.py` (тип по magic bytes: JPEG, PNG, HEIC, PDF), `src/core/images.py` (HEIC → JPEG, поворот по EXIF, длинная сторона ≤ 2400 px, JPEG 85, в потоке; защита от «бомб» по числу пикселей), `src/services/files.py` (`FileService`: загрузка решения, файла проверки, материала, удаление своего файла, подписанные ссылки с проверкой прав), `src/repositories/homework.py`, `src/schemas/files.py`; зависимости `pillow` и `pillow-heif`; тесты `tests/unit/test_file_types.py`, `test_images.py`, `test_file_prepare.py`, `tests/integration/test_file_service.py` (подмена расширения → 415, > 10 МБ → 413, 11-й файл, чужой файл → 404, HEIC конвертируется, очистка S3 при сбое БД). Тестовые файлы генерируются в памяти, образцы в репозиторий не добавлялись. Эндпоинты — T4.11.
 
 ### T4.06 · Создание и выдача заданий
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t4-06-create-homework` · **Коммит:** `feat(homework): create and assign homework`
