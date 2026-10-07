@@ -21,6 +21,7 @@ import { RequireRole } from "@/features/auth/RequireRole";
 import { HelloPage } from "@/features/auth/pages/HelloPage";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { ProfilePage } from "@/features/profile/ProfilePage";
 import { StaffPage } from "@/features/staff/StaffPage";
 import { StudentCardPage } from "@/features/students/StudentCardPage";
 import { StudentFormPage } from "@/features/students/StudentFormPage";
@@ -50,6 +51,7 @@ const studentRoutes: RouteObject = {
       element: <StudentLayout />,
       children: [
         { index: true, element: <Navigate to="schedule" replace /> },
+        { path: "profile", element: <ProfilePage /> },
         {
           path: "schedule",
           element: (
