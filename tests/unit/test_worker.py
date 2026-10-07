@@ -46,6 +46,39 @@ def test_broker_has_no_read_timeout_for_blocking_pop(worker: SimpleNamespace) ->
     assert kwargs["socket_keepalive"] is True
 
 
+def test_broker_reconnects_dead_pooled_connections(worker: SimpleNamespace) -> None:
+    """Регрессия аудита 2026-10-08: без повтора мёртвое соединение пула теряло отправку задачи."""
+    from redis.exceptions import ConnectionError as RedisConnectionError  # noqa: PLC0415
+    from redis.exceptions import TimeoutError as RedisTimeoutError  # noqa: PLC0415
+
+    kwargs = worker.broker.broker.connection_pool.connection_kwargs
+    assert kwargs["health_check_interval"] == 30
+    assert set(kwargs["retry_on_error"]) == {RedisConnectionError, RedisTimeoutError}
+    assert kwargs["retry"].get_retries() == 3
+
+
+async def test_scheduler_logs_failed_send_instead_of_losing_it(
+    worker: SimpleNamespace, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Сбой отправки пишется в журнал сразу, с именем задачи, и не роняет цикл планировщика."""
+    from taskiq import ScheduledTask  # noqa: PLC0415
+    from taskiq.exceptions import SendTaskError  # noqa: PLC0415
+
+    scheduler = worker.broker.scheduler
+
+    async def broken_kick(message: object) -> None:
+        raise SendTaskError
+
+    scheduler.broker.kick = broken_kick
+    task = ScheduledTask(
+        task_name="send_morning_digest", labels={}, args=[], kwargs={}, cron="0 * * * *"
+    )
+    with caplog.at_level(logging.ERROR, logger="src.worker.broker"):
+        await scheduler.on_ready(scheduler.sources[0], task)
+    assert "send_morning_digest" in caplog.text
+    assert caplog.records[-1].exc_info is not None
+
+
 def test_heartbeat_is_scheduled_every_five_minutes(worker: SimpleNamespace) -> None:
     task = worker.tasks.heartbeat
     assert task.task_name == "heartbeat"
