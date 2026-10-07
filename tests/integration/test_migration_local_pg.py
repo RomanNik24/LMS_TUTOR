@@ -61,6 +61,10 @@ T102_TABLES = {
     "auth_tokens",
     "audit_log",
     "grade_scales",
+    "schedule_templates",
+    "schedule_template_participants",
+    "lessons",
+    "lesson_participants",
 }
 
 EXPECTED_FK_DELETE_RULES = {
@@ -75,6 +79,16 @@ EXPECTED_FK_DELETE_RULES = {
     "fk_student_profiles_teacher_id": "r",
     "fk_student_subjects_subject_id": "c",
     "fk_student_subjects_student_id": "c",
+    "fk_schedule_templates_teacher_id": "r",
+    "fk_schedule_templates_subject_id": "r",
+    "fk_schedule_template_participants_template_id": "c",
+    "fk_schedule_template_participants_student_id": "r",
+    "fk_lessons_teacher_id": "r",
+    "fk_lessons_subject_id": "r",
+    "fk_lessons_template_id": "n",
+    "fk_lessons_cancelled_by": "n",
+    "fk_lesson_participants_lesson_id": "c",
+    "fk_lesson_participants_student_id": "r",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -84,6 +98,12 @@ EXPECTED_CHECK_NAMES = {
     "ck_auth_tokens_purpose",
     "ck_grade_scales_primary_score_nonneg",
     "ck_student_profiles_lesson_price_nonneg",
+    "ck_schedule_templates_weekday_range",
+    "ck_schedule_templates_duration_positive",
+    "ck_lessons_status",
+    "ck_lessons_end_after_start",
+    "ck_lesson_participants_attendance",
+    "ck_lesson_participants_price_snapshot_nonneg",
 }
 
 
@@ -401,6 +421,7 @@ def test_constraints_created_by_migration_local(
                 "uq_exam_types_code",
                 "uq_users_telegram_id",
                 "uq_auth_tokens_token_hash",
+                "uq_lessons_template_id_start_at",
                 "uq_grade_scales_exam_type_id_valid_year_primary_score",
             }
 

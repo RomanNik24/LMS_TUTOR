@@ -904,6 +904,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T3.01 (CODE). Модели и новая Alembic-ревизия (с рабочим downgrade) для: schedule_templates, schedule_template_participants, lessons, lesson_participants — строго по docs/04 §3–§4: CHECK (end_at > start_at, weekday 1..7), UNIQUE (template_id, start_at), EXCLUDE USING gist для запрета пересечения уроков одного преподавателя (btree_gist), индексы. Тест соответствия метаданных docs/04 + тест вставки пересекающегося урока (должен падать).
 ```
 **Проверка:** 🤖 `uv run pytest -q` зелёный; 🤖 `uv run alembic heads` — одна голова.
+**Статус:** ✅ модели `src/db/models/schedule.py` (4 таблицы), ревизия `a3b1c0d4e5f6` (downgrade сохраняет `btree_gist`, он принадлежит первой ревизии); тесты `tests/unit/test_schedule_models.py` и `tests/integration/test_schedule_constraints.py` (пересечение, встык, отменённый урок, `end_at > start_at`, уникальность `template_id + start_at`, дефолты). Проверено на реальных PostgreSQL 16 и Redis: 475 тестов.
 
 ### T3.02 · Проверка схемы расписания на реальной БД
 **Кто:** 🖥️ TERM · **Размер:** S
