@@ -16,7 +16,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core import texts
-from src.core.constants import SCHEDULE_HORIZON_WEEKS_DEFAULT
+from src.core.constants import (
+    LIST_LIMIT_DEFAULT,
+    LIST_LIMIT_MAX,
+    SCHEDULE_HORIZON_WEEKS_DEFAULT,
+)
 from src.core.current_user import CurrentUser
 from src.core.enums import AttendanceStatus, LessonStatus, UserRole
 from src.core.exceptions import (
@@ -36,13 +40,17 @@ from src.repositories.subjects import SubjectRepository
 from src.repositories.users import UserRepository
 from src.schemas.schedule import (
     HORIZON_WEEKS_MAX,
+    PERIOD_MAX_DAYS,
     GenerationResult,
     LessonCancel,
     LessonComplete,
     LessonCreate,
     LessonItem,
+    LessonListPage,
     LessonParticipantItem,
     LessonReschedule,
+    LessonUpdate,
+    StudentLessonItem,
     TemplateCreate,
     TemplateItem,
     TemplateUpdate,
@@ -53,6 +61,7 @@ AUDIT_LESSON_CREATED = "lesson.created"
 AUDIT_LESSON_RESCHEDULED = "lesson.rescheduled"
 AUDIT_LESSON_CANCELLED = "lesson.cancelled"
 AUDIT_LESSON_COMPLETED = "lesson.completed"
+AUDIT_LESSON_UPDATED = "lesson.updated"
 AUDIT_TEMPLATE_CREATED = "schedule_template.created"
 AUDIT_TEMPLATE_UPDATED = "schedule_template.updated"
 AUDIT_TEMPLATE_DEACTIVATED = "schedule_template.deactivated"
@@ -256,6 +265,154 @@ class ScheduleService:
         )
         await self._session.commit()
         return await self._build_item(lesson)
+
+    async def list_lessons(
+        self,
+        actor: CurrentUser,
+        *,
+        start: datetime,
+        end: datetime,
+        student_id: int | None = None,
+        teacher_id: int | None = None,
+        status: LessonStatus | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+        offset: int = 0,
+    ) -> LessonListPage:
+        """Уроки с началом в ``[start, end)`` для сотрудников; период не больше года.
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+            ValidationError: ``invalid_period`` или ``invalid_list_params``.
+        """
+        self._require_staff(actor)
+        self._check_period(start, end)
+        if not 1 <= limit <= LIST_LIMIT_MAX or offset < 0:
+            raise ValidationError(texts.LIST_PARAMS_INVALID, code="invalid_list_params")
+        lessons, total = await self._lessons.list_in_period(
+            start,
+            end,
+            student_id=student_id,
+            teacher_id=teacher_id,
+            status=status,
+            limit=limit,
+            offset=offset,
+        )
+        return LessonListPage(
+            items=await self._build_items(lessons), total=total, limit=limit, offset=offset
+        )
+
+    async def get_lesson(self, actor: CurrentUser, lesson_id: int) -> LessonItem:
+        """Детали урока для сотрудников.
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+            NotFoundError: ``lesson_not_found``.
+        """
+        self._require_staff(actor)
+        lesson = await self._lessons.get_by_id(lesson_id)
+        if lesson is None:
+            raise NotFoundError(texts.LESSON_NOT_FOUND, code="lesson_not_found")
+        return await self._build_item(lesson)
+
+    async def update_lesson(
+        self, actor: CurrentUser, lesson_id: int, data: LessonUpdate
+    ) -> LessonItem:
+        """Изменить тему, заметку, ссылки и/или участников урока.
+
+        Урок из шаблона после правки получает ``is_detached = true``: правка шаблона его не
+        затрагивает. Участников можно менять только у запланированного урока.
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+            NotFoundError: ``lesson_not_found`` или участник не найден.
+            BusinessRuleError: ``lesson_not_scheduled`` (участники проведённого/отменённого
+                урока) или ``student_archived``.
+        """
+        self._require_staff(actor)
+        lesson = await self._lessons.get_by_id(lesson_id, for_update=True)
+        if lesson is None:
+            raise NotFoundError(texts.LESSON_NOT_FOUND, code="lesson_not_found")
+        fields = data.model_fields_set
+        if "student_ids" in fields and data.student_ids is not None:
+            if lesson.status != LessonStatus.SCHEDULED:
+                raise BusinessRuleError(texts.LESSON_NOT_SCHEDULED, code="lesson_not_scheduled")
+            current = set(await self._lessons.participant_ids(lesson.id))
+            wanted = list(dict.fromkeys(data.student_ids))
+            added = [sid for sid in wanted if sid not in current]
+            await self._resolve_students(added)
+            await self._lessons.remove_participants(lesson.id, sorted(current - set(wanted)))
+            await self._lessons.add_participants(lesson.id, added)
+        for name in ("topic", "teacher_note", "video_url_override", "board_url_override"):
+            if name in fields:
+                setattr(lesson, name, getattr(data, name))
+        if lesson.template_id is not None:
+            lesson.is_detached = True
+        lesson.updated_at = utcnow()
+        await self._audit.record(
+            actor_user_id=actor.id,
+            action=AUDIT_LESSON_UPDATED,
+            entity_type=AUDIT_ENTITY_LESSON,
+            entity_id=lesson.id,
+            data={"fields": sorted(fields)},
+        )
+        await self._session.commit()
+        return await self._build_item(lesson)
+
+    # ------------------------------------------------------------------ уроки ученика
+
+    async def list_student_lessons(
+        self, actor: CurrentUser, *, start: datetime, end: datetime
+    ) -> list[StudentLessonItem]:
+        """Уроки самого ученика с началом в ``[start, end)``; период не больше года.
+
+        Raises:
+            PermissionDeniedError: Не ученик.
+            ValidationError: ``invalid_period``.
+        """
+        self._require_student(actor)
+        self._check_period(start, end)
+        lessons = await self._lessons.list_for_student(actor.id, start, end)
+        return await self._student_items(actor.id, lessons)
+
+    async def get_student_lesson(self, actor: CurrentUser, lesson_id: int) -> StudentLessonItem:
+        """Карточка урока ученика; чужой или несуществующий урок — одинаково 404.
+
+        Raises:
+            PermissionDeniedError: Не ученик.
+            NotFoundError: ``lesson_not_found``.
+        """
+        self._require_student(actor)
+        lesson = await self._lessons.get_for_student(lesson_id, actor.id)
+        if lesson is None:
+            raise NotFoundError(texts.LESSON_NOT_FOUND, code="lesson_not_found")
+        return (await self._student_items(actor.id, [lesson]))[0]
+
+    async def _student_items(
+        self, student_id: int, lessons: list[Lesson]
+    ) -> list[StudentLessonItem]:
+        """Уроки ученика: ссылки «урок → профиль», только число участников."""
+        profile = await self._profiles.get_by_user_id(student_id)
+        counts = await self._lessons.participant_counts([lesson.id for lesson in lessons])
+        codes = await self._lessons.subject_codes(sorted({lesson.subject_id for lesson in lessons}))
+        return [
+            StudentLessonItem(
+                id=lesson.id,
+                subject_code=codes[lesson.subject_id],
+                start_at=lesson.start_at,
+                end_at=lesson.end_at,
+                status=lesson.status,
+                topic=lesson.topic,
+                video_url=lesson.video_url_override or (profile.video_url if profile else None),
+                board_url=lesson.board_url_override or (profile.board_url if profile else None),
+                participants_count=counts.get(lesson.id, 0),
+            )
+            for lesson in lessons
+        ]
+
+    @staticmethod
+    def _require_student(actor: CurrentUser) -> None:
+        if actor.role != UserRole.STUDENT:
+            raise PermissionDeniedError()
 
     # ------------------------------------------------------------------ шаблоны (T3.06)
 
@@ -470,30 +627,45 @@ class ScheduleService:
 
     async def _build_item(self, lesson: Lesson) -> LessonItem:
         """Ответ для сотрудников по текущему состоянию урока в БД."""
-        rows = await self._lessons.participants_with_names(lesson.id)
-        return LessonItem(
-            id=lesson.id,
-            teacher_id=lesson.teacher_id,
-            subject_code=await self._lessons.subject_code(lesson.subject_id),
-            start_at=lesson.start_at,
-            end_at=lesson.end_at,
-            status=lesson.status,
-            is_detached=lesson.is_detached,
-            video_url_override=lesson.video_url_override,
-            board_url_override=lesson.board_url_override,
-            topic=lesson.topic,
-            completed_at=lesson.completed_at,
-            cancelled_at=lesson.cancelled_at,
-            cancel_reason=lesson.cancel_reason,
-            participants=[
-                LessonParticipantItem(
-                    student_id=participant.student_id,
-                    display_name=name,
-                    attendance=participant.attendance,
-                )
-                for participant, name in rows
-            ],
-        )
+        return (await self._build_items([lesson]))[0]
+
+    async def _build_items(self, lessons: list[Lesson]) -> list[LessonItem]:
+        """Ответы для сотрудников по нескольким урокам (участники и предметы — пачкой)."""
+        participants = await self._lessons.participants_for([lesson.id for lesson in lessons])
+        codes = await self._lessons.subject_codes(sorted({lesson.subject_id for lesson in lessons}))
+        return [
+            LessonItem(
+                id=lesson.id,
+                teacher_id=lesson.teacher_id,
+                subject_code=codes[lesson.subject_id],
+                start_at=lesson.start_at,
+                end_at=lesson.end_at,
+                status=lesson.status,
+                is_detached=lesson.is_detached,
+                video_url_override=lesson.video_url_override,
+                board_url_override=lesson.board_url_override,
+                topic=lesson.topic,
+                teacher_note=lesson.teacher_note,
+                completed_at=lesson.completed_at,
+                cancelled_at=lesson.cancelled_at,
+                cancel_reason=lesson.cancel_reason,
+                participants=[
+                    LessonParticipantItem(
+                        student_id=participant.student_id,
+                        display_name=name,
+                        attendance=participant.attendance,
+                    )
+                    for participant, name in participants.get(lesson.id, [])
+                ],
+            )
+            for lesson in lessons
+        ]
+
+    @staticmethod
+    def _check_period(start: datetime, end: datetime) -> None:
+        """Период фильтра: конец позже начала и не больше года."""
+        if end <= start or end - start > timedelta(days=PERIOD_MAX_DAYS):
+            raise ValidationError(texts.LESSON_PERIOD_INVALID, code="invalid_period")
 
     # ------------------------------------------------------------------ генерация уроков
 

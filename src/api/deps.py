@@ -28,6 +28,7 @@ from src.core.session_store import SessionStore
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
 from src.services.auth import AuthService
 from src.services.profile import ProfileService
+from src.services.schedule import ScheduleService
 from src.services.staff import StaffService
 from src.services.students import StudentService
 
@@ -171,6 +172,8 @@ def get_profile_service(session: Annotated[AsyncSession, Depends(get_session)]) 
 # Сотрудник (owner или manager) и только владелец: зависимости эндпоинтов /admin/*.
 StaffActor = Annotated[CurrentUser, Depends(require_role(UserRole.OWNER, UserRole.MANAGER))]
 OwnerActor = Annotated[CurrentUser, Depends(require_role(UserRole.OWNER))]
+# Ученик: зависимость эндпоинтов /student/*.
+StudentActor = Annotated[CurrentUser, Depends(require_role(UserRole.STUDENT))]
 
 
 def get_student_service(
@@ -179,6 +182,13 @@ def get_student_service(
 ) -> StudentService:
     """Собрать ``StudentService`` на запрос."""
     return StudentService(session, auth)
+
+
+def get_schedule_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ScheduleService:
+    """Собрать ``ScheduleService`` на запрос (горизонт генерации — из настроек)."""
+    return ScheduleService(session, get_settings().schedule_horizon_weeks)
 
 
 def get_staff_service(

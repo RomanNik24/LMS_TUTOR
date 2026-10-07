@@ -13,6 +13,8 @@ from src.schemas.validators import https_url, iana_timezone
 LESSON_MAX_MINUTES = 12 * 60
 LESSON_MAX_PARTICIPANTS = 20
 TOPIC_MAX_LENGTH = 255
+TEACHER_NOTE_MAX_LENGTH = 5000
+PERIOD_MAX_DAYS = 366
 URL_MAX_LENGTH = 500
 CANCEL_REASON_MAX_LENGTH = 255
 WEEKDAY_MIN = 1
@@ -127,6 +129,44 @@ class LessonComplete(BaseModel):
         return self
 
 
+class LessonUpdate(BaseModel):
+    """Частичная правка урока: тема, заметка, ссылки, участники (только пока урок запланирован).
+
+    ``null`` очищает тему, заметку и ссылки; список участников очищать нельзя.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str | None = Field(default=None, max_length=TOPIC_MAX_LENGTH)
+    teacher_note: str | None = Field(default=None, max_length=TEACHER_NOTE_MAX_LENGTH)
+    video_url_override: str | None = Field(default=None, max_length=URL_MAX_LENGTH)
+    board_url_override: str | None = Field(default=None, max_length=URL_MAX_LENGTH)
+    student_ids: list[int] | None = Field(
+        default=None, min_length=1, max_length=LESSON_MAX_PARTICIPANTS
+    )
+
+    _urls = field_validator("video_url_override", "board_url_override")(https_url)
+
+    @field_validator("topic", "teacher_note")
+    @classmethod
+    def _text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if not self.model_fields_set:
+            raise ValueError(texts.LESSON_UPDATE_EMPTY)
+        if "student_ids" in self.model_fields_set and self.student_ids is None:
+            raise ValueError(f"student_ids: {texts.LESSON_FIELD_NOT_NULLABLE}")
+        ids = self.student_ids or []
+        if len(set(ids)) != len(ids):
+            raise ValueError(texts.LESSON_STUDENTS_DUPLICATE)
+        return self
+
+
 class LessonParticipantItem(BaseModel):
     """Участник урока в ответе для сотрудников (без цены и признака оплаты)."""
 
@@ -148,10 +188,38 @@ class LessonItem(BaseModel):
     video_url_override: str | None
     board_url_override: str | None
     topic: str | None
+    teacher_note: str | None
     completed_at: datetime | None
     cancelled_at: datetime | None
     cancel_reason: str | None
     participants: list[LessonParticipantItem]
+
+
+class LessonListPage(BaseModel):
+    """Страница списка уроков для сотрудников (docs/08 §1: items, total, limit, offset)."""
+
+    items: list[LessonItem]
+    total: int
+    limit: int
+    offset: int
+
+
+class StudentLessonItem(BaseModel):
+    """Урок для ученика: только его данные.
+
+    Ссылки уже «разрешены» (переопределение урока → ссылка из профиля ученика). Других
+    участников ученик не видит, только их число; заметок и финансовых полей в схеме нет.
+    """
+
+    id: int
+    subject_code: str
+    start_at: datetime
+    end_at: datetime
+    status: LessonStatus
+    topic: str | None
+    video_url: str | None
+    board_url: str | None
+    participants_count: int
 
 
 # ---------------------------------------------------------------- шаблоны (T3.06)
