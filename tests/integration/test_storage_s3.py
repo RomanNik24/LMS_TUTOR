@@ -2,7 +2,8 @@
 
 По умолчанию поднимается локальный S3-сервер ``moto`` (HTTP-протокол S3 без Docker). Чтобы
 прогнать тесты против MinIO, задайте ``S3_TEST_ENDPOINT``, ``S3_TEST_BUCKET``,
-``S3_TEST_ACCESS_KEY`` и ``S3_TEST_SECRET_KEY`` (бакет должен существовать). Настоящий MinIO проверяет TERM (T4.04).
+``S3_TEST_ACCESS_KEY`` и ``S3_TEST_SECRET_KEY`` (бакет должен существовать).
+Настоящий MinIO проверяет TERM (T4.04).
 """
 
 import os
