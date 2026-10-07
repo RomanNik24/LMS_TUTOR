@@ -106,3 +106,13 @@ WEBHOOK_PATH_REDACTED = BOT_WEBHOOK_PATH + "/***"
 # Повторы отправки уведомлений при сетевых сбоях (docs/05 §6.4): паузы 1, 5, 15 минут,
 # после третьего повтора уведомление получает статус failed.
 NOTIFICATION_RETRY_DELAYS_SECONDS = (60, 300, 900)
+
+# Доставка уведомлений (docs/05 §6.4)
+NOTIFICATION_BATCH_SIZE = 25
+NOTIFICATION_MAX_BATCHES = 100
+# ~25 сообщений в секунду: лимит Telegram на массовые отправки
+NOTIFICATION_SEND_PAUSE_SECONDS = 0.04
+QUIET_HOURS_START = 22
+QUIET_HOURS_END = 8
+# Урок ближе этого срока делает отмену или перенос срочными (игнорируют тихие часы)
+URGENT_LESSON_CHANGE_HOURS = 12
