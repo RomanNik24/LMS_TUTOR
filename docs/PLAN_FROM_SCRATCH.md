@@ -954,6 +954,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T3.06 (CODE). CRUD шаблонов (weekday, start_local_time, timezone, участники, период, пауза); generate_lessons(horizon_weeks из SCHEDULE_HORIZON_WEEKS): идемпотентно (INSERT ... ON CONFLICT DO NOTHING по UNIQUE(template_id,start_at)), generated_until; правка шаблона затрагивает ТОЛЬКО будущие уроки с is_detached=false; ручная принудительная генерация. Тесты US-02: повторный запуск без дублей; вручную изменённый урок не перезаписывается; смена DST не сдвигает локальное время; пауза шаблона.
 ```
 **Проверка:** 🤖 тесты зелёные.
+**Статус:** ✅ `ScheduleService.create_template / update_template / deactivate_template / list_templates / generate_lessons`, схемы `TemplateCreate/Update/Item`, `GenerationResult`, репозиторий `schedule_templates`; генерация через `INSERT ... ON CONFLICT DO NOTHING` (дубль и пересечение пропускаются), окно после `generated_until`, прошедшее время не создаётся; правка и отключение удаляют и пересоздают только будущие неизменённые запланированные уроки; тесты `tests/integration/test_schedule_templates.py`, `tests/unit/test_template_schemas.py`. Известное ограничение: при правке шаблона урок, перенесённый на другой день, не «помнит» исходную дату, и на старом месте может появиться новый урок (в пределах суток и для отменённых дат это учтено). Запуск генерации воркером (03:00) — этап 7.
 
 ### T3.07 · REST расписания
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t3-07-schedule-api` · **Коммит:** `feat(api): add schedule endpoints`

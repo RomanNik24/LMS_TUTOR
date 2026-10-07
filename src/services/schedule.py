@@ -10,11 +10,13 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import date, datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core import texts
+from src.core.constants import SCHEDULE_HORIZON_WEEKS_DEFAULT
 from src.core.current_user import CurrentUser
 from src.core.enums import AttendanceStatus, LessonStatus, UserRole
 from src.core.exceptions import (
@@ -24,20 +26,26 @@ from src.core.exceptions import (
     PermissionDeniedError,
     ValidationError,
 )
-from src.core.timeutils import utcnow
-from src.db.models import Lesson, User
+from src.core.timeutils import local_date_of, utcnow, weekly_starts_utc
+from src.db.models import Lesson, ScheduleTemplate, User
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.lessons import LessonRepository
+from src.repositories.schedule_templates import ScheduleTemplateRepository
 from src.repositories.student_profiles import StudentProfileRepository
 from src.repositories.subjects import SubjectRepository
 from src.repositories.users import UserRepository
 from src.schemas.schedule import (
+    HORIZON_WEEKS_MAX,
+    GenerationResult,
     LessonCancel,
     LessonComplete,
     LessonCreate,
     LessonItem,
     LessonParticipantItem,
     LessonReschedule,
+    TemplateCreate,
+    TemplateItem,
+    TemplateUpdate,
 )
 from src.services.auth import STAFF_ROLES
 
@@ -45,6 +53,11 @@ AUDIT_LESSON_CREATED = "lesson.created"
 AUDIT_LESSON_RESCHEDULED = "lesson.rescheduled"
 AUDIT_LESSON_CANCELLED = "lesson.cancelled"
 AUDIT_LESSON_COMPLETED = "lesson.completed"
+AUDIT_TEMPLATE_CREATED = "schedule_template.created"
+AUDIT_TEMPLATE_UPDATED = "schedule_template.updated"
+AUDIT_TEMPLATE_DEACTIVATED = "schedule_template.deactivated"
+AUDIT_LESSONS_GENERATED = "lessons.generated"
+AUDIT_ENTITY_TEMPLATE = "schedule_template"
 AUDIT_ENTITY_LESSON = "lesson"
 OVERLAP_CONSTRAINT = "ex_lessons_teacher_no_overlap"
 
@@ -52,13 +65,18 @@ OVERLAP_CONSTRAINT = "ex_lessons_teacher_no_overlap"
 class ScheduleService:
     """Расписание: создание урока с защитой от пересечений."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self, session: AsyncSession, horizon_weeks: int = SCHEDULE_HORIZON_WEEKS_DEFAULT
+    ) -> None:
         """Создать сервис.
 
         Args:
             session: Сессия БД на текущую единицу работы.
+            horizon_weeks: Горизонт генерации, недель (``SCHEDULE_HORIZON_WEEKS``).
         """
         self._session = session
+        self._horizon_weeks = horizon_weeks
+        self._templates = ScheduleTemplateRepository(session)
         self._users = UserRepository(session)
         self._subjects = SubjectRepository(session)
         self._lessons = LessonRepository(session)
@@ -239,6 +257,155 @@ class ScheduleService:
         await self._session.commit()
         return await self._build_item(lesson)
 
+    # ------------------------------------------------------------------ шаблоны (T3.06)
+
+    async def create_template(self, actor: CurrentUser, data: TemplateCreate) -> TemplateItem:
+        """Создать шаблон «каждую неделю» и сразу сгенерировать уроки на горизонт.
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+            ValidationError: Неизвестный предмет или недопустимый преподаватель.
+            NotFoundError / BusinessRuleError: Участник не найден или в архиве.
+        """
+        self._require_staff(actor)
+        teacher_id = await self._resolve_teacher(actor, data.teacher_id)
+        subject_id = await self._resolve_subject(data.subject_code)
+        await self._resolve_students(data.student_ids)
+        template = await self._templates.add(
+            ScheduleTemplate(
+                teacher_id=teacher_id,
+                subject_id=subject_id,
+                weekday=data.weekday,
+                start_local_time=data.start_local_time,
+                duration_minutes=data.duration_minutes,
+                timezone=data.timezone,
+                starts_on=data.starts_on,
+                ends_on=data.ends_on,
+            )
+        )
+        await self._templates.replace_participants(template.id, data.student_ids)
+        created, skipped = await self._generate(template, utcnow(), self._horizon_weeks)
+        await self._audit.record(
+            actor_user_id=actor.id,
+            action=AUDIT_TEMPLATE_CREATED,
+            entity_type=AUDIT_ENTITY_TEMPLATE,
+            entity_id=template.id,
+            data={"created": created, "skipped": skipped},
+        )
+        await self._session.commit()
+        return await self._template_item(template, data.subject_code)
+
+    async def list_templates(self, actor: CurrentUser) -> list[TemplateItem]:
+        """Все шаблоны по возрастанию id (включая отключённые)."""
+        self._require_staff(actor)
+        return [
+            await self._template_item(
+                template, await self._lessons.subject_code(template.subject_id)
+            )
+            for template in await self._templates.list_all()
+        ]
+
+    async def update_template(
+        self, actor: CurrentUser, template_id: int, data: TemplateUpdate
+    ) -> TemplateItem:
+        """Изменить шаблон; затрагивает ТОЛЬКО будущие неизменённые уроки.
+
+        Будущие запланированные уроки шаблона с ``is_detached = false`` удаляются и создаются
+        заново по новым правилам. Изменённые вручную (``is_detached``), проведённые, отменённые
+        и прошедшие уроки не трогаются; даты, где у шаблона уже есть урок (в т. ч. отменённый
+        или перенесённый внутри суток), заново не создаются.
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+            NotFoundError: ``template_not_found``.
+            ValidationError: ``ends_on`` раньше ``starts_on``.
+            NotFoundError / BusinessRuleError: Новый участник не найден или в архиве.
+        """
+        self._require_staff(actor)
+        template = await self._load_template(template_id)
+        fields = data.model_fields_set
+        if "student_ids" in fields and data.student_ids is not None:
+            await self._resolve_students(data.student_ids)
+            await self._templates.replace_participants(template.id, data.student_ids)
+        for name in ("weekday", "start_local_time", "duration_minutes", "timezone", "starts_on"):
+            value = getattr(data, name)
+            if name in fields and value is not None:
+                setattr(template, name, value)
+        if "ends_on" in fields:
+            template.ends_on = data.ends_on
+        if "is_active" in fields and data.is_active is not None:
+            template.is_active = data.is_active
+        if template.ends_on is not None and template.ends_on < template.starts_on:
+            raise ValidationError(texts.TEMPLATE_ENDS_BEFORE_START, code="invalid_period")
+        template.updated_at = utcnow()
+        removed, created, skipped = await self._regenerate(template)
+        await self._audit.record(
+            actor_user_id=actor.id,
+            action=AUDIT_TEMPLATE_UPDATED,
+            entity_type=AUDIT_ENTITY_TEMPLATE,
+            entity_id=template.id,
+            data={"removed": removed, "created": created, "skipped": skipped},
+        )
+        await self._session.commit()
+        return await self._template_item(
+            template, await self._lessons.subject_code(template.subject_id)
+        )
+
+    async def deactivate_template(self, actor: CurrentUser, template_id: int) -> TemplateItem:
+        """Отключить шаблон: новые уроки не создаются, будущие неизменённые уроки удаляются."""
+        self._require_staff(actor)
+        template = await self._load_template(template_id)
+        template.is_active = False
+        template.updated_at = utcnow()
+        removed, _, _ = await self._regenerate(template)
+        await self._audit.record(
+            actor_user_id=actor.id,
+            action=AUDIT_TEMPLATE_DEACTIVATED,
+            entity_type=AUDIT_ENTITY_TEMPLATE,
+            entity_id=template.id,
+            data={"removed": removed},
+        )
+        await self._session.commit()
+        return await self._template_item(
+            template, await self._lessons.subject_code(template.subject_id)
+        )
+
+    async def generate_lessons(
+        self, actor: CurrentUser | None = None, horizon_weeks: int | None = None
+    ) -> GenerationResult:
+        """Дозаполнить уроки по всем включённым шаблонам на горизонт (идемпотентно).
+
+        ``actor = None`` — вызов воркера (ежедневно в 03:00); с ``actor`` — ручной запуск
+        сотрудником. Повторный запуск не создаёт дублей; занятое время пропускается.
+
+        Raises:
+            PermissionDeniedError: ``actor`` не сотрудник.
+            ValidationError: Горизонт вне 1..52 недель.
+        """
+        if actor is not None:
+            self._require_staff(actor)
+        weeks = self._horizon_weeks if horizon_weeks is None else horizon_weeks
+        if not 1 <= weeks <= HORIZON_WEEKS_MAX:
+            raise ValidationError(texts.TEMPLATE_HORIZON_INVALID, code="invalid_horizon")
+        now = utcnow()
+        templates = await self._templates.list_all(only_active=True)
+        total_created = total_skipped = 0
+        for template in templates:
+            created, skipped = await self._generate(template, now, weeks)
+            total_created += created
+            total_skipped += skipped
+        await self._audit.record(
+            actor_user_id=None if actor is None else actor.id,
+            action=AUDIT_LESSONS_GENERATED,
+            entity_type=AUDIT_ENTITY_TEMPLATE,
+            entity_id=None,
+            data={"templates": len(templates), "created": total_created, "skipped": total_skipped},
+        )
+        await self._session.commit()
+        return GenerationResult(
+            templates=len(templates), created=total_created, skipped=total_skipped
+        )
+
     # ------------------------------------------------------------------ внутреннее
 
     async def _resolve_teacher(self, actor: CurrentUser, teacher_id: int | None) -> int:
@@ -327,3 +494,108 @@ class ScheduleService:
                 for participant, name in rows
             ],
         )
+
+    # ------------------------------------------------------------------ генерация уроков
+
+    async def _load_template(self, template_id: int) -> ScheduleTemplate:
+        template = await self._templates.get_by_id(template_id, for_update=True)
+        if template is None:
+            raise NotFoundError(texts.TEMPLATE_NOT_FOUND, code="template_not_found")
+        return template
+
+    async def _template_item(self, template: ScheduleTemplate, subject_code: str) -> TemplateItem:
+        return TemplateItem(
+            id=template.id,
+            teacher_id=template.teacher_id,
+            subject_code=subject_code,
+            student_ids=await self._templates.student_ids(template.id),
+            weekday=template.weekday,
+            start_local_time=template.start_local_time,
+            duration_minutes=template.duration_minutes,
+            timezone=template.timezone,
+            starts_on=template.starts_on,
+            ends_on=template.ends_on,
+            is_active=template.is_active,
+            generated_until=template.generated_until,
+        )
+
+    async def _regenerate(self, template: ScheduleTemplate) -> tuple[int, int, int]:
+        """Убрать будущие неизменённые уроки шаблона и создать их заново (если включён).
+
+        Returns:
+            ``(удалено, создано, пропущено)``.
+        """
+        now = utcnow()
+        removed = await self._lessons.delete_future_generated(template.id, now)
+        template.generated_until = None
+        if not template.is_active:
+            return removed, 0, 0
+        created, skipped = await self._generate(
+            template, now, self._horizon_weeks, skip_existing_dates=True
+        )
+        return removed, created, skipped
+
+    async def _generate(
+        self,
+        template: ScheduleTemplate,
+        now: datetime,
+        horizon_weeks: int,
+        *,
+        skip_existing_dates: bool = False,
+    ) -> tuple[int, int]:
+        """Создать уроки шаблона на горизонт; вернуть ``(создано, пропущено)``.
+
+        Окно: от «сегодня» (в поясе шаблона) или ``starts_on`` до горизонта или ``ends_on``;
+        при обычном запуске — только после ``generated_until``, чтобы перенесённый или
+        отменённый урок не возвращался на своё прежнее место. Прошедшее время не создаётся.
+        """
+        today = local_date_of(now, template.timezone)
+        upper = today + timedelta(weeks=horizon_weeks)
+        if template.ends_on is not None:
+            upper = min(upper, template.ends_on)
+        lower = max(template.starts_on, today)
+        if template.generated_until is not None:
+            lower = max(lower, template.generated_until + timedelta(days=1))
+        if lower > upper:
+            return 0, 0
+        student_ids = await self._active_student_ids(template.id)
+        if not student_ids:
+            return 0, 0
+        taken: set[date] = (
+            await self._lessons.local_dates_of_template(template.id, template.timezone)
+            if skip_existing_dates
+            else set()
+        )
+        starts = [
+            start
+            for start in weekly_starts_utc(
+                template.weekday, template.start_local_time, template.timezone, lower, upper
+            )
+            if start > now and local_date_of(start, template.timezone) not in taken
+        ]
+        duration = timedelta(minutes=template.duration_minutes)
+        created = await self._lessons.insert_generated(
+            [
+                {
+                    "teacher_id": template.teacher_id,
+                    "subject_id": template.subject_id,
+                    "start_at": start,
+                    "end_at": start + duration,
+                    "template_id": template.id,
+                }
+                for start in starts
+            ]
+        )
+        await self._lessons.add_participants_bulk(
+            [(lesson_id, sid) for lesson_id, _ in created for sid in student_ids]
+        )
+        template.generated_until = max(template.generated_until or upper, upper)
+        template.updated_at = utcnow()
+        await self._session.flush()
+        return len(created), len(starts) - len(created)
+
+    async def _active_student_ids(self, template_id: int) -> list[int]:
+        """Участники шаблона, которые существуют и не в архиве (архивных не приглашаем)."""
+        ids = await self._templates.student_ids(template_id)
+        users = await self._users.list_by_ids(ids)
+        return [u.id for u in users if u.role == UserRole.STUDENT and u.is_active]
