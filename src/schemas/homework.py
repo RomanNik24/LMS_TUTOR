@@ -213,3 +213,21 @@ class GradeItem(BaseModel):
     graded_after_expiry: bool
     teacher_comment: str | None
     due_at: datetime
+
+
+class ExtendRequest(BaseModel):
+    """Перенос дедлайна: без ``due_at`` — на ближайшее занятие, с ``due_at`` — на дату вручную."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    due_at: AwareDatetime | None = None
+
+
+class ExtensionItem(BaseModel):
+    """Итог переноса: старый и новый срок, сколько переносов осталось."""
+
+    assignment_id: int
+    old_due_at: datetime
+    new_due_at: datetime
+    extensions_count: int
+    extensions_left: int

@@ -1095,6 +1095,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T4.09 (CODE). extend_deadline: новый дедлайн = начало ближайшего следующего урока ученика (scheduled) после текущего due_at; если урока нет — ручная дата (тоже перенос); МАКСИМУМ 2 переноса (extensions_count), журнал в homework_extensions; только в статусах assigned/needs_revision. Третья попытка → 400 homework_extension_limit. Тесты US-05.
 ```
 **Проверка:** 🤖 тесты зелёные; есть тест третьего переноса.
+**Статус:** ✅ `src/services/extensions.py` (`ExtensionService.extend_deadline`), схемы `ExtendRequest`, `ExtensionItem`; перенос только персоналом и только в `assigned` / `needs_revision`; не более двух раз (третий — 400 `homework_extension_limit`, в ответе `extensions_left`); без даты — на начало ближайшего запланированного урока ученика после текущего срока (а у просроченной выдачи — после текущего момента), урока нет — `no_next_lesson`, тогда дата вручную (в будущем и позже текущего срока; тоже считается переносом); журнал `homework_extensions` и аудит; `original_due_at` не меняется; тесты `tests/unit/test_extend_schema.py`, `tests/integration/test_extension_service.py` (в т. ч. третий перенос). Эндпоинты — T4.11.
 
 ### T4.10 · Истечение выдач
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `feature/t4-10-expiry` · **Коммит:** `feat(homework): add assignment expiry service`
