@@ -866,6 +866,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `feature/t2-07-student-profile` · **Коммит:** `feat(frontend): add student profile screen`
 **Промпт:** `Задача T2.07 (CODE). Экран docs/07 §9.1.7: имя, класс, часовой пояс (PATCH /me), кнопка «Войти в браузере», выход. Тест формы пояса.`
 **Проверка:** 📱 смена часового пояса сохраняется и видна после перезагрузки.
+**Статус:** ✅ `frontend/src/features/profile` (маршрут `/app/profile`, вход — аватар в шапке): имя и часовой пояс (PATCH /me), подсказка «Войти в браузере» (команда `/web` у бота), выход; тесты формы. Класс в профиле не показан: `GET /me` его не отдаёт. 📱 проверка на телефоне — за владельцем.
 
 ### T2.08 · Сводный набор тестов безопасности
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `test/t2-08-security-suite` · **Коммит:** `test(security): add auth and privacy regression suite`

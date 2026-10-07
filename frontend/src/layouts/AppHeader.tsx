@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { useMe } from "@/features/auth/api";
 import { texts } from "@/lib/texts";
 import { initials } from "@/lib/utils";
@@ -11,13 +13,13 @@ export function AppHeader() {
         {texts.common.brand}
       </span>
       {me !== undefined && (
-        <span
-          role="img"
+        <Link
+          to="/app/profile"
           aria-label={`${texts.common.profileAvatar}: ${me.display_name}`}
-          className="inline-flex size-9 items-center justify-center rounded-full bg-secondary text-sm font-bold text-secondary-foreground font-heading"
+          className="inline-flex size-9 items-center justify-center rounded-full bg-secondary text-sm font-bold text-secondary-foreground font-heading focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {initials(me.display_name)}
-        </span>
+        </Link>
       )}
     </header>
   );
