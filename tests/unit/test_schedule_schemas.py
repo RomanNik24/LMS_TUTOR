@@ -70,3 +70,43 @@ def test_topic_is_trimmed_and_limited() -> None:
 def test_unknown_fields_are_forbidden() -> None:
     with pytest.raises(ValidationError):
         make(price=100)
+
+
+# ---------------------------------------------------------------- перенос, отмена, отметка (T3.05)
+
+
+def test_reschedule_checks_interval() -> None:
+    from src.schemas.schedule import LessonReschedule  # noqa: PLC0415
+
+    LessonReschedule(start_at=START, end_at=START + timedelta(hours=1))
+    with pytest.raises(ValidationError):
+        LessonReschedule(start_at=START, end_at=START)
+
+
+def test_cancel_reason_is_trimmed_limited_and_ids_unique() -> None:
+    from src.schemas.schedule import LessonCancel  # noqa: PLC0415
+
+    assert LessonCancel(reason="  ").reason is None
+    with pytest.raises(ValidationError):
+        LessonCancel(reason="а" * 256)
+    with pytest.raises(ValidationError):
+        LessonCancel(billable_student_ids=[1, 1])
+
+
+def test_complete_marks_validation() -> None:
+    from src.schemas.schedule import LessonComplete  # noqa: PLC0415
+
+    ok = LessonComplete.model_validate({"marks": [{"student_id": 1, "attendance": "attended"}]})
+    assert ok.marks[0].is_billable is None
+    for bad in (
+        {"marks": []},
+        {"marks": [{"student_id": 1, "attendance": "pending"}]},
+        {
+            "marks": [
+                {"student_id": 1, "attendance": "attended"},
+                {"student_id": 1, "attendance": "no_show"},
+            ]
+        },
+    ):
+        with pytest.raises(ValidationError):
+            LessonComplete.model_validate(bad)
