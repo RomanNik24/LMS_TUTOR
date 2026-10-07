@@ -58,7 +58,7 @@ async def redis_clean(redis_client: aioredis.Redis) -> aioredis.Redis:
 
 @pytest.fixture
 async def client(
-    db_session: AsyncSession, redis_clean: aioredis.Redis
+    db_session: AsyncSession, redis_clean: aioredis.Redis, app_settings_env: None
 ) -> AsyncIterator[httpx.AsyncClient]:
     transport = httpx.ASGITransport(app=_build_app(db_session, redis_clean))
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:

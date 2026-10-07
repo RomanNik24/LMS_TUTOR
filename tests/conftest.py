@@ -234,6 +234,25 @@ async def db_session(migrated_postgres_url: str) -> AsyncIterator[AsyncSession]:
 
 
 @pytest.fixture
+def app_settings_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Минимальное окружение для ``get_settings()`` в тестах, что собирают свои FastAPI-приложения.
+
+    Зависимости API читают ``SESSION_SECRET`` из настроек, а CI не имеет ``.env.local``.
+    """
+    from src.core import config as config_module  # noqa: PLC0415 - импорт только при необходимости
+
+    monkeypatch.setenv("APP_ENV", "local")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5432/db")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("DEFAULT_TIMEZONE", "UTC")
+    # Пустой секрет (допустим в local) совпадает с ``SessionStore(redis)`` в тестах без секрета.
+    monkeypatch.setenv("SESSION_SECRET", "")
+    config_module.get_settings.cache_clear()
+    yield
+    config_module.get_settings.cache_clear()
+
+
+@pytest.fixture
 async def api_client() -> AsyncIterator[httpx.AsyncClient]:
     """`httpx.AsyncClient`, подключённый напрямую к FastAPI-приложению (без сети)."""
     from src.main import app  # noqa: PLC0415 - импорт приложения только при необходимости
