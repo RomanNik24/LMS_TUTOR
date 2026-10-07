@@ -4,6 +4,8 @@
 персоналу нейтрально. Тексты не содержат токенов и персональных данных.
 """
 
+from datetime import date, datetime
+
 # --- Приглашения и вход (docs/05 §3.1) ---
 INVITE_INVALID = "Ссылка недействительна или устарела. Попроси у преподавателя новую."
 INVITE_ALREADY_USED = "Ссылка уже использована. Попроси у преподавателя новую."
@@ -104,6 +106,8 @@ BOT_ALREADY_LOGGED_IN = "Ты уже в системе."
 BOT_APP_UNAVAILABLE = "Приложение пока недоступно."
 BOT_OPEN_APP_STUDENT = "Открыть приложение"
 BOT_OPEN_APP_STAFF = "Открыть Admin App"
+BOT_BUTTON_SCHEDULE = "Расписание"
+BOT_BUTTON_TODAY = "Сегодня"
 BOT_BUTTON_CATALOG = "Каталог услуг"
 BOT_BUTTON_CONTACT = "Связаться с преподавателем"
 BOT_CATALOG_EMPTY = "Каталог скоро появится. Напиши преподавателю."
@@ -139,12 +143,14 @@ BOT_HELP_GUEST = (
 )
 BOT_HELP_STUDENT = (
     "/app — открыть приложение\n"
+    "/today — уроки на ближайшие 24 часа\n"
     "/web — ссылка для входа в браузере\n"
     "/logout — выйти из аккаунта\n"
     "/help — эта справка"
 )
 BOT_HELP_STAFF = (
     "/app — открыть Admin App\n"
+    "/today — уроки на сегодня\n"
     "/web — ссылка для входа в браузере\n"
     "/logout — отвязать аккаунт\n"
     "/help — справка"
@@ -153,6 +159,48 @@ BOT_HELP_STAFF = (
 # --- Бот: описания команд (setMyCommands) ---
 BOT_CMD_START = "Начало работы"
 BOT_CMD_APP = "Открыть приложение"
+BOT_CMD_TODAY = "Расписание на сегодня"
 BOT_CMD_WEB = "Вход в браузере"
 BOT_CMD_LOGOUT = "Выйти из аккаунта"
 BOT_CMD_HELP = "Справка"
+
+
+# --- Бот: расписание (/today, T3.08) ---
+BOT_STUDENT_NO_LESSONS = "В ближайшие 24 часа уроков нет. Всё расписание — в приложении."
+BOT_STAFF_NO_LESSONS = "На сегодня уроков нет."
+BOT_STAFF_TODAY_HEADER = "Сегодня, {date}:"
+BOT_LINK_VIDEO = "Телемост"
+BOT_LINK_BOARD = "Доска"
+BOT_LESSON_DONE_MARK = "проведён"
+BOT_LESSON_CANCELLED_MARK = "отменён"
+SUBJECT_NAMES = {"informatics": "Информатика", "math": "Математика"}
+MONTHS_GENITIVE = (
+    "янв",
+    "фев",
+    "мар",
+    "апр",
+    "мая",
+    "июн",
+    "июл",
+    "авг",
+    "сен",
+    "окт",
+    "ноя",
+    "дек",
+)
+WEEKDAYS_SHORT = ("пн", "вт", "ср", "чт", "пт", "сб", "вс")
+
+
+def subject_name(code: str) -> str:
+    """Название предмета по коду (неизвестный код показывается как есть)."""
+    return SUBJECT_NAMES.get(code, code)
+
+
+def short_date(day: date) -> str:
+    """Дата для сообщений бота: «вт, 14 окт»."""
+    return f"{WEEKDAYS_SHORT[day.weekday()]}, {day.day} {MONTHS_GENITIVE[day.month - 1]}"
+
+
+def lesson_when(start: datetime, end: datetime) -> str:
+    """Время урока в поясе получателя: «вт, 14 окт, 17:00–18:00» (аргументы уже локальные)."""
+    return f"{short_date(start.date())}, {start:%H:%M}–{end:%H:%M}"

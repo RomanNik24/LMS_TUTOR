@@ -54,6 +54,7 @@ def test_commands_by_state() -> None:
         assert [c.command for c in commands_for(role)] == [
             "start",
             "app",
+            "today",
             "web",
             "logout",
             "help",
@@ -78,3 +79,31 @@ def test_reply_keyboards_never_use_web_app() -> None:
     for role in (None, UserRole.STUDENT, UserRole.MANAGER, UserRole.OWNER):
         markup = main_menu(role, "https://x.example")
         assert all(button.web_app is None for row in markup.keyboard for button in row)
+
+
+def test_schedule_formatting_helpers() -> None:
+    from datetime import datetime
+
+    from src.core import texts
+
+    start = datetime(2026, 10, 14, 17, 0)  # noqa: DTZ001 - форматирование не зависит от пояса
+    end = datetime(2026, 10, 14, 18, 0)  # noqa: DTZ001
+    assert texts.short_date(start.date()) == "ср, 14 окт"
+    assert texts.lesson_when(start, end) == "ср, 14 окт, 17:00–18:00"
+    assert texts.subject_name("informatics") == "Информатика"
+    assert texts.subject_name("physics") == "physics"
+
+
+def test_lesson_links_keyboard() -> None:
+    from src.bot.keyboards import lesson_links
+
+    assert lesson_links(None, None) is None
+    both = lesson_links("https://t.example/v", "https://m.example/b")
+    assert both is not None
+    assert [b.url for b in both.inline_keyboard[0]] == [
+        "https://t.example/v",
+        "https://m.example/b",
+    ]
+    only_board = lesson_links(None, "https://m.example/b")
+    assert only_board is not None
+    assert len(only_board.inline_keyboard[0]) == 1

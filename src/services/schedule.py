@@ -30,7 +30,7 @@ from src.core.exceptions import (
     PermissionDeniedError,
     ValidationError,
 )
-from src.core.timeutils import local_date_of, utcnow, weekly_starts_utc
+from src.core.timeutils import day_bounds_utc, local_date_of, utcnow, weekly_starts_utc
 from src.db.models import Lesson, ScheduleTemplate, User
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.lessons import LessonRepository
@@ -408,6 +408,43 @@ class ScheduleService:
             )
             for lesson in lessons
         ]
+
+    async def student_upcoming(
+        self, actor: CurrentUser, *, hours: int = 24
+    ) -> list[StudentLessonItem]:
+        """Запланированные уроки ученика в ближайшие ``hours`` часов (для ``/today`` в боте).
+
+        Raises:
+            PermissionDeniedError: Не ученик.
+        """
+        self._require_student(actor)
+        now = utcnow()
+        lessons = await self._lessons.list_for_student(actor.id, now, now + timedelta(hours=hours))
+        scheduled = [lesson for lesson in lessons if lesson.status == LessonStatus.SCHEDULED]
+        return await self._student_items(actor.id, scheduled)
+
+    async def staff_today(self, actor: CurrentUser) -> tuple[date, list[LessonItem]]:
+        """Все уроки «сегодня» в поясе сотрудника (для ``/today`` в боте).
+
+        Returns:
+            Местная дата и уроки этих суток по времени начала.
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+        """
+        self._require_staff(actor)
+        today = local_date_of(utcnow(), actor.timezone)
+        start, end = day_bounds_utc(today, actor.timezone)
+        lessons, _ = await self._lessons.list_in_period(
+            start,
+            end,
+            student_id=None,
+            teacher_id=None,
+            status=None,
+            limit=LIST_LIMIT_MAX,
+            offset=0,
+        )
+        return today, await self._build_items(lessons)
 
     @staticmethod
     def _require_student(actor: CurrentUser) -> None:
