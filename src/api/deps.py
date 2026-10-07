@@ -5,7 +5,7 @@
 из БД на каждом запросе, а не из cookie.
 """
 
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator
 from functools import lru_cache
 from typing import Annotated
 
@@ -121,23 +121,34 @@ async def current_user(
     return account.user
 
 
-def require_role(*roles: UserRole) -> Callable[[CurrentUser], Awaitable[CurrentUser]]:
+class RoleChecker:
+    """Зависимость «только указанные роли».
+
+    Класс, а не замыкание: список ролей доступен как ``roles``, и тест приватности
+    (``tests/unit/test_privacy_contract.py``) по нему определяет, кто может вызвать эндпоинт.
+    """
+
+    def __init__(self, roles: frozenset[UserRole]) -> None:
+        """Сохранить допустимые роли."""
+        self.roles = roles
+
+    async def __call__(self, user: Annotated[CurrentUser, Depends(current_user)]) -> CurrentUser:
+        """Вернуть ``CurrentUser`` либо 403 ``permission_denied``."""
+        if user.role not in self.roles:
+            raise PermissionDeniedError()
+        return user
+
+
+def require_role(*roles: UserRole) -> RoleChecker:
     """Создать зависимость, пропускающую только указанные роли.
 
     Args:
         roles: Допустимые роли.
 
     Returns:
-        Зависимость FastAPI: возвращает ``CurrentUser`` либо 403 ``permission_denied``.
+        Зависимость FastAPI (``RoleChecker``): возвращает ``CurrentUser`` либо 403.
     """
-    allowed = frozenset(roles)
-
-    async def _checker(user: Annotated[CurrentUser, Depends(current_user)]) -> CurrentUser:
-        if user.role not in allowed:
-            raise PermissionDeniedError()
-        return user
-
-    return _checker
+    return RoleChecker(frozenset(roles))
 
 
 def get_auth_service(

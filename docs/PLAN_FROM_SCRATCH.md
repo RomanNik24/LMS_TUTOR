@@ -809,6 +809,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T2.01 (CODE). 1) Отдельные Pydantic-схемы ответов для student, manager, owner: поля lesson_price, price_snapshot, is_billable, teacher_notes, teacher_note, суммы и финансы НЕ включаются в схемы ученика и менеджера (а не скрываются условием). 2) Автотест контракта privacy: обходит OpenAPI-схемы ответов эндпоинтов /student/* и /admin/* (для роли manager — набор эндпоинтов, доступных менеджеру) и падает, если находит запрещённое поле. Тест должен автоматически подхватывать будущие эндпоинты. 3) Покажи, что тест краснеет: временно добавь lesson_price в схему ученика (в отчёте приведи вывод падения), затем убери.
 ```
 **Проверка:** 🤖 тест зелёный в репозитории; 👁 в отчёте есть вывод красного прогона с искусственным нарушением.
+**Статус:** ✅ выполнено (схемы `src/schemas/roles.py`, `src/schemas/students.py`, тест `tests/unit/test_privacy_contract.py`). Заметка: менеджеру доступны `teacher_notes` (docs/08 §8, docs/01 §4.3), поэтому они запрещены только в схемах ученика; деньги запрещены и ученику, и менеджеру.
 
 ### T2.02 · `StudentService`
 **Кто:** 💻 CODE · **Размер:** L · **Ветка:** `feature/t2-02-student-service` · **Коммит:** `feat(students): implement student service`
