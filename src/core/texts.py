@@ -66,6 +66,14 @@ LESSON_NOT_PARTICIPANT = "Этот ученик не участвует в ур�
 LESSON_MARK_PENDING = "Посещаемость должна быть «был», «не пришёл» или «отменено»."
 LESSON_CANCEL_REASON_TOO_LONG = "Причина отмены не длиннее 255 символов."
 
+TEMPLATE_TIME_HAS_TZ = "Время начала задаётся без часового пояса: пояс указывается отдельно."
+TEMPLATE_NOT_FOUND = "Шаблон расписания не найден."
+TEMPLATE_ENDS_BEFORE_START = "Дата окончания не может быть раньше даты начала."
+TEMPLATE_UPDATE_EMPTY = "Укажите хотя бы одно поле для изменения."
+TEMPLATE_FIELD_NOT_NULLABLE = "Это поле нельзя очистить."
+TEMPLATE_NO_PARTICIPANTS = "У шаблона должен остаться хотя бы один участник."
+TEMPLATE_HORIZON_INVALID = "Горизонт генерации — от 1 до 52 недель."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."
