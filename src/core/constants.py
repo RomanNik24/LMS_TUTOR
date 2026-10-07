@@ -116,3 +116,7 @@ QUIET_HOURS_START = 22
 QUIET_HOURS_END = 8
 # Урок ближе этого срока делает отмену или перенос срочными (игнорируют тихие часы)
 URGENT_LESSON_CHANGE_HOURS = 12
+
+# Воркер (docs/03 §9, docs/10 §8)
+HEARTBEAT_CRON = "*/5 * * * *"
+HEARTBEAT_TIMEOUT_SECONDS = 10

@@ -22,8 +22,8 @@
 | Сервис | Образ / команда | Примечания |
 |---|---|---|
 | `app` | `uvicorn src.main:app` | FastAPI (REST `/api/v1`, `/health`, вебхук) + Aiogram. Healthcheck `/health` |
-| `worker` | `taskiq worker src.worker.broker:broker` | Фоновые задачи |
-| `scheduler` | `taskiq scheduler src.worker.broker:scheduler` | Строго один экземпляр |
+| `worker` | `taskiq worker src.worker.broker:broker src.worker.tasks` | Фоновые задачи |
+| `scheduler` | `taskiq scheduler src.worker.broker:scheduler src.worker.tasks` | Строго один экземпляр |
 | `postgres` | `postgres:16` | Volume, наружу не публикуется |
 | `redis` | `redis:7` | Persistence AOF, наружу не публикуется |
 | `nginx` | Образ из `frontend/Dockerfile` | Содержит собранный фронтенд, раздаёт статику, проксирует `/api`, `/telegram`, `/health` на `app`, SSL |

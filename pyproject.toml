@@ -18,6 +18,8 @@ dependencies = [
     "redis",
     "sentry-sdk>=2.71.0",
     "sqlalchemy[asyncio]",
+    "taskiq>=0.13.0",
+    "taskiq-redis>=1.2.4",
     "tzdata",
     "uvicorn[standard]",
 ]
