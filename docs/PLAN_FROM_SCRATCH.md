@@ -820,6 +820,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Тесты: менеджер не видит и не меняет цену; ученик → 403/404; аудит изменения цены; сессии удалены при архивации; ссылка не-https отклоняется.
 ```
 **Проверка:** 🤖 тесты зелёные; 👁 в списке тестов есть `manager_cannot_*price*`, `archive_removes_sessions`.
+**Статус:** ✅ сервис `src/services/students.py` (`StudentService`), репозитории `src/repositories/subjects.py`, `student_profiles.search`, схемы запросов и списка в `src/schemas/students.py`; тесты `tests/integration/test_student_service.py` (22) и `tests/unit/test_student_schemas.py`. Эндпоинты — T2.04.
 
 ### T2.03 · `StaffService` (только owner)
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t2-03-staff-service` · **Коммит:** `feat(staff): implement staff management`

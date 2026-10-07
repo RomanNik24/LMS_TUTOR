@@ -78,6 +78,14 @@ INVITE_FAILED_ATTEMPTS_LIMIT = 5
 INVITE_FAILED_ATTEMPTS_WINDOW_SECONDS = 10 * 60
 INVITE_FAILURE_SCOPE = "invite_fail"
 
+# Список учеников (docs/08 §1 «Пагинация»): лимит по умолчанию и максимум.
+LIST_LIMIT_DEFAULT = 50
+LIST_LIMIT_MAX = 200
+# Часовой пояс нового ученика по умолчанию (docs/04 §2.1).
+DEFAULT_USER_TIMEZONE = "Europe/Moscow"
+# Длина ссылок профиля ученика (docs/04 §2.2).
+PROFILE_URL_MAX_LENGTH = 500
+
 # Базовый путь REST API (docs/08 §1).
 API_V1_PREFIX = "/api/v1"
 

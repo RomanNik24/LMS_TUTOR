@@ -1,9 +1,15 @@
 """Репозиторий профилей учеников (задача T1.06, docs/04 §2.2)."""
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
-from src.db.models import StudentProfile
+from src.core.enums import UserRole
+from src.db.models import StudentProfile, User
 from src.repositories.base import BaseRepository
+
+
+def escape_like(text: str) -> str:
+    """Экранировать ``%``, ``_`` и ``\\`` для ``LIKE ... ESCAPE '\\'``."""
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 class StudentProfileRepository(BaseRepository[StudentProfile]):
@@ -20,3 +26,37 @@ class StudentProfileRepository(BaseRepository[StudentProfile]):
         """
         stmt = select(StudentProfile).where(StudentProfile.user_id == user_id)
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def search(
+        self, *, is_active: bool, q: str | None, limit: int, offset: int
+    ) -> tuple[list[tuple[User, StudentProfile]], int]:
+        """Список учеников со страницей и общим числом (docs/08 §5.2).
+
+        Args:
+            is_active: ``True`` — активные, ``False`` — архив.
+            q: Подстрока имени (без учёта регистра) или ``None``.
+            limit: Размер страницы.
+            offset: Смещение.
+
+        Returns:
+            Пары (пользователь, профиль) по алфавиту имени и общее число подходящих.
+        """
+        conditions = [User.role == UserRole.STUDENT, User.is_active.is_(is_active)]
+        if q:
+            conditions.append(User.display_name.ilike(f"%{escape_like(q)}%", escape="\\"))
+        total_stmt = (
+            select(func.count(User.id))
+            .join(StudentProfile, StudentProfile.user_id == User.id)
+            .where(*conditions)
+        )
+        total = int((await self._session.execute(total_stmt)).scalar_one())
+        page_stmt = (
+            select(User, StudentProfile)
+            .join(StudentProfile, StudentProfile.user_id == User.id)
+            .where(*conditions)
+            .order_by(User.display_name, User.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        rows = (await self._session.execute(page_stmt)).all()
+        return [(user, profile) for user, profile in rows], total
