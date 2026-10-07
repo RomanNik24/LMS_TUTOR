@@ -173,6 +173,10 @@ services:
         # Публичное значение (username бота без @) вшивается в сборку фронтенда.
         VITE_BOT_USERNAME: ${VITE_BOT_USERNAME:-}
     container_name: my-lms-nginx
+    environment:
+      # Тот же публичный адрес хранилища, что у app: подписанные ссылки на фото ДЗ ведут туда,
+      # и CSP (img-src) должен его разрешать (nginx/templates/snippets/security-headers.conf.template).
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://127.0.0.1:9000}
     ports:
       - "127.0.0.1:8080:80"
     depends_on:

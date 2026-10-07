@@ -198,3 +198,13 @@ jobs:
 
       - name: Check nginx config syntax
         run: docker run --rm --add-host app:127.0.0.1 lms-nginx nginx -t
+
+      # CSP пускает фото по подписанным ссылкам публичного адреса S3 (аудит 2026-10-08, п. 3).
+      - name: Check CSP allows images from the public S3 endpoint
+        run: |
+          docker run -d --name csp-check -p 8081:80 --add-host app:127.0.0.1 \
+            -e S3_PUBLIC_ENDPOINT=https://s3.example.test lms-nginx
+          for _ in $(seq 1 20); do curl -fsS -o /dev/null http://127.0.0.1:8081/login && break; sleep 1; done
+          curl -fsSI http://127.0.0.1:8081/login | tee headers.txt
+          grep -q "img-src 'self' data: https://s3.example.test;" headers.txt
+          docker rm -f csp-check
