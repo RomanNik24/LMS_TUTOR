@@ -90,6 +90,19 @@ HOMEWORK_NOT_FOUND = "Задание не найдено."
 ASSIGNMENT_NOT_EDITABLE = "Файлы нельзя менять: работа уже проверена или срок вышел."
 FILE_DEFAULT_NAME = "файл"
 
+# --- Домашние задания (docs/04 §5, T4.06) ---
+HOMEWORK_TITLE_REQUIRED = "Укажите название задания."
+HOMEWORK_EXAM_TYPE_REQUIRED = "Для пробника укажите тип экзамена."
+HOMEWORK_SUBJECT_REQUIRED = "Укажите предмет задания."
+HOMEWORK_MAX_SCORE_REQUIRED = "Укажите число заданий (максимальный балл)."
+HOMEWORK_DUE_AT_REQUIRED = "Для фиксированного срока укажите дату и время."
+HOMEWORK_DUE_IN_PAST = "Срок сдачи должен быть в будущем."
+HOMEWORK_NO_NEXT_LESSON = "У ученика нет запланированного урока: выберите срок вручную."
+HOMEWORK_EXAM_TYPE_UNKNOWN = "Тип экзамена не найден."
+HOMEWORK_LESSON_UNKNOWN = "Урок не найден."
+HOMEWORK_SUBJECT_MISMATCH = "Предмет не совпадает с предметом экзамена."
+HOMEWORK_STUDENTS_REQUIRED = "Выберите хотя бы одного ученика."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."
