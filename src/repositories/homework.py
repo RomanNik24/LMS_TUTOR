@@ -1,14 +1,16 @@
 """Репозитории домашних заданий, выдач, материалов и файлов (docs/04 §5)."""
 
 from datetime import datetime
+from typing import Any, cast
 
-from sqlalchemy import case, func, select, update
+from sqlalchemy import Select, and_, case, func, select, update
 
 from src.core.enums import AssignmentStatus, HomeworkFileRole
 from src.db.models import (
     ExamType,
     Homework,
     HomeworkAssignment,
+    HomeworkExtension,
     HomeworkFile,
     HomeworkMaterial,
     Subject,
@@ -139,6 +141,92 @@ class HomeworkAssignmentRepository(BaseRepository[HomeworkAssignment]):
             stmt = stmt.with_for_update()
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
+    @staticmethod
+    def _joined() -> Select[Any]:
+        stmt = (
+            select(HomeworkAssignment, Homework, Subject.code, User.display_name)
+            .join(Homework, Homework.id == HomeworkAssignment.homework_id)
+            .join(Subject, Subject.id == Homework.subject_id)
+            .join(User, User.id == HomeworkAssignment.student_id)
+        )
+        return cast("Select[Any]", stmt)
+
+    async def page(
+        self,
+        *,
+        student_id: int | None = None,
+        statuses: list[AssignmentStatus] | None = None,
+        overdue_at: datetime | None = None,
+        sort_by_due: bool = False,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[tuple[HomeworkAssignment, Homework, str, str]], int]:
+        """Страница выдач с заданием, кодом предмета и именем ученика.
+
+        ``overdue_at`` — момент «сейчас»: оставляет только просроченные (срок вышел, статус
+        ``assigned`` или ``needs_revision``).
+        """
+        conditions = []
+        if student_id is not None:
+            conditions.append(HomeworkAssignment.student_id == student_id)
+        if statuses is not None:
+            conditions.append(HomeworkAssignment.status.in_(statuses))
+        if overdue_at is not None:
+            conditions.append(
+                and_(
+                    HomeworkAssignment.due_at < overdue_at,
+                    HomeworkAssignment.status.in_(
+                        [AssignmentStatus.ASSIGNED, AssignmentStatus.NEEDS_REVISION]
+                    ),
+                )
+            )
+        order = (
+            (HomeworkAssignment.due_at, HomeworkAssignment.id)
+            if sort_by_due
+            else (HomeworkAssignment.id.desc(),)
+        )
+        stmt = self._joined().where(*conditions).order_by(*order).limit(limit).offset(offset)
+        total_stmt = select(func.count()).select_from(HomeworkAssignment).where(*conditions)
+        rows = [
+            (row[0], row[1], row[2], row[3]) for row in (await self._session.execute(stmt)).all()
+        ]
+        return rows, (await self._session.execute(total_stmt)).scalar_one()
+
+    async def review_queue(
+        self, *, limit: int, offset: int
+    ) -> tuple[list[tuple[HomeworkAssignment, Homework, str, str]], int]:
+        """Очередь проверки: сданные работы, самые давние сверху."""
+        conditions = [HomeworkAssignment.status == AssignmentStatus.SUBMITTED]
+        stmt = (
+            self._joined()
+            .where(*conditions)
+            .order_by(HomeworkAssignment.submitted_at, HomeworkAssignment.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        total_stmt = select(func.count()).select_from(HomeworkAssignment).where(*conditions)
+        rows = [
+            (row[0], row[1], row[2], row[3]) for row in (await self._session.execute(stmt)).all()
+        ]
+        return rows, (await self._session.execute(total_stmt)).scalar_one()
+
+    async def detail(
+        self, assignment_id: int
+    ) -> tuple[HomeworkAssignment, Homework, str, str] | None:
+        """Одна выдача с заданием, кодом предмета и именем ученика."""
+        stmt = self._joined().where(HomeworkAssignment.id == assignment_id)
+        row = (await self._session.execute(stmt)).first()
+        return None if row is None else (row[0], row[1], row[2], row[3])
+
+    async def extensions(self, assignment_id: int) -> list[HomeworkExtension]:
+        """Журнал переносов выдачи по возрастанию id."""
+        stmt = (
+            select(HomeworkExtension)
+            .where(HomeworkExtension.assignment_id == assignment_id)
+            .order_by(HomeworkExtension.id)
+        )
+        return list((await self._session.execute(stmt)).scalars())
+
     async def expire_due(self, now: datetime, max_extensions: int) -> list[int]:
         """Перевести просроченные выдачи в ``expired`` одним запросом; вернуть их id.
 
@@ -178,6 +266,15 @@ class HomeworkFileRepository(BaseRepository[HomeworkFile]):
             .where(HomeworkFile.assignment_id == assignment_id, HomeworkFile.role == role)
         )
         return (await self._session.execute(stmt)).scalar_one()
+
+    async def list_for(self, assignment_id: int) -> list[HomeworkFile]:
+        """Все файлы выдачи (решения и проверка) по возрастанию id."""
+        stmt = (
+            select(HomeworkFile)
+            .where(HomeworkFile.assignment_id == assignment_id)
+            .order_by(HomeworkFile.id)
+        )
+        return list((await self._session.execute(stmt)).scalars())
 
     async def delete(self, entity: HomeworkFile) -> None:
         """Удалить запись о файле (объект в S3 удаляет сервис)."""

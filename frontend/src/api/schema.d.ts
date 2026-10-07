@@ -552,6 +552,390 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/homework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Список заданий
+         * @description Задания, новые сверху, со счётчиками «сдали N из M».
+         */
+        get: operations["list_homework"];
+        put?: never;
+        /**
+         * Создать задание и выдать
+         * @description Создать задание и выдать его ученикам.
+         */
+        post: operations["create_homework"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/homework/{homework_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Задание и его выдачи
+         * @description Задание со всеми выдачами и материалами.
+         */
+        get: operations["get_homework"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/homework/{homework_id}/assignees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Добавить учеников к заданию
+         * @description Выдать задание ещё ученикам; уже получившие пропускаются.
+         */
+        post: operations["add_homework_assignees"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/homework/{homework_id}/materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Загрузить материал к заданию
+         * @description Файл-материал (multipart, поле ``file``).
+         */
+        post: operations["upload_homework_material"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Выдачи с фильтрами
+         * @description Выдачи по статусу, ученику и признаку «просрочено».
+         */
+        get: operations["list_assignments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/assignments/review-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Очередь проверки
+         * @description Сданные работы, самые давние первыми.
+         */
+        get: operations["list_review_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/assignments/{assignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Выдача: файлы и журнал переносов
+         * @description Карточка выдачи для персонала.
+         */
+        get: operations["get_assignment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/assignments/{assignment_id}/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Поставить оценку
+         * @description Оценка 0..max_score; для пробника создаёт результат.
+         */
+        post: operations["grade_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/assignments/{assignment_id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Вернуть на доработку
+         * @description Вернуть работу с комментарием и новым сроком.
+         */
+        post: operations["return_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/assignments/{assignment_id}/extend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Перенести дедлайн
+         * @description Без тела — на ближайшее занятие; ``due_at`` — вручную. Не больше двух переносов.
+         */
+        post: operations["extend_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/assignments/{assignment_id}/review-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Файл преподавателя к проверке
+         * @description Файл проверки (multipart, поле ``file``).
+         */
+        post: operations["upload_review_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/homework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Мои домашние задания
+         * @description Свои выдачи по сроку; ``status``: active, submitted, graded, expired.
+         */
+        get: operations["list_student_homework"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/homework/{assignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Карточка домашнего задания
+         * @description Описание, материалы, дедлайн, ``is_overdue``, ``extensions_left``, оценка, свои файлы.
+         */
+        get: operations["get_student_homework"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/homework/{assignment_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Загрузить файл решения
+         * @description Один файл решения (multipart, поле ``file``): jpg/png/heic/pdf, до 10 МБ, до 10 штук.
+         */
+        post: operations["upload_solution_file"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/homework/{assignment_id}/files/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Удалить свой файл решения
+         * @description Удалить файл, пока работа не сдана на проверку.
+         */
+        delete: operations["delete_solution_file"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/homework/{assignment_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Сдать работу с файлами
+         * @description Сдача; нужен хотя бы один загруженный файл.
+         */
+        post: operations["submit_homework"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/homework/{assignment_id}/self-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отметить «Сделал» без файлов
+         * @description Сдача кнопкой «Сделал»: файлы не обязательны.
+         */
+        post: operations["self_report_homework"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{file_id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ссылка на файл выдачи
+         * @description Подписанная ссылка на файл решения или проверки; живёт 10 минут.
+         */
+        get: operations["get_file_url"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/materials/{material_id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ссылка на материал задания
+         * @description Подписанная ссылка на материал задания; живёт 10 минут.
+         */
+        get: operations["get_material_url"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -580,11 +964,177 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AdminAssignmentDetail
+         * @description Карточка выдачи для персонала: файлы ученика, журнал переносов, комментарии.
+         */
+        AdminAssignmentDetail: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Homework Id */
+            homework_id: number;
+            /** Title */
+            title: string;
+            kind: components["schemas"]["HomeworkKind"];
+            /** Student Id */
+            student_id: number;
+            /** Student Name */
+            student_name: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Is Overdue */
+            is_overdue: boolean;
+            /** Extensions Count */
+            extensions_count: number;
+            /** Submitted At */
+            submitted_at: string | null;
+            /** Score */
+            score: number | null;
+            /** Max Score */
+            max_score: number;
+            /** Description */
+            description: string | null;
+            /**
+             * Original Due At
+             * Format: date-time
+             */
+            original_due_at: string;
+            /** On Time */
+            on_time: boolean | null;
+            submission_type: components["schemas"]["SubmissionType"] | null;
+            /** Student Comment */
+            student_comment: string | null;
+            /** Teacher Comment */
+            teacher_comment: string | null;
+            /** Graded After Expiry */
+            graded_after_expiry: boolean;
+            /** Score Percent */
+            score_percent: number | null;
+            /** Materials */
+            materials: components["schemas"]["MaterialItem"][];
+            /** Files */
+            files: components["schemas"]["HomeworkFileItem"][];
+            /** Extensions */
+            extensions: components["schemas"]["ExtensionLogItem"][];
+        };
+        /**
+         * AdminAssignmentItem
+         * @description Строка списка выдач для персонала.
+         */
+        AdminAssignmentItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Homework Id */
+            homework_id: number;
+            /** Title */
+            title: string;
+            kind: components["schemas"]["HomeworkKind"];
+            /** Student Id */
+            student_id: number;
+            /** Student Name */
+            student_name: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Is Overdue */
+            is_overdue: boolean;
+            /** Extensions Count */
+            extensions_count: number;
+            /** Submitted At */
+            submitted_at: string | null;
+            /** Score */
+            score: number | null;
+            /** Max Score */
+            max_score: number;
+        };
+        /**
+         * AdminAssignmentPage
+         * @description Страница списка выдач для персонала.
+         */
+        AdminAssignmentPage: {
+            /** Items */
+            items: components["schemas"]["AdminAssignmentItem"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /**
+         * AssigneesAdd
+         * @description Добавление учеников к существующему заданию.
+         */
+        AssigneesAdd: {
+            /** Student Ids */
+            student_ids: number[];
+            /** Due At */
+            due_at?: string | null;
+        };
+        /**
+         * AssignmentItem
+         * @description Выдача ученику в карточке задания.
+         */
+        AssignmentItem: {
+            /** Id */
+            id: number;
+            /** Student Id */
+            student_id: number;
+            /** Display Name */
+            display_name: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /**
+             * Original Due At
+             * Format: date-time
+             */
+            original_due_at: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Extensions Count */
+            extensions_count: number;
+        };
+        /**
+         * AssignmentStatus
+         * @description Статус выдачи ДЗ ученику: `homework_assignments.status` (docs/04 §5.3).
+         * @enum {string}
+         */
+        AssignmentStatus: "assigned" | "submitted" | "needs_revision" | "graded" | "expired";
+        /**
          * AttendanceStatus
          * @description Посещаемость участника урока: `lesson_participants.attendance` (docs/04 §4.2).
          * @enum {string}
          */
         AttendanceStatus: "pending" | "attended" | "no_show" | "cancelled";
+        /** Body_upload_homework_material */
+        Body_upload_homework_material: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_review_file */
+        Body_upload_review_file: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_solution_file */
+        Body_upload_solution_file: {
+            /** File */
+            file: string;
+        };
+        /**
+         * DueMode
+         * @description Способ определения первоначального дедлайна: `homeworks.due_mode` (docs/04 §5.1).
+         * @enum {string}
+         */
+        DueMode: "next_lesson" | "fixed";
         /**
          * ErrorBody
          * @description Тело ошибки.
@@ -612,6 +1162,69 @@ export interface components {
             error: components["schemas"]["ErrorBody"];
         };
         /**
+         * ExtendRequest
+         * @description Перенос дедлайна: без ``due_at`` — на ближайшее занятие, с ``due_at`` — на дату вручную.
+         */
+        ExtendRequest: {
+            /** Due At */
+            due_at?: string | null;
+        };
+        /**
+         * ExtensionItem
+         * @description Итог переноса: старый и новый срок, сколько переносов осталось.
+         */
+        ExtensionItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            /**
+             * Old Due At
+             * Format: date-time
+             */
+            old_due_at: string;
+            /**
+             * New Due At
+             * Format: date-time
+             */
+            new_due_at: string;
+            /** Extensions Count */
+            extensions_count: number;
+            /** Extensions Left */
+            extensions_left: number;
+        };
+        /**
+         * ExtensionLogItem
+         * @description Запись журнала переносов (только персоналу).
+         */
+        ExtensionLogItem: {
+            /**
+             * Old Due At
+             * Format: date-time
+             */
+            old_due_at: string;
+            /**
+             * New Due At
+             * Format: date-time
+             */
+            new_due_at: string;
+            /** Created By */
+            created_by: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * FileUrl
+         * @description Подписанная ссылка на чтение (docs/08 §6).
+         */
+        FileUrl: {
+            /** Url */
+            url: string;
+            /** Expires In */
+            expires_in: number;
+        };
+        /**
          * GenerationResult
          * @description Итог генерации уроков: сколько создано и сколько пропущено (дубль или пересечение).
          */
@@ -622,6 +1235,45 @@ export interface components {
             created: number;
             /** Skipped */
             skipped: number;
+        };
+        /**
+         * GradeItem
+         * @description Итог проверки выдачи: статус, балл, процент и срок.
+         */
+        GradeItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            status: components["schemas"]["AssignmentStatus"];
+            /** Score */
+            score: number | null;
+            /** Max Score */
+            max_score: number;
+            /** Score Percent */
+            score_percent: number | null;
+            /** Graded At */
+            graded_at: string | null;
+            /** Graded After Expiry */
+            graded_after_expiry: boolean;
+            /** Teacher Comment */
+            teacher_comment: string | null;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+        };
+        /**
+         * GradeRequest
+         * @description Оценка работы: целый балл и необязательный комментарий.
+         *
+         *     Границу ``0..max_score`` проверяет сервис (400 ``score_out_of_range``), а не схема: так любой
+         *     выход за пределы — одна и та же понятная ошибка.
+         */
+        GradeRequest: {
+            /** Score */
+            score: number;
+            /** Comment */
+            comment?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -653,6 +1305,139 @@ export interface components {
              * @default ok
              */
             redis: string;
+        };
+        /**
+         * HomeworkCreate
+         * @description Создание задания и выдача ученикам: одно ``homework`` и N выдач.
+         *
+         *     ``regular``: обязательны ``subject_code`` и ``max_score`` (число заданий, 1 задание = 1 балл).
+         *     ``mock_exam``: обязателен ``exam_type_id``; предмет берётся из экзамена, ``max_score`` по
+         *     умолчанию — максимальный первичный балл экзамена.
+         *     ``due_mode = fixed``: обязателен ``due_at``. ``next_lesson``: срок — начало ближайшего урока
+         *     ученика; ``due_at`` в этом случае — запасной срок для учеников без запланированного урока.
+         */
+        HomeworkCreate: {
+            kind: components["schemas"]["HomeworkKind"];
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Subject Code */
+            subject_code?: string | null;
+            /** Exam Type Id */
+            exam_type_id?: number | null;
+            /** Max Score */
+            max_score?: number | null;
+            /** Lesson Id */
+            lesson_id?: number | null;
+            due_mode: components["schemas"]["DueMode"];
+            /** Due At */
+            due_at?: string | null;
+            /** Student Ids */
+            student_ids: number[];
+        };
+        /**
+         * HomeworkFileItem
+         * @description Файл выдачи в ответе: без ключа S3 (клиенту он не нужен и раскрывать его незачем).
+         */
+        HomeworkFileItem: {
+            /** Id */
+            id: number;
+            /** Assignment Id */
+            assignment_id: number;
+            role: components["schemas"]["HomeworkFileRole"];
+            /** Original Name */
+            original_name: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * HomeworkFileRole
+         * @description Назначение файла: `homework_files.role` (docs/04 §5.5).
+         * @enum {string}
+         */
+        HomeworkFileRole: "student_solution" | "teacher_review";
+        /**
+         * HomeworkItem
+         * @description Задание со всеми выдачами и материалами.
+         */
+        HomeworkItem: {
+            /** Id */
+            id: number;
+            kind: components["schemas"]["HomeworkKind"];
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Subject Code */
+            subject_code: string;
+            /** Exam Type Id */
+            exam_type_id: number | null;
+            /** Lesson Id */
+            lesson_id: number | null;
+            /** Max Score */
+            max_score: number;
+            due_mode: components["schemas"]["DueMode"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Materials */
+            materials: components["schemas"]["MaterialItem"][];
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentItem"][];
+        };
+        /**
+         * HomeworkKind
+         * @description Вид домашнего задания: `homeworks.kind` (docs/04 §5.1).
+         * @enum {string}
+         */
+        HomeworkKind: "regular" | "mock_exam";
+        /**
+         * HomeworkListItem
+         * @description Строка списка заданий: «сдали N из M».
+         */
+        HomeworkListItem: {
+            /** Id */
+            id: number;
+            kind: components["schemas"]["HomeworkKind"];
+            /** Title */
+            title: string;
+            /** Subject Code */
+            subject_code: string;
+            /** Max Score */
+            max_score: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Assigned Count */
+            assigned_count: number;
+            /** Submitted Count */
+            submitted_count: number;
+        };
+        /**
+         * HomeworkListPage
+         * @description Страница списка заданий (docs/08 §1).
+         */
+        HomeworkListPage: {
+            /** Items */
+            items: components["schemas"]["HomeworkListItem"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /**
          * InvitationResponse
@@ -847,6 +1632,22 @@ export interface components {
             token: string;
         };
         /**
+         * MaterialItem
+         * @description Материал преподавателя к заданию.
+         */
+        MaterialItem: {
+            /** Id */
+            id: number;
+            /** Homework Id */
+            homework_id: number;
+            /** Original Name */
+            original_name: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /**
          * MeResponse
          * @description Текущий пользователь (docs/08 §2): id, роль, имя, часовой пояс.
          *
@@ -870,6 +1671,18 @@ export interface components {
             timezone?: string | null;
             /** Display Name */
             display_name?: string | null;
+        };
+        /**
+         * ReturnRequest
+         * @description Возврат на доработку: что исправить и (необязательно) новый срок.
+         *
+         *     Без ``new_due_at`` срок — начало ближайшего запланированного урока ученика.
+         */
+        ReturnRequest: {
+            /** Comment */
+            comment: string;
+            /** New Due At */
+            new_due_at?: string | null;
         };
         /**
          * StaffCreate
@@ -940,6 +1753,104 @@ export interface components {
             display_name?: string | null;
             /** Role */
             role?: ("owner" | "manager") | null;
+        };
+        /**
+         * StudentAssignmentDetail
+         * @description Карточка ДЗ ученика: описание, материалы, оценка, комментарии, файлы.
+         */
+        StudentAssignmentDetail: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Homework Id */
+            homework_id: number;
+            /** Title */
+            title: string;
+            kind: components["schemas"]["HomeworkKind"];
+            /** Subject Code */
+            subject_code: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Is Overdue */
+            is_overdue: boolean;
+            /** Extensions Left */
+            extensions_left: number;
+            /** Max Score */
+            max_score: number;
+            /** Score */
+            score: number | null;
+            /** Score Percent */
+            score_percent: number | null;
+            /** Submitted At */
+            submitted_at: string | null;
+            /** Description */
+            description: string | null;
+            /**
+             * Original Due At
+             * Format: date-time
+             */
+            original_due_at: string;
+            /** On Time */
+            on_time: boolean | null;
+            submission_type: components["schemas"]["SubmissionType"] | null;
+            /** Student Comment */
+            student_comment: string | null;
+            /** Teacher Comment */
+            teacher_comment: string | null;
+            /** Materials */
+            materials: components["schemas"]["MaterialItem"][];
+            /** Files */
+            files: components["schemas"]["HomeworkFileItem"][];
+        };
+        /**
+         * StudentAssignmentItem
+         * @description Строка списка ДЗ ученика.
+         */
+        StudentAssignmentItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Homework Id */
+            homework_id: number;
+            /** Title */
+            title: string;
+            kind: components["schemas"]["HomeworkKind"];
+            /** Subject Code */
+            subject_code: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Is Overdue */
+            is_overdue: boolean;
+            /** Extensions Left */
+            extensions_left: number;
+            /** Max Score */
+            max_score: number;
+            /** Score */
+            score: number | null;
+            /** Score Percent */
+            score_percent: number | null;
+            /** Submitted At */
+            submitted_at: string | null;
+        };
+        /**
+         * StudentAssignmentPage
+         * @description Страница списка ДЗ ученика.
+         */
+        StudentAssignmentPage: {
+            /** Items */
+            items: components["schemas"]["StudentAssignmentItem"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /**
          * StudentCardManager
@@ -1033,6 +1944,12 @@ export interface components {
             /** Teacher Id */
             teacher_id?: number | null;
         };
+        /**
+         * StudentHomeworkFilter
+         * @description Фильтр списка ДЗ ученика: ``status=active|submitted|graded|expired`` (docs/08 §4).
+         * @enum {string}
+         */
+        StudentHomeworkFilter: "active" | "submitted" | "graded" | "expired";
         /**
          * StudentLessonItem
          * @description Урок для ученика: только его данные.
@@ -1139,6 +2056,39 @@ export interface components {
             lesson_price?: number | null;
             /** Teacher Id */
             teacher_id?: number | null;
+        };
+        /**
+         * SubmissionItem
+         * @description Итог сдачи для ученика: статус, тип сдачи и признак «в срок».
+         */
+        SubmissionItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            status: components["schemas"]["AssignmentStatus"];
+            submission_type: components["schemas"]["SubmissionType"];
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** On Time */
+            on_time: boolean;
+            /** Files Count */
+            files_count: number;
+        };
+        /**
+         * SubmissionType
+         * @description Тип сдачи работы: `homework_assignments.submission_type` (docs/04 §5.3).
+         * @enum {string}
+         */
+        SubmissionType: "files" | "self_reported";
+        /**
+         * SubmitRequest
+         * @description Сдача работы: необязательный комментарий ученика.
+         */
+        SubmitRequest: {
+            /** Student Comment */
+            student_comment?: string | null;
         };
         /**
          * TelegramLoginRequest
@@ -3596,6 +4546,1530 @@ export interface operations {
             };
             /** @description Нет прав */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_homework: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeworkListPage"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_homework: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeworkCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeworkItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_homework: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                homework_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeworkItem"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_homework_assignees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                homework_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssigneesAdd"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeworkItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    upload_homework_material: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                homework_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_homework_material"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterialItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Файл слишком большой */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Неподдерживаемый тип файла */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_assignments: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AssignmentStatus"] | null;
+                student_id?: number | null;
+                overdue?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAssignmentPage"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_review_queue: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAssignmentPage"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAssignmentDetail"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    grade_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    return_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    extend_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ExtendRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtensionItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    upload_review_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_review_file"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeworkFileItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Файл слишком большой */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Неподдерживаемый тип файла */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_student_homework: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["StudentHomeworkFilter"] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentAssignmentPage"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_student_homework: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentAssignmentDetail"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    upload_solution_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_solution_file"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeworkFileItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Файл слишком большой */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Неподдерживаемый тип файла */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_solution_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+                file_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submit_homework: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    self_report_homework: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_file_url: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileUrl"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_material_url: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                material_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileUrl"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

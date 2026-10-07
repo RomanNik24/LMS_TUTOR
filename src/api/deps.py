@@ -9,7 +9,7 @@ from collections.abc import AsyncIterator
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Cookie, Depends, Request
+from fastapi import Cookie, Depends, Request, UploadFile
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
@@ -17,20 +17,30 @@ from src.core import texts
 from src.core.config import get_settings
 from src.core.constants import (
     RATE_LIMIT_AUTH_PER_MINUTE,
+    RATE_LIMIT_UPLOAD_COUNT,
+    RATE_LIMIT_UPLOAD_WINDOW_SECONDS,
     RATE_LIMIT_USER_PER_MINUTE,
     SESSION_COOKIE_NAME,
 )
 from src.core.current_user import CurrentUser
 from src.core.enums import UserRole
 from src.core.exceptions import AppError, ExternalServiceError, PermissionDeniedError
+from src.core.file_types import MAX_FILE_BYTES
 from src.core.rate_limit import RateLimiter
 from src.core.session_store import SessionStore
+from src.core.storage import ObjectStorage, S3Storage
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
+from src.services.assignments import AssignmentQueryService
 from src.services.auth import AuthService
+from src.services.extensions import ExtensionService
+from src.services.files import FileService
+from src.services.grading import GradingService
+from src.services.homework import HomeworkService
 from src.services.profile import ProfileService
 from src.services.schedule import ScheduleService
 from src.services.staff import StaffService
 from src.services.students import StudentService
+from src.services.submissions import SubmissionService
 
 
 @lru_cache(maxsize=1)
@@ -218,3 +228,67 @@ async def get_bot_username(request: Request) -> str:
             request.app.state.bot_username = me.username
             return str(me.username)
     raise ExternalServiceError(texts.BOT_USERNAME_UNKNOWN)
+
+
+@lru_cache
+def _s3_storage() -> S3Storage:
+    return S3Storage.from_settings(get_settings())
+
+
+def get_object_storage() -> ObjectStorage:
+    """Хранилище файлов (S3); в тестах подменяется через ``dependency_overrides``."""
+    return _s3_storage()
+
+
+def get_file_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    storage: Annotated[ObjectStorage, Depends(get_object_storage)],
+) -> FileService:
+    """Собрать ``FileService`` на запрос."""
+    return FileService(session, storage)
+
+
+async def upload_rate_limit(
+    user: Annotated[CurrentUser, Depends(current_user)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> None:
+    """Лимит загрузки: 30 файлов за 10 минут на пользователя (docs/08 §10)."""
+    await RateLimiter(redis).hit(
+        "upload", str(user.id), RATE_LIMIT_UPLOAD_COUNT, RATE_LIMIT_UPLOAD_WINDOW_SECONDS
+    )
+
+
+def get_homework_service(session: Annotated[AsyncSession, Depends(get_session)]) -> HomeworkService:
+    """Собрать ``HomeworkService`` на запрос."""
+    return HomeworkService(session)
+
+
+def get_submission_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> SubmissionService:
+    """Собрать ``SubmissionService`` на запрос."""
+    return SubmissionService(session)
+
+
+def get_grading_service(session: Annotated[AsyncSession, Depends(get_session)]) -> GradingService:
+    """Собрать ``GradingService`` на запрос."""
+    return GradingService(session)
+
+
+def get_extension_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ExtensionService:
+    """Собрать ``ExtensionService`` на запрос."""
+    return ExtensionService(session)
+
+
+def get_assignment_query_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> AssignmentQueryService:
+    """Собрать ``AssignmentQueryService`` на запрос."""
+    return AssignmentQueryService(session)
+
+
+async def read_upload(file: UploadFile) -> tuple[str, bytes]:
+    """Прочитать загружаемый файл целиком, но не больше лимита + 1 байт (его проверит сервис)."""
+    return file.filename or "", await file.read(MAX_FILE_BYTES + 1)

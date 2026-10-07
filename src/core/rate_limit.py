@@ -19,13 +19,20 @@ class RateLimiter:
         """Сохранить клиента Redis."""
         self._redis = redis
 
-    async def hit(self, scope: str, subject: str, limit: int) -> None:
+    async def hit(
+        self,
+        scope: str,
+        subject: str,
+        limit: int,
+        window_seconds: int = RATE_LIMIT_WINDOW_SECONDS,
+    ) -> None:
         """Засчитать запрос и отклонить, если лимит окна превышен.
 
         Args:
             scope: Группа лимита (``auth``, ``user``).
             subject: Кого считаем (IP или ``user_id``).
             limit: Максимум запросов в окне.
+            window_seconds: Длина окна (по умолчанию минута).
 
         Raises:
             AppError: 429 ``rate_limited``.
@@ -33,7 +40,7 @@ class RateLimiter:
         key = f"{RATE_LIMIT_KEY_PREFIX}{scope}:{subject}"
         async with self._redis.pipeline(transaction=True) as pipe:
             pipe.incr(key)
-            pipe.expire(key, RATE_LIMIT_WINDOW_SECONDS, nx=True)
+            pipe.expire(key, window_seconds, nx=True)
             count, _ = await pipe.execute()
         if int(count) > limit:
             raise AppError(

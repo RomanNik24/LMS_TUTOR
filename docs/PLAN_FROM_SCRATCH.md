@@ -1111,6 +1111,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T4.11 (CODE). Эндпоинты docs/08 §4 (student), §5.5 (admin), §6 (files); is_overdue и extensions_left (без деталей журнала) в ответе ученика; multipart-загрузка; rate limit загрузки 30 файлов за 10 минут. Матрица прав docs/08 §8 покрыта тестами. gen:api.
 ```
 **Проверка:** 🤖 `scripts/check.py` PASS (включая privacy и drift).
+**Статус:** ✅ роутеры `src/api/v1/student_homework.py` (список с фильтром `status`, карточка, загрузка/удаление файла, `submit`, `self-report`), `admin_homework.py` (задания, выдачи, очередь проверки, `grade`, `return`, `extend`, `review-files`, материалы), `files.py` (подписанные ссылки на файл и материал); сервис чтения `src/services/assignments.py` (`AssignmentQueryService`), схемы `src/schemas/homework_views.py`; ученик видит только свои выдачи (чужая — 404), `is_overdue` и `extensions_left`, без журнала переносов и заметок преподавателя; журнал виден персоналу; multipart-загрузка, лимит 30 файлов за 10 минут на пользователя (429 `rate_limited`), 413/415 в OpenAPI; `python-multipart` добавлен в зависимости; `pnpm gen:api` обновил `schema.d.ts`; тесты `tests/integration/test_homework_api.py` (полный цикл, матрица ролей, чужое → 404, лимиты, privacy), обновлён `test_operation_ids_are_stable`.
 
 ### T4.12 · Фронтенд: админ — ДЗ
 **Кто:** 💻 CODE · **Размер:** L (список+создание / очередь / экран проверки) · **Ветка:** `feature/t4-12-admin-homework-ui` · **Коммит:** `feat(frontend): add admin homework screens`
