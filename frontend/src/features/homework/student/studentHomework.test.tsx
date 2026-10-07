@@ -239,15 +239,15 @@ describe("ДЗ ученика: загрузчик", () => {
   });
 
   it("загрузка отправляет multipart и обновляет карточку; ошибка 415 показывается", async () => {
-    let files: File[] = [];
+    let fileParts = 0;
     let calls = 0;
     mockDetail();
     server.use(
       http.post("*/api/v1/student/homework/7/files", async ({ request }) => {
-        const form = await request.formData();
-        const sent = form.get("file");
-        // File из jsdom и из MSW — разные классы, instanceof не подходит
-        files = sent !== null && typeof sent !== "string" ? [sent] : [];
+        // request.formData() падает на Node 24 (undici не разбирает multipart от jsdom), поэтому
+        // читаем тело как текст и ищем часть «file»
+        const body = await request.text();
+        fileParts = body.includes('name="file"') ? 1 : 0;
         calls += 1;
         if (calls === 1) {
           return HttpResponse.json(
@@ -271,7 +271,7 @@ describe("ДЗ ученика: загрузчик", () => {
     await waitFor(() => {
       expect(calls).toBe(2);
       // jsdom теряет имя файла в multipart, поэтому проверяем сам факт части «file»
-      expect(files).toHaveLength(1);
+      expect(fileParts).toBe(1);
     });
     expect(await screen.findByText("student_solution-5.jpg")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: t.submit })).toBeEnabled();
