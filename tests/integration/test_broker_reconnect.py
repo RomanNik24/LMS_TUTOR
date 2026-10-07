@@ -11,13 +11,20 @@ import contextlib
 
 import pytest
 import redis.asyncio as aioredis
-from src.worker.broker import create_broker
 from taskiq.message import BrokerMessage
+from taskiq_redis import ListQueueBroker
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("app_settings_env")]
 
 QUEUE = "taskiq"
 WAIT_SECONDS = 10
+
+
+def _broker(redis_url: str) -> ListQueueBroker:
+    """Брокер с настройками приложения (модуль читает Settings при импорте — импорт под env)."""
+    from src.worker.broker import create_broker  # noqa: PLC0415
+
+    return create_broker(redis_url)
 
 
 def _message(task_id: str) -> BrokerMessage:
@@ -40,7 +47,7 @@ async def test_kick_survives_connections_closed_by_server(
     redis_client: aioredis.Redis, redis_url: str
 ) -> None:
     await redis_client.delete(QUEUE)
-    broker = create_broker(redis_url)
+    broker = _broker(redis_url)
     await broker.startup()
     try:
         await broker.kick(_message("first"))
@@ -56,7 +63,7 @@ async def test_listen_survives_connection_closed_by_server(
     redis_client: aioredis.Redis, redis_url: str
 ) -> None:
     await redis_client.delete(QUEUE)
-    broker = create_broker(redis_url)
+    broker = _broker(redis_url)
     await broker.startup()
     listener = broker.listen()
     receive = asyncio.ensure_future(anext(listener))
