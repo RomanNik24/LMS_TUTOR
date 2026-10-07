@@ -83,7 +83,14 @@ async def test_student_start_greets_by_name_with_web_app_button(
     # Кнопка клавиатуры НЕ web_app: Telegram не передал бы initData (вход не сработал бы)
     assert button.web_app is None
     commands = harness.session.of("SetMyCommands")[-1]
-    assert [c.command for c in commands.commands] == ["start", "app", "web", "logout", "help"]
+    assert [c.command for c in commands.commands] == [
+        "start",
+        "app",
+        "today",
+        "web",
+        "logout",
+        "help",
+    ]
 
 
 async def test_staff_start_uses_neutral_tone_and_admin_app(

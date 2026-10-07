@@ -47,8 +47,10 @@ def main_menu(role: UserRole | None, public_base_url: str) -> ReplyKeyboardMarku
             [KeyboardButton(text=texts.BOT_BUTTON_CONTACT)],
         ]
     else:
-        label = texts.BOT_OPEN_APP_STUDENT if role == UserRole.STUDENT else texts.BOT_OPEN_APP_STAFF
-        rows = [[KeyboardButton(text=label)]]
+        student = role == UserRole.STUDENT
+        label = texts.BOT_OPEN_APP_STUDENT if student else texts.BOT_OPEN_APP_STAFF
+        today = texts.BOT_BUTTON_SCHEDULE if student else texts.BOT_BUTTON_TODAY
+        rows = [[KeyboardButton(text=label)], [KeyboardButton(text=today)]]
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
@@ -88,3 +90,16 @@ def contact_button(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text=texts.BOT_CONTACT_LINK, url=url)]]
     )
+
+
+def lesson_links(video_url: str | None, board_url: str | None) -> InlineKeyboardMarkup | None:
+    """URL-кнопки «Телемост» и «Доска» под уроком; ``None``, если ссылок нет."""
+    buttons = [
+        InlineKeyboardButton(text=label, url=url)
+        for label, url in (
+            (texts.BOT_LINK_VIDEO, video_url),
+            (texts.BOT_LINK_BOARD, board_url),
+        )
+        if url
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=[buttons]) if buttons else None

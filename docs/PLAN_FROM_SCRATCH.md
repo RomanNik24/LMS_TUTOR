@@ -970,6 +970,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `feature/t3-08-bot-schedule` · **Коммит:** `feat(bot): add today and schedule commands`
 **Промпт:** `Задача T3.08 (CODE). /today и кнопка «Расписание»: ученику — уроки на 24 часа с кнопками Телемост/Доска; персоналу — компактная сводка дня. Тексты в texts.py (тон по ADR). Тесты хэндлеров.`
 **Проверка:** 📱 `/today` в боте показывает тестовый урок.
+**Статус:** ✅ `src/bot/handlers/schedule.py` (`/today`, кнопки «Расписание» и «Сегодня»), `ScheduleService.student_upcoming / staff_today`, `keyboards.lesson_links`, тексты и форматирование дат в `texts.py`; ученику — уроки на 24 часа по одному сообщению с кнопками «Телемост»/«Доска» (ссылка урока → профиль), в его часовом поясе; персоналу — сводка дня; тесты `tests/integration/test_bot_schedule.py`. 📱 проверка в живом боте — за владельцем.
 
 ### T3.09 · Фронтенд: админ-расписание
 **Кто:** 💻 CODE · **Размер:** L · **Ветка:** `feature/t3-09-admin-schedule-ui` · **Коммит:** `feat(frontend): add admin schedule screens`
