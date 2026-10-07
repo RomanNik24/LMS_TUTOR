@@ -1065,6 +1065,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T4.06 (CODE). HomeworkService.create_homework: тип regular/mock_exam; max_score = число заданий; для mock_exam обязателен exam_type_id и max_score по умолчанию из exam_types; выдача нескольким/группе: ОДНО homework + N выдач (assignments) с отдельными статусами и оценками; due_mode next_lesson/fixed; add_assignees; материалы преподавателя. Тесты US-03: группа из 3 учеников, mock_exam без exam_type_id → ошибка, next_lesson при отсутствии урока.
 ```
 **Проверка:** 🤖 тесты зелёные.
+**Статус:** ✅ `src/services/homework.py` (`HomeworkService.create_homework / add_assignees / get_homework / list_homeworks`), схемы `src/schemas/homework.py`, репозитории `src/repositories/homework.py`; одно `homework` и N выдач с отдельными статусами; срок `fixed` или `next_lesson` (начало ближайшего запланированного урока ученика; для учеников без урока — запасной `due_at`, иначе `no_next_lesson` с их id); `mock_exam`: предмет и максимальный балл по умолчанию из типа экзамена; список с «сдали N из M»; тесты `tests/unit/test_homework_schemas.py`, `tests/integration/test_homework_service.py`. Материалы загружает `FileService.upload_material` (T4.05); эндпоинты — T4.11.
 
 ### T4.07 · Сдача решений
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t4-07-submissions` · **Коммит:** `feat(homework): implement submissions`

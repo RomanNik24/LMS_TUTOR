@@ -1,9 +1,19 @@
 """Репозитории домашних заданий, выдач, материалов и файлов (docs/04 §5)."""
 
-from sqlalchemy import func, select
+from datetime import datetime
 
-from src.core.enums import HomeworkFileRole
-from src.db.models import Homework, HomeworkAssignment, HomeworkFile, HomeworkMaterial
+from sqlalchemy import case, func, select
+
+from src.core.enums import AssignmentStatus, HomeworkFileRole
+from src.db.models import (
+    ExamType,
+    Homework,
+    HomeworkAssignment,
+    HomeworkFile,
+    HomeworkMaterial,
+    Subject,
+    User,
+)
 from src.repositories.base import BaseRepository
 
 
@@ -22,6 +32,99 @@ class HomeworkRepository(BaseRepository[Homework]):
             HomeworkAssignment.student_id == student_id,
         )
         return (await self._session.execute(stmt)).first() is not None
+
+    async def list_page(
+        self, *, limit: int, offset: int
+    ) -> tuple[list[tuple[Homework, str, int, int]], int]:
+        """Страница заданий (новые сверху) с кодом предмета и счётчиками «выдано / сдано».
+
+        «Сдано» — выдачи в статусах ``submitted`` и ``graded``.
+        """
+        submitted = func.coalesce(
+            func.sum(
+                case(
+                    (
+                        HomeworkAssignment.status.in_(
+                            [AssignmentStatus.SUBMITTED, AssignmentStatus.GRADED]
+                        ),
+                        1,
+                    ),
+                    else_=0,
+                )
+            ),
+            0,
+        )
+        stmt = (
+            select(Homework, Subject.code, func.count(HomeworkAssignment.id), submitted)
+            .join(Subject, Subject.id == Homework.subject_id)
+            .outerjoin(HomeworkAssignment, HomeworkAssignment.homework_id == Homework.id)
+            .group_by(Homework.id, Subject.code)
+            .order_by(Homework.id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        rows = [
+            (row[0], row[1], int(row[2]), int(row[3]))
+            for row in (await self._session.execute(stmt)).all()
+        ]
+        total = (
+            await self._session.execute(select(func.count()).select_from(Homework))
+        ).scalar_one()
+        return rows, total
+
+    async def subject_code(self, subject_id: int) -> str:
+        """Код предмета задания."""
+        stmt = select(Subject.code).where(Subject.id == subject_id)
+        return (await self._session.execute(stmt)).scalar_one()
+
+    async def assignments_with_names(
+        self, homework_id: int
+    ) -> list[tuple[HomeworkAssignment, str]]:
+        """Выдачи задания вместе с именами учеников, по возрастанию id."""
+        stmt = (
+            select(HomeworkAssignment, User.display_name)
+            .join(User, User.id == HomeworkAssignment.student_id)
+            .where(HomeworkAssignment.homework_id == homework_id)
+            .order_by(HomeworkAssignment.id)
+        )
+        return [(row[0], row[1]) for row in (await self._session.execute(stmt)).all()]
+
+    async def materials(self, homework_id: int) -> list[HomeworkMaterial]:
+        """Материалы задания по возрастанию id."""
+        stmt = (
+            select(HomeworkMaterial)
+            .where(HomeworkMaterial.homework_id == homework_id)
+            .order_by(HomeworkMaterial.id)
+        )
+        return list((await self._session.execute(stmt)).scalars())
+
+    async def assigned_student_ids(self, homework_id: int) -> set[int]:
+        """Ученики, которым задание уже выдано."""
+        stmt = select(HomeworkAssignment.student_id).where(
+            HomeworkAssignment.homework_id == homework_id
+        )
+        return set((await self._session.execute(stmt)).scalars())
+
+    async def first_original_due(self, homework_id: int) -> datetime | None:
+        """Самый ранний первоначальный срок среди выдач (для добавления учеников к fixed)."""
+        stmt = select(func.min(HomeworkAssignment.original_due_at)).where(
+            HomeworkAssignment.homework_id == homework_id
+        )
+        return (await self._session.execute(stmt)).scalar_one()
+
+    async def add_assignments(self, rows: list[HomeworkAssignment]) -> None:
+        """Добавить выдачи пачкой."""
+        self._session.add_all(rows)
+        await self._session.flush()
+
+
+class ExamTypeRepository(BaseRepository[ExamType]):
+    """Доступ к справочнику ``exam_types``."""
+
+    async def get_by_id(self, exam_type_id: int) -> ExamType | None:
+        """Тип экзамена по id."""
+        stmt = select(ExamType).where(ExamType.id == exam_type_id)
+        return (await self._session.execute(stmt)).scalar_one_or_none()
 
 
 class HomeworkAssignmentRepository(BaseRepository[HomeworkAssignment]):

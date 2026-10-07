@@ -217,3 +217,24 @@ class LessonRepository(BaseRepository[Lesson]):
             .where(Lesson.id == lesson_id, LessonParticipant.student_id == student_id)
         )
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def next_starts_for_students(
+        self, student_ids: Sequence[int], after: datetime
+    ) -> dict[int, datetime]:
+        """Начало ближайшего запланированного урока после ``after`` для каждого ученика.
+
+        У учеников без такого урока ключа в ответе нет.
+        """
+        if not student_ids:
+            return {}
+        stmt = (
+            select(LessonParticipant.student_id, func.min(Lesson.start_at))
+            .join(Lesson, Lesson.id == LessonParticipant.lesson_id)
+            .where(
+                LessonParticipant.student_id.in_(list(student_ids)),
+                Lesson.status == LessonStatus.SCHEDULED,
+                Lesson.start_at > after,
+            )
+            .group_by(LessonParticipant.student_id)
+        )
+        return {row[0]: row[1] for row in (await self._session.execute(stmt)).all()}
