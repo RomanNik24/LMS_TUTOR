@@ -52,6 +52,8 @@ class Settings(BaseSettings):
             кнопка Mini App, проверка `Origin` в CSRF. Вебхук Telegram строится от `webhook_url`.
         s3_endpoint / s3_bucket / s3_access_key / s3_secret_key / s3_region:
             Параметры S3-совместимого хранилища приватных файлов (docs/10 §5).
+        s3_public_endpoint: Адрес S3, доступный клиенту (телефону), для подписанных ссылок;
+            пусто — используется ``s3_endpoint`` (годится, только если он виден и клиенту).
         sentry_dsn: DSN Sentry; пусто — интеграция отключена.
         schedule_horizon_weeks: Горизонт генерации уроков из шаблонов, недель.
         telegram_api_base: Альтернативный базовый URL Telegram API (docs/02 §6).
@@ -83,6 +85,7 @@ class Settings(BaseSettings):
 
     # --- S3-совместимое хранилище файлов (docs/02 §7, docs/10 §5) ---
     s3_endpoint: str = Field(default="", validation_alias="S3_ENDPOINT")
+    s3_public_endpoint: str = Field(default="", validation_alias="S3_PUBLIC_ENDPOINT")
     s3_bucket: str = Field(default="", validation_alias="S3_BUCKET")
     s3_access_key: str = Field(default="", validation_alias="S3_ACCESS_KEY")
     s3_secret_key: SecretStr = Field(default=SecretStr(""), validation_alias="S3_SECRET_KEY")
