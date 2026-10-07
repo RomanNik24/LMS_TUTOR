@@ -65,6 +65,11 @@ T102_TABLES = {
     "schedule_template_participants",
     "lessons",
     "lesson_participants",
+    "homeworks",
+    "homework_materials",
+    "homework_assignments",
+    "homework_extensions",
+    "homework_files",
 }
 
 EXPECTED_FK_DELETE_RULES = {
@@ -89,6 +94,18 @@ EXPECTED_FK_DELETE_RULES = {
     "fk_lessons_cancelled_by": "n",
     "fk_lesson_participants_lesson_id": "c",
     "fk_lesson_participants_student_id": "r",
+    "fk_homeworks_created_by": "r",
+    "fk_homeworks_lesson_id": "n",
+    "fk_homeworks_subject_id": "r",
+    "fk_homeworks_exam_type_id": "r",
+    "fk_homework_materials_homework_id": "c",
+    "fk_homework_assignments_homework_id": "c",
+    "fk_homework_assignments_student_id": "r",
+    "fk_homework_assignments_graded_by": "n",
+    "fk_homework_extensions_assignment_id": "c",
+    "fk_homework_extensions_created_by": "r",
+    "fk_homework_files_assignment_id": "c",
+    "fk_homework_files_uploaded_by": "r",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -104,6 +121,15 @@ EXPECTED_CHECK_NAMES = {
     "ck_lessons_end_after_start",
     "ck_lesson_participants_attendance",
     "ck_lesson_participants_price_snapshot_nonneg",
+    "ck_homeworks_kind",
+    "ck_homeworks_due_mode",
+    "ck_homeworks_max_score_positive",
+    "ck_homeworks_mock_exam_needs_exam_type",
+    "ck_homework_assignments_status",
+    "ck_homework_assignments_submission_type",
+    "ck_homework_assignments_extensions_count_range",
+    "ck_homework_assignments_score_nonneg",
+    "ck_homework_files_role",
 }
 
 
@@ -422,6 +448,7 @@ def test_constraints_created_by_migration_local(
                 "uq_users_telegram_id",
                 "uq_auth_tokens_token_hash",
                 "uq_lessons_template_id_start_at",
+                "uq_homework_assignments_homework_id_student_id",
                 "uq_grade_scales_exam_type_id_valid_year_primary_score",
             }
 
