@@ -21,6 +21,7 @@ from taskiq_redis import ListQueueBroker
 
 from src.bot.client import build_bot
 from src.core.config import get_settings
+from src.core.constants import REDIS_CONNECT_TIMEOUT_SECONDS
 from src.core.sentry import init_sentry
 from src.db.session import create_engine, create_session_factory
 
@@ -35,10 +36,21 @@ STATE_BOT = "bot"
 def create_broker(redis_url: str) -> ListQueueBroker:
     """Создать брокер очереди на Redis.
 
+    Воркер ждёт задачи блокирующим ``BRPOP`` без таймаута. Клиент redis-py 8 по умолчанию
+    ставит ``socket_timeout`` в 5 секунд, поэтому на простое чтение обрывалось
+    ``TimeoutError``, которого брокер не ловит, и воркер перезапускался каждые ~12 секунд.
+    Для брокера таймаут чтения отключён (``None``); обрыв соединения ловит TCP keepalive,
+    а подключение по-прежнему ограничено ``socket_connect_timeout``.
+
     Args:
         redis_url: Адрес Redis (``REDIS_URL``).
     """
-    return ListQueueBroker(redis_url)
+    return ListQueueBroker(
+        redis_url,
+        socket_timeout=None,
+        socket_connect_timeout=REDIS_CONNECT_TIMEOUT_SECONDS,
+        socket_keepalive=True,
+    )
 
 
 broker = create_broker(get_settings().redis_url)
