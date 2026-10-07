@@ -41,6 +41,8 @@ STUDENT_UPDATE_EMPTY = "Укажите хотя бы одно поле для и
 STUDENT_FIELD_NOT_NULLABLE = "Это поле нельзя очистить."
 LIST_PARAMS_INVALID = "Неверные параметры списка: limit от 1 до 200, offset не меньше 0."
 
+BOT_USERNAME_UNKNOWN = "Не удалось определить имя бота. Задайте BOT_USERNAME в настройках."
+
 # --- Сотрудники (docs/08 §5.3, T2.03) ---
 STAFF_NOT_FOUND = "Сотрудник не найден."
 STAFF_LAST_OWNER = "Нельзя понизить или архивировать последнего владельца."

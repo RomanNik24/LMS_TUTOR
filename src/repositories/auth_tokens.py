@@ -17,6 +17,21 @@ from src.repositories.base import BaseRepository
 class AuthTokenRepository(BaseRepository[AuthToken]):
     """Доступ к таблице ``auth_tokens``."""
 
+    async def get_by_id(self, token_id: int, *, for_update: bool = False) -> AuthToken | None:
+        """Найти токен по ``auth_tokens.id`` (отзыв приглашения из админки).
+
+        Args:
+            token_id: ``auth_tokens.id``.
+            for_update: Заблокировать строку (``SELECT ... FOR UPDATE``).
+
+        Returns:
+            Токен (в любом состоянии) или ``None``.
+        """
+        stmt = select(AuthToken).where(AuthToken.id == token_id)
+        if for_update:
+            stmt = stmt.with_for_update()
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
     async def get_by_hash(self, token_hash: str, *, for_update: bool = False) -> AuthToken | None:
         """Найти токен по SHA-256 хэшу (сам токен в БД не хранится).
 

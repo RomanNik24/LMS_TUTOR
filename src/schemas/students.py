@@ -9,6 +9,7 @@
 и ``/admin/*``.
 """
 
+from datetime import datetime
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -69,6 +70,22 @@ class StudentCardOwner(StudentCardManager):
     model_config = audience_config(UserRole.OWNER)
 
     lesson_price: int
+
+
+# Ответ для персонала: «разный DTO по роли» на одном пути (docs/08 §8, §9). Какой вариант вернуть,
+# решает сервис: менеджер получает карточку без цены, владелец — с ценой.
+StudentCardResponse = StudentCardOwner | StudentCardManager
+
+
+class InvitationResponse(BaseModel):
+    """Выпущенное приглашение (``POST /admin/students/{id}/invitations`` и для сотрудников).
+
+    Токен входит в ``url`` и показывается только в этом ответе (в БД хранится хэш, docs/09 §2.1).
+    """
+
+    id: int
+    url: str
+    expires_at: datetime
 
 
 # ------------------------------------------------------------------ запросы (вход)

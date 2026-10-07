@@ -65,10 +65,12 @@ class IssuedToken:
     """Только что выпущенный токен (показывается один раз, в БД его нет).
 
     Attributes:
+        id: ``auth_tokens.id`` (по нему приглашение отзывают, ``DELETE /admin/invitations/{id}``).
         token: Токен для ссылки.
         expires_at: Момент истечения (UTC).
     """
 
+    id: int
     token: str
     expires_at: datetime
 
@@ -142,7 +144,7 @@ class AuthService:
         revoked = await self._revoke_active(target.id, AuthTokenPurpose.INVITE, now)
         token = new_token()
         expires_at = now + timedelta(days=INVITE_TTL_DAYS)
-        await self._tokens.add(
+        record = await self._tokens.add(
             AuthToken(
                 purpose=AuthTokenPurpose.INVITE,
                 user_id=target.id,
@@ -155,7 +157,7 @@ class AuthService:
             actor.id, AUDIT_INVITE_CREATED, target.id, {"revoked_previous": revoked}
         )
         await self._session.commit()
-        return IssuedToken(token=token, expires_at=expires_at)
+        return IssuedToken(id=record.id, token=token, expires_at=expires_at)
 
     async def revoke_invite(self, actor: CurrentUser, user_id: int) -> None:
         """Отозвать действующие приглашения пользователя.
@@ -169,6 +171,33 @@ class AuthService:
         if revoked == 0:
             raise NotFoundError(texts.INVITE_NOT_FOUND, code="invite_not_found")
         await self._audit_user(actor.id, AUDIT_INVITE_REVOKED, target.id, {"count": revoked})
+        await self._session.commit()
+
+    async def revoke_invitation(self, actor: CurrentUser, invitation_id: int) -> None:
+        """Отозвать одно приглашение по ``auth_tokens.id`` (``DELETE /admin/invitations/{id}``).
+
+        Приглашение сотрудника отзывает только владелец (как и выпускает).
+
+        Raises:
+            NotFoundError: ``invite_not_found`` — нет такого действующего приглашения.
+            PermissionDeniedError: Нет прав на пользователя, которому оно выпущено.
+        """
+        now = utcnow()
+        record = await self._tokens.get_by_id(invitation_id, for_update=True)
+        if (
+            record is None
+            or record.purpose != AuthTokenPurpose.INVITE
+            or record.used_at is not None
+            or record.revoked_at is not None
+            or record.expires_at <= now
+        ):
+            raise NotFoundError(texts.INVITE_NOT_FOUND, code="invite_not_found")
+        target = await self._require_manageable_target(actor, record.user_id)
+        record.revoked_at = now
+        record.updated_at = now
+        await self._audit_user(
+            actor.id, AUDIT_INVITE_REVOKED, target.id, {"count": 1, "invitation_id": record.id}
+        )
         await self._session.commit()
 
     async def accept_invite(
@@ -295,7 +324,7 @@ class AuthService:
             raise PermissionDeniedError()
         expires_at = utcnow() + timedelta(minutes=WEB_LOGIN_TTL_MINUTES)
         token = new_token()
-        await self._tokens.add(
+        record = await self._tokens.add(
             AuthToken(
                 purpose=AuthTokenPurpose.WEB_LOGIN,
                 user_id=user.id,
@@ -305,7 +334,7 @@ class AuthService:
             )
         )
         await self._session.commit()
-        return IssuedToken(token=token, expires_at=expires_at)
+        return IssuedToken(id=record.id, token=token, expires_at=expires_at)
 
     async def consume_web_login(self, token: str) -> CurrentUser:
         """Погасить ссылку входа (только POST, одноразово) и вернуть пользователя.

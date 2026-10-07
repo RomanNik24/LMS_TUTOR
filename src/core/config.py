@@ -41,6 +41,8 @@ class Settings(BaseSettings):
             в `local` (HTTP без TLS), в `prod` обязателен `true`.
         default_timezone: Часовой пояс по умолчанию (IANA) для новых пользователей.
         bot_token: Токен Telegram-бота от @BotFather.
+        bot_username: Username бота без `@` (ссылки-приглашения `https://t.me/<bot>?start=inv_…`);
+            пусто — берётся у Telegram (`getMe`) при запущенном боте.
         bot_mode: Режим бота: `polling` (локально) или `webhook` (сервер).
         webhook_url: Публичный HTTPS-адрес эндпоинта вебхука бота.
         webhook_secret: Секрет заголовка `X-Telegram-Bot-Api-Secret-Token`.
@@ -72,6 +74,7 @@ class Settings(BaseSettings):
     # --- Telegram-бот (docs/02 §7) ---
     bot_token: SecretStr = Field(default=SecretStr(""), validation_alias="BOT_TOKEN")
     bot_mode: str = Field(default=BOT_MODE_POLLING, validation_alias="BOT_MODE")
+    bot_username: str = Field(default="", validation_alias="BOT_USERNAME")
     webhook_url: str = Field(default="", validation_alias="WEBHOOK_URL")
     webhook_secret: SecretStr = Field(default=SecretStr(""), validation_alias="WEBHOOK_SECRET")
     owner_telegram_id: int | None = Field(default=None, validation_alias="OWNER_TELEGRAM_ID")
