@@ -245,3 +245,25 @@ def short_date(day: date) -> str:
 def lesson_when(start: datetime, end: datetime) -> str:
     """Время урока в поясе получателя: «вт, 14 окт, 17:00–18:00» (аргументы уже локальные)."""
     return f"{short_date(start.date())}, {start:%H:%M}–{end:%H:%M}"
+
+
+# --- Уведомления (docs/05 §6): ученику на «ты», персоналу нейтрально, без родовых окончаний ---
+NOTIFY_LESSON_REMINDER = "⏰ Через 30 минут урок: {subject}, {time}."
+NOTIFY_HOMEWORK_DEADLINE = "📌 Завтра дедлайн ДЗ «{title}». Не забудь сдать."
+NOTIFY_HOMEWORK_GRADED = "✅ ДЗ «{title}» проверено: {score}/{max_score}."
+NOTIFY_HOMEWORK_RETURNED = "↩ ДЗ «{title}» нужно доработать. Комментарий: {comment}"
+NOTIFY_HOMEWORK_ASSIGNED = "📝 Новое ДЗ: «{title}». Срок: {due}."
+NOTIFY_LESSON_CANCELLED = "❌ Урок {when} отменён."
+NOTIFY_LESSON_RESCHEDULED = "🔁 Урок перенесён: было {old}, стало {new}."
+NOTIFY_HOMEWORK_SUBMITTED = "📥 Сдано ДЗ «{title}»: {student}."
+NOTIFY_HOMEWORK_EXPIRED = "⌛ ДЗ «{title}» сгорело: {student}."
+NOTIFY_LESSON_UNMARKED = "📋 Нет отметки об уроке: {subject}, {when}."
+NOTIFY_STUDENT_JOINED = "👋 Ученик принял приглашение: {student}."
+NOTIFY_BUTTON_OPEN_HOMEWORK = "Открыть ДЗ"
+NOTIFY_BUTTON_OPEN_APP = "Открыть приложение"
+NOTIFY_BUTTON_OPEN_ADMIN = "Открыть Admin App"
+
+
+def local_when(moment: datetime) -> str:
+    """Момент в поясе получателя: «вт, 14 окт, 17:00» (аргумент уже локальный)."""
+    return f"{short_date(moment.date())}, {moment:%H:%M}"
