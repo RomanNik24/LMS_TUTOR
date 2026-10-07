@@ -875,6 +875,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T2.08 (CODE). Набор с маркером security: ученик → чужие данные (404), менеджер → финансы (403), CSRF (нет X-Requested-With / чужой Origin), rate limit /auth/*, повторное использование приглашения, перепривязка Telegram. В CI добавь отдельный шаг "pytest -m security".
 ```
 **Проверка:** 🤖 `uv run pytest -m security -q` зелёный; в CI виден отдельный шаг.
+**Статус:** ✅ сводные проверки в `tests/integration/test_admin_api.py` (раздел T2.08): матрица всех `/admin/*` из OpenAPI (аноним 401, ученик 403, менеджер 403 на owner-only), CSRF на записи админки, менеджер нигде не получает цену, rate limit `/auth/link`; остальные пункты уже покрыты `test_auth_api.py`, `test_auth_service.py`, `test_csrf.py`, `test_rate_limit.py`. В CI отдельный шаг `pytest -m security`. «Ученик → чужие данные» появится вместе с первыми эндпоинтами данных ученика (этап 3). Интеграционные тесты идут только в CI (нужен Docker).
 
 ### T2.09 · Проверка этапа (полный локальный стек)
 **Кто:** 🖥️ TERM · **Размер:** M
