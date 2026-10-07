@@ -10,8 +10,6 @@ import {
   ClipboardList,
   LineChart,
   Sun,
-  UserCog,
-  Users,
   Wallet,
 } from "lucide-react";
 import { Suspense, lazy } from "react";
@@ -23,6 +21,10 @@ import { RequireRole } from "@/features/auth/RequireRole";
 import { HelloPage } from "@/features/auth/pages/HelloPage";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { StaffPage } from "@/features/staff/StaffPage";
+import { StudentCardPage } from "@/features/students/StudentCardPage";
+import { StudentFormPage } from "@/features/students/StudentFormPage";
+import { StudentsListPage } from "@/features/students/StudentsListPage";
 import { StudentLayout } from "@/layouts/StudentLayout";
 import { texts } from "@/lib/texts";
 import { MorePage } from "@/pages/MorePage";
@@ -107,16 +109,10 @@ const adminRoutes: RouteObject = {
             />
           ),
         },
-        {
-          path: "students",
-          element: (
-            <SectionPlaceholder
-              icon={Users}
-              title={texts.empty.adminStudents.title}
-              text={texts.empty.adminStudents.text}
-            />
-          ),
-        },
+        { path: "students", element: <StudentsListPage /> },
+        { path: "students/new", element: <StudentFormPage /> },
+        { path: "students/:id", element: <StudentCardPage /> },
+        { path: "students/:id/edit", element: <StudentFormPage /> },
         { path: "more", element: <MorePage /> },
         { path: "exams", element: soon(texts.nav.admin.exams, ClipboardCheck) },
         { path: "catalog", element: soon(texts.nav.admin.catalog, BookOpen) },
@@ -124,7 +120,7 @@ const adminRoutes: RouteObject = {
           element: <RequireRole allowed={["owner"]} />,
           children: [
             { path: "finance", element: soon(texts.nav.admin.finance, Wallet) },
-            { path: "staff", element: soon(texts.nav.admin.staff, UserCog) },
+            { path: "staff", element: <StaffPage /> },
           ],
         },
       ],
