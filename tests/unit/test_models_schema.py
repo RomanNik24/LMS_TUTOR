@@ -56,6 +56,10 @@ EXPECTED_TABLES: set[str] = {
     "guardians",
     "auth_tokens",
     "audit_log",
+    "schedule_templates",
+    "schedule_template_participants",
+    "lessons",
+    "lesson_participants",
 }
 
 IDENTITY_PK_TABLES = (
@@ -142,7 +146,7 @@ def server_default_text(table_name: str, column_name: str) -> str | None:
 
 
 def test_all_tables_of_phase_exist_and_no_future_tables() -> None:
-    """Таблиц ровно девять, из будущих этапов ничего не добавлено."""
+    """Набор таблиц ровно такой, как в EXPECTED_TABLES: из будущих этапов ничего не добавлено."""
 
     assert set(Base.metadata.tables) == EXPECTED_TABLES
 

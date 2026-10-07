@@ -3,7 +3,7 @@
 Таблицы строго по ``docs/04_database_schema.md``: §0 (общие правила),
 §1.1–1.3 (справочники), §2 (пользователи и доступ), §7.2 (журнал аудита).
 
-Созданы ТОЛЬКО девять таблиц текущего этапа:
+Таблицы этапа 1 (расписание добавлено в T3.01, ``schedule.py``):
 ``subjects``, ``exam_types``, ``grade_scales``, ``users``,
 ``student_profiles``, ``student_subjects``, ``guardians``, ``auth_tokens``,
 ``audit_log``. Модели расписания, уроков, ДЗ, пробников, уведомлений и
@@ -45,6 +45,12 @@
 from src.db.models._enum import enum_varchar
 from src.db.models.audit import AuditLog
 from src.db.models.reference import ExamType, GradeScale, Subject
+from src.db.models.schedule import (
+    Lesson,
+    LessonParticipant,
+    ScheduleTemplate,
+    ScheduleTemplateParticipant,
+)
 from src.db.models.users import AuthToken, Guardian, StudentProfile, StudentSubject, User
 
 __all__ = [
@@ -53,6 +59,10 @@ __all__ = [
     "ExamType",
     "GradeScale",
     "Guardian",
+    "Lesson",
+    "LessonParticipant",
+    "ScheduleTemplate",
+    "ScheduleTemplateParticipant",
     "StudentProfile",
     "StudentSubject",
     "Subject",

@@ -56,6 +56,10 @@ T102_TABLES = {
     "auth_tokens",
     "audit_log",
     "grade_scales",
+    "schedule_templates",
+    "schedule_template_participants",
+    "lessons",
+    "lesson_participants",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -65,6 +69,12 @@ EXPECTED_CHECK_NAMES = {
     "ck_auth_tokens_purpose",
     "ck_grade_scales_primary_score_nonneg",
     "ck_student_profiles_lesson_price_nonneg",
+    "ck_schedule_templates_weekday_range",
+    "ck_schedule_templates_duration_positive",
+    "ck_lessons_status",
+    "ck_lessons_end_after_start",
+    "ck_lesson_participants_attendance",
+    "ck_lesson_participants_price_snapshot_nonneg",
 }
 
 

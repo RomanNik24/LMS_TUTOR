@@ -22,13 +22,16 @@ def test_alembic_ini_is_ascii_and_uses_project_layout() -> None:
 
 
 def test_alembic_has_single_head() -> None:
-    """В репозитории T1.03 существует ровно одна revision head."""
+    """В репозитории существует ровно одна revision head (сейчас — T3.01)."""
 
     config = Config(str(ALEMBIC_INI))
     script = ScriptDirectory.from_config(config)
 
-    assert script.get_heads() == ["fddb2f6cef06"]
+    assert script.get_heads() == ["a3b1c0d4e5f6"]
 
-    revision = script.get_revision("fddb2f6cef06")
+    revision = script.get_revision("a3b1c0d4e5f6")
     assert revision is not None
-    assert revision.down_revision is None
+    assert revision.down_revision == "fddb2f6cef06"
+    first = script.get_revision("fddb2f6cef06")
+    assert first is not None
+    assert first.down_revision is None
