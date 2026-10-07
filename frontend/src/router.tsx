@@ -22,6 +22,7 @@ import { HelloPage } from "@/features/auth/pages/HelloPage";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
+import { SchedulePage } from "@/features/schedule/SchedulePage";
 import { StaffPage } from "@/features/staff/StaffPage";
 import { StudentCardPage } from "@/features/students/StudentCardPage";
 import { StudentFormPage } from "@/features/students/StudentFormPage";
@@ -100,7 +101,7 @@ const adminRoutes: RouteObject = {
       children: [
         { index: true, element: <Navigate to="today" replace /> },
         { path: "today", element: soon(texts.nav.admin.today, Sun) },
-        { path: "schedule", element: soon(texts.nav.admin.schedule, CalendarDays) },
+        { path: "schedule", element: <SchedulePage /> },
         {
           path: "homework",
           element: (
