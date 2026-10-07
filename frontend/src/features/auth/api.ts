@@ -5,7 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/api/client";
-import { unwrap } from "@/api/errors";
+import { unwrap, unwrapEmpty } from "@/api/errors";
 import type { components } from "@/api/schema";
 
 export type Me = components["schemas"]["MeResponse"];
@@ -44,6 +44,19 @@ export function useLinkLogin() {
       unwrap(await api.POST("/api/v1/auth/link", { body: { token } })),
     onSuccess: (me) => {
       queryClient.setQueryData(ME_QUERY_KEY, me);
+    },
+  });
+}
+
+/** Выход: сессия удаляется на сервере, кеш запросов очищается. */
+export function useLogout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      unwrapEmpty(await api.POST("/api/v1/auth/logout"));
+    },
+    onSuccess: () => {
+      queryClient.clear();
     },
   });
 }

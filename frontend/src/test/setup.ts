@@ -5,25 +5,17 @@
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup } from "@testing-library/react";
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 
 import { server } from "./server";
+import { setViewport } from "./viewport";
 
-// jsdom не реализует matchMedia; заглушка нужна lib/telegram.ts (вне Telegram он
-// спрашивает prefers-color-scheme). Возвращаем «светлая тема» — как основной режим брендбука.
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: (query: string): MediaQueryList =>
-    ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      dispatchEvent: () => false,
-    }) satisfies MediaQueryList,
+const MOBILE_WIDTH = 360;
+
+// jsdom не реализует matchMedia: подставляем заглушку (мобильная ширина 360 px, светлая тема).
+// Тесты лэйаутов меняют ширину через setViewport().
+beforeEach(() => {
+  setViewport(MOBILE_WIDTH);
 });
 
 // MSW: все сетевые запросы в тестах идут через mock-сервер, реальный бэкенд не нужен.
