@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@date-fns/tz": "1.4.1",
+    "@hookform/resolvers": "5.9.1",
     "@radix-ui/react-dialog": "1.2.0",
     "@radix-ui/react-slot": "1.4.0",
     "@radix-ui/react-tabs": "1.1.22",
@@ -33,9 +34,11 @@
     "openapi-fetch": "0.17.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-hook-form": "7.89.0",
     "react-router-dom": "7.18.4",
     "sonner": "2.0.8",
-    "tailwind-merge": "3.7.0"
+    "tailwind-merge": "3.7.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
