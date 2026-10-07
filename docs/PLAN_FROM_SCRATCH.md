@@ -1075,6 +1075,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T4.07 (CODE). submit_files (требует >= 1 файла), submit_self_reported («Сделал»), удаление/замена своих файлов до проверки; разрешены только статусы assigned/needs_revision; expired сдать нельзя; чужая выдача → 404; фиксируется on_time. Тесты US-04, включая сдачу просроченной (после последнего переноса).
 ```
 **Проверка:** 🤖 тесты зелёные.
+**Статус:** ✅ `src/services/submissions.py` (`SubmissionService.submit_files` — нужен хотя бы один файл, иначе `no_files`; `submit_self_reported` — «Сделал»; если файлы уже загружены, сдача записывается как файловая), схемы `SubmitRequest`, `SubmissionItem`; сдать можно только в `assigned` и `needs_revision` (`expired` — `assignment_expired`, `submitted`/`graded` — `assignment_not_submittable`); просроченная, но не `expired` выдача сдаётся; `on_time` = `submitted_at <= original_due_at` (вычисляется, перенос срока «в срок» не возвращает); чужая выдача — 404; файлы после сдачи заблокированы (`FileService`); тесты `tests/unit/test_submit_schema.py`, `tests/integration/test_submission_service.py`. Эндпоинты — T4.11.
 
 ### T4.08 · Проверка, возврат, оценка
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t4-08-grading` · **Коммит:** `feat(homework): implement grading and revision`
