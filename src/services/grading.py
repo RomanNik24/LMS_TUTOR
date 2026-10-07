@@ -32,6 +32,7 @@ from src.repositories.homework import HomeworkAssignmentRepository, HomeworkRepo
 from src.repositories.lessons import LessonRepository
 from src.schemas.homework import GradeItem, GradeRequest, ReturnRequest
 from src.services.auth import STAFF_ROLES
+from src.services.notification_events import NotificationEvents
 
 AUDIT_GRADED = "assignment.graded"
 AUDIT_GRADED_AFTER_EXPIRY = "assignment.graded_after_expiry"
@@ -58,6 +59,7 @@ class GradingService:
         self._homeworks = HomeworkRepository(session)
         self._lessons = LessonRepository(session)
         self._audit = AuditLogRepository(session)
+        self._events = NotificationEvents(session)
 
     async def grade_assignment(
         self, actor: CurrentUser, assignment_id: int, data: GradeRequest
@@ -100,6 +102,9 @@ class GradingService:
             entity_id=assignment.id,
             data=audit_data,
         )
+        await self._events.homework_graded(
+            assignment.student_id, assignment.id, homework.title, data.score, homework.max_score
+        )
         await self._session.commit()
         return self._item(assignment, homework)
 
@@ -123,6 +128,7 @@ class GradingService:
         now = utcnow()
         new_due = await self._new_due(assignment, data.new_due_at, now)
         old_due = assignment.due_at
+        submitted_at = assignment.submitted_at
         assignment.status = AssignmentStatus.NEEDS_REVISION
         assignment.teacher_comment = data.comment
         assignment.due_at = new_due
@@ -133,6 +139,9 @@ class GradingService:
             entity_type=AUDIT_ENTITY_ASSIGNMENT,
             entity_id=assignment.id,
             data={"old_due_at": old_due.isoformat(), "new_due_at": new_due.isoformat()},
+        )
+        await self._events.homework_returned(
+            assignment.student_id, assignment.id, homework.title, data.comment, submitted_at
         )
         await self._session.commit()
         return self._item(assignment, homework)

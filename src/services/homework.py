@@ -44,6 +44,7 @@ from src.schemas.homework import (
     HomeworkListPage,
 )
 from src.services.auth import STAFF_ROLES
+from src.services.notification_events import NotificationEvents
 
 AUDIT_HOMEWORK_CREATED = "homework.created"
 AUDIT_HOMEWORK_ASSIGNED = "homework.assignees_added"
@@ -66,6 +67,7 @@ class HomeworkService:
         self._lessons = LessonRepository(session)
         self._users = UserRepository(session)
         self._audit = AuditLogRepository(session)
+        self._events = NotificationEvents(session)
 
     async def create_homework(self, actor: CurrentUser, data: HomeworkCreate) -> HomeworkItem:
         """Создать задание и выдать его ученикам.
@@ -100,17 +102,17 @@ class HomeworkService:
                 due_mode=data.due_mode,
             )
         )
-        await self._homeworks.add_assignments(
-            [
-                HomeworkAssignment(
-                    homework_id=homework.id,
-                    student_id=student.id,
-                    original_due_at=due[student.id],
-                    due_at=due[student.id],
-                )
-                for student in students
-            ]
-        )
+        rows = [
+            HomeworkAssignment(
+                homework_id=homework.id,
+                student_id=student.id,
+                original_due_at=due[student.id],
+                due_at=due[student.id],
+            )
+            for student in students
+        ]
+        await self._homeworks.add_assignments(rows)
+        await self._notify_assigned(homework.title, rows)
         await self._audit.record(
             actor_user_id=actor.id,
             action=AUDIT_HOMEWORK_CREATED,
@@ -149,17 +151,17 @@ class HomeworkService:
             if homework.due_mode == DueMode.FIXED and fallback is None:
                 fallback = await self._homeworks.first_original_due(homework.id)
             due = await self._due_dates(homework.due_mode, fallback, students, now)
-            await self._homeworks.add_assignments(
-                [
-                    HomeworkAssignment(
-                        homework_id=homework.id,
-                        student_id=student.id,
-                        original_due_at=due[student.id],
-                        due_at=due[student.id],
-                    )
-                    for student in students
-                ]
-            )
+            rows = [
+                HomeworkAssignment(
+                    homework_id=homework.id,
+                    student_id=student.id,
+                    original_due_at=due[student.id],
+                    due_at=due[student.id],
+                )
+                for student in students
+            ]
+            await self._homeworks.add_assignments(rows)
+            await self._notify_assigned(homework.title, rows)
             await self._audit.record(
                 actor_user_id=actor.id,
                 action=AUDIT_HOMEWORK_ASSIGNED,
@@ -212,6 +214,10 @@ class HomeworkService:
         return HomeworkListPage(items=items, total=total, limit=limit, offset=offset)
 
     # ------------------------------------------------------------------ внутреннее
+
+    async def _notify_assigned(self, title: str, rows: list[HomeworkAssignment]) -> None:
+        for row in rows:
+            await self._events.homework_assigned(row.student_id, row.id, title, row.due_at)
 
     @staticmethod
     def _require_staff(actor: CurrentUser) -> None:

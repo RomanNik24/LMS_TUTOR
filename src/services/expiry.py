@@ -19,6 +19,7 @@ from src.core.timeutils import utcnow
 from src.db.models.homework import MAX_EXTENSIONS
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.homework import HomeworkAssignmentRepository
+from src.services.notification_events import NotificationEvents
 
 AUDIT_EXPIRED = "assignment.expired"
 AUDIT_ENTITY_ASSIGNMENT = "homework_assignment"
@@ -43,6 +44,7 @@ class ExpiryService:
         self._session = session
         self._assignments = HomeworkAssignmentRepository(session)
         self._audit = AuditLogRepository(session)
+        self._events = NotificationEvents(session)
 
     async def expire_due_assignments(self, now: datetime | None = None) -> ExpiryResult:
         """Перевести просроченные выдачи в ``expired``.
@@ -63,5 +65,9 @@ class ExpiryService:
                 entity_id=assignment_id,
                 data={},
             )
+            row = await self._assignments.detail(assignment_id)
+            if row is not None:
+                _assignment, homework, _code, student_name = row
+                await self._events.homework_expired(assignment_id, homework.title, student_name)
         await self._session.commit()
         return ExpiryResult(expired=len(ids), assignment_ids=ids)

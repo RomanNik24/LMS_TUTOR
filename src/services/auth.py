@@ -41,6 +41,7 @@ from src.db.models import AuthToken, User
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.auth_tokens import AuthTokenRepository
 from src.repositories.users import UserRepository
+from src.services.notification_events import NotificationEvents
 
 STAFF_ROLES = frozenset({UserRole.OWNER, UserRole.MANAGER})
 OWNER_DISPLAY_NAME = texts.OWNER_DISPLAY_NAME
@@ -290,6 +291,7 @@ class AuthService:
             await self._session.rollback()
             return pending
 
+        first_link = target.telegram_id is None
         target.telegram_id = telegram_id
         target.telegram_username = username
         target.updated_at = now
@@ -303,6 +305,8 @@ class AuthService:
         await self._audit_user(
             record.created_by, AUDIT_INVITE_ACCEPTED, target.id, {"invite_token_id": record.id}
         )
+        if first_link and target.role == UserRole.STUDENT:
+            await NotificationEvents(self._session).student_joined(target.id, target.display_name)
         await self._session.commit()
         return InviteAcceptResult(
             InviteAcceptStatus.LINKED, target.id, target.role, target.display_name
