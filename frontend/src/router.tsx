@@ -13,6 +13,9 @@ import { RequireRole } from "@/features/auth/RequireRole";
 import { HelloPage } from "@/features/auth/pages/HelloPage";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { AdminHomeworkPage } from "@/features/homework/AdminHomeworkPage";
+import { HomeworkDetailPage } from "@/features/homework/HomeworkDetailPage";
+import { ReviewPage } from "@/features/homework/ReviewPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
 import { StudentLessonPage } from "@/features/schedule/StudentLessonPage";
 import { StudentSchedulePage } from "@/features/schedule/StudentSchedulePage";
@@ -88,16 +91,9 @@ const adminRoutes: RouteObject = {
         { index: true, element: <Navigate to="today" replace /> },
         { path: "today", element: soon(texts.nav.admin.today, Sun) },
         { path: "schedule", element: <SchedulePage /> },
-        {
-          path: "homework",
-          element: (
-            <SectionPlaceholder
-              icon={ClipboardList}
-              title={texts.empty.adminReviewQueue.title}
-              text={texts.empty.adminReviewQueue.text}
-            />
-          ),
-        },
+        { path: "homework", element: <AdminHomeworkPage /> },
+        { path: "homework/:homeworkId", element: <HomeworkDetailPage /> },
+        { path: "assignments/:assignmentId", element: <ReviewPage /> },
         { path: "students", element: <StudentsListPage /> },
         { path: "students/new", element: <StudentFormPage /> },
         { path: "students/:id", element: <StudentCardPage /> },
