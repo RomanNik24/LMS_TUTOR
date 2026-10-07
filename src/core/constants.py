@@ -120,3 +120,22 @@ URGENT_LESSON_CHANGE_HOURS = 12
 # Воркер (docs/03 §9, docs/10 §8)
 HEARTBEAT_CRON = "*/5 * * * *"
 HEARTBEAT_TIMEOUT_SECONDS = 10
+
+# Напоминания и обслуживание (docs/03 §9, docs/05 §6)
+LESSON_REMINDER_MINUTES = 30
+# Задача идёт раз в минуту: напоминание ставится заранее (с запасом в одну минуту) на точный момент
+LESSON_REMINDER_LOOKAHEAD_MINUTES = 31
+# Если воркер простоял, позднее напоминание ещё полезно, но не позже этого опоздания
+LESSON_REMINDER_LATE_TOLERANCE_MINUTES = 5
+HOMEWORK_REMINDER_HOURS = 24
+HOMEWORK_REMINDER_LOOKAHEAD_MINUTES = 5
+UNMARKED_LESSON_AFTER_MINUTES = 60
+# Урок без отметки старше этого срока уже не напоминаем (иначе первый запуск завалит сообщениями)
+UNMARKED_LESSON_LOOKBACK_DAYS = 14
+TOKEN_RETENTION_DAYS = 1
+# Расписание задач (cron, UTC)
+CRON_EVERY_MINUTE = "* * * * *"
+CRON_EVERY_5_MINUTES = "*/5 * * * *"
+CRON_EVERY_15_MINUTES = "*/15 * * * *"
+CRON_LESSON_GENERATION = "0 3 * * *"
+CRON_LINKS_CLEANUP = "30 3 * * *"

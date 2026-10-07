@@ -7,7 +7,7 @@ expires_at > now``. Текущее время передаётся параме�
 
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from src.core.enums import AuthTokenPurpose
 from src.db.models import AuthToken
@@ -69,3 +69,12 @@ class AuthTokenRepository(BaseRepository[AuthToken]):
             AuthToken.expires_at > now,
         )
         return list((await self._session.execute(stmt)).scalars().all())
+
+    async def delete_expired(self, before: datetime) -> int:
+        """Удалить токены, срок которых истёк раньше ``before`` (погашенные и отозванные тоже).
+
+        Returns:
+            Сколько токенов удалено.
+        """
+        stmt = delete(AuthToken).where(AuthToken.expires_at < before).returning(AuthToken.id)
+        return len((await self._session.execute(stmt)).all())
