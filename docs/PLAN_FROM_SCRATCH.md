@@ -830,6 +830,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T2.03 (CODE). StaffService: create_staff (manager/owner), change_role (запись в аудит + удаление сессий), приглашение сотрудника, архивация. Нельзя архивировать или понизить последнего владельца. Менеджер на все операции — 403. Тесты на каждое правило.
 ```
 **Проверка:** 🤖 тесты зелёные, есть тест «последний владелец».
+**Статус:** ✅ `src/services/staff.py` (`StaffService`), схемы `src/schemas/staff.py`, блокировка `FOR UPDATE` активных владельцев; тесты `tests/integration/test_staff_service.py` и `tests/unit/test_staff_schemas.py`. Эндпоинты — T2.04.
 
 ### T2.04 · Admin API: ученики, приглашения, сотрудники
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t2-04-admin-api` · **Коммит:** `feat(api): add admin students and staff endpoints`

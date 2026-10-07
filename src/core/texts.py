@@ -41,6 +41,11 @@ STUDENT_UPDATE_EMPTY = "Укажите хотя бы одно поле для и
 STUDENT_FIELD_NOT_NULLABLE = "Это поле нельзя очистить."
 LIST_PARAMS_INVALID = "Неверные параметры списка: limit от 1 до 200, offset не меньше 0."
 
+# --- Сотрудники (docs/08 §5.3, T2.03) ---
+STAFF_NOT_FOUND = "Сотрудник не найден."
+STAFF_LAST_OWNER = "Нельзя понизить или архивировать последнего владельца."
+STAFF_ALREADY_ARCHIVED = "Сотрудник уже в архиве."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."
