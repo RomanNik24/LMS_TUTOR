@@ -12,14 +12,20 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core import texts
+from src.core.constants import LIST_LIMIT_DEFAULT, LIST_LIMIT_MAX
 from src.core.current_user import CurrentUser
 from src.core.enums import UserRole
-from src.core.exceptions import BusinessRuleError, NotFoundError, PermissionDeniedError
+from src.core.exceptions import (
+    BusinessRuleError,
+    NotFoundError,
+    PermissionDeniedError,
+    ValidationError,
+)
 from src.core.timeutils import utcnow
 from src.db.models import User
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.users import UserRepository
-from src.schemas.staff import StaffCreate, StaffItem, StaffUpdate
+from src.schemas.staff import StaffCreate, StaffItem, StaffListPage, StaffUpdate
 from src.services.auth import AUDIT_ENTITY_USER, STAFF_ROLES, AuthService, IssuedToken
 
 AUDIT_STAFF_CREATED = "staff.created"
@@ -59,18 +65,25 @@ class StaffService:
         return self._item(user)
 
     async def list_staff(
-        self, actor: CurrentUser, *, include_archived: bool = False
-    ) -> list[StaffItem]:
-        """Список сотрудников по алфавиту имени (по умолчанию без архивных).
+        self,
+        actor: CurrentUser,
+        *,
+        include_archived: bool = False,
+        limit: int = LIST_LIMIT_DEFAULT,
+        offset: int = 0,
+    ) -> StaffListPage:
+        """Список сотрудников по алфавиту имени со страницей (по умолчанию без архивных).
 
         Raises:
             PermissionDeniedError: Не владелец.
+            ValidationError: Неверные ``limit`` или ``offset``.
         """
         self._require_owner(actor)
-        return [
-            self._item(user)
-            for user in await self._users.list_staff(include_archived=include_archived)
-        ]
+        if not 1 <= limit <= LIST_LIMIT_MAX or offset < 0:
+            raise ValidationError(texts.LIST_PARAMS_INVALID, code="invalid_list_params")
+        everyone = await self._users.list_staff(include_archived=include_archived)
+        items = [self._item(user) for user in everyone[offset : offset + limit]]
+        return StaffListPage(items=items, total=len(everyone), limit=limit, offset=offset)
 
     async def update_staff(self, actor: CurrentUser, staff_id: int, data: StaffUpdate) -> StaffItem:
         """Изменить имя и/или роль сотрудника.

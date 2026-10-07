@@ -5,7 +5,7 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.core import texts
-from src.core.constants import DEFAULT_USER_TIMEZONE
+from src.core.constants import DEFAULT_USER_TIMEZONE, LIST_LIMIT_DEFAULT
 from src.core.enums import UserRole
 from src.schemas.auth import DISPLAY_NAME_MAX_LENGTH
 from src.schemas.roles import audience_config
@@ -64,3 +64,14 @@ class StaffItem(BaseModel):
     bot_blocked: bool
     telegram_linked: bool
     invite_pending: bool
+
+
+class StaffListPage(BaseModel):
+    """Страница списка сотрудников (docs/08 §1: ``items``, ``total``, ``limit``, ``offset``)."""
+
+    model_config = audience_config(UserRole.OWNER)
+
+    items: list[StaffItem]
+    total: int
+    limit: int = LIST_LIMIT_DEFAULT
+    offset: int = 0

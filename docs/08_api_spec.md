@@ -90,7 +90,7 @@
 | PATCH | `/admin/students/{id}` | Правка (цена только `owner`, изменение пишется в `audit_log`) |
 | POST | `/admin/students/{id}/archive` | Архивировать |
 | POST | `/admin/students/{id}/restore` | Вернуть из архива |
-| POST | `/admin/students/{id}/invitations` | Создать/перевыпустить приглашение. Ответ: `{ "url": "https://t.me/<bot>?start=inv_<token>", "expires_at": "..." }` (токен показывается только в этот момент) |
+| POST | `/admin/students/{id}/invitations` | Создать/перевыпустить приглашение. Ответ `201`: `{ "id": 7, "url": "https://t.me/<bot>?start=inv_<token>", "expires_at": "..." }` (`id` — для отзыва) (токен показывается только в этот момент) |
 | DELETE | `/admin/invitations/{id}` | Отозвать приглашение |
 | POST | `/admin/students/{id}/unlink-telegram` | Снять привязку Telegram (владельцу отвязать самого себя нельзя: 400 `owner_cannot_unlink`) |
 | GET | `/admin/students/{id}/report?from=&to=` | Отчёт по ученику (ДЗ, пробники, посещаемость); для `owner` + финансы ученика |

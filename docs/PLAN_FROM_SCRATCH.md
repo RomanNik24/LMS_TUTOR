@@ -840,6 +840,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T2.04 (CODE). Эндпоинты docs/08 §5.2–§5.3: создание/правка/архив/восстановление ученика, приглашение (токен показывается один раз), отзыв, unlink-telegram, сотрудники. Пагинация limit/offset/total, единый формат ошибок, operation_id. Интеграционные тесты по матрице прав docs/08 §8 (включая негативные: ученик, менеджер на owner-эндпоинты). Затем запусти gen:api и закоммить schema.d.ts.
 ```
 **Проверка:** 🤖 `uv run python scripts/check.py` PASS; 🤖 CI-шаг drift зелёный.
+**Статус:** ✅ роутеры `src/api/v1/admin_students.py`, `admin_staff.py`, `invitations.py` (14 операций), зависимости `StaffActor`/`OwnerActor`, `BOT_USERNAME` (иначе `getMe`), `DELETE /admin/invitations/{id}` по `auth_tokens.id`; тесты `tests/unit/test_admin_api.py` (без БД, сервисы подменены) и `tests/integration/test_admin_api.py`; типы фронтенда перегенерированы. Отчёт `/admin/students/{id}/report` — на этапах ДЗ и пробников.
 
 ### T2.05 · Фронтенд: каркас, layouts, общие компоненты
 **Кто:** 💻 CODE · **Размер:** L (разбить) · **Ветка:** `feature/t2-05-layouts` · **Коммит:** `feat(frontend): add layouts and shared components`

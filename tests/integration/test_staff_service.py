@@ -6,7 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.current_user import CurrentUser
 from src.core.enums import UserRole
-from src.core.exceptions import BusinessRuleError, NotFoundError, PermissionDeniedError
+from src.core.exceptions import (
+    BusinessRuleError,
+    NotFoundError,
+    PermissionDeniedError,
+    ValidationError,
+)
 from src.core.rate_limit import RateLimiter
 from src.core.session_store import SessionStore
 from src.db.models import AuditLog, AuthToken, User
@@ -125,10 +130,15 @@ async def test_list_staff_excludes_students_and_archived_by_default(
     await service.archive_staff(_actor(owner), archived.user_id)
 
     active = await service.list_staff(_actor(owner))
-    assert {i.display_name for i in active} == {"Роман", "Мария"}
+    assert {i.display_name for i in active.items} == {"Роман", "Мария"}
+    assert active.total == 2
     everyone = await service.list_staff(_actor(owner), include_archived=True)
-    assert {i.display_name for i in everyone} == {"Роман", "Мария", "Архивный"}
-    assert all(i.role in (UserRole.OWNER, UserRole.MANAGER) for i in everyone)
+    assert {i.display_name for i in everyone.items} == {"Роман", "Мария", "Архивный"}
+    assert all(i.role in (UserRole.OWNER, UserRole.MANAGER) for i in everyone.items)
+    page = await service.list_staff(_actor(owner), include_archived=True, limit=1, offset=1)
+    assert (page.total, len(page.items), page.limit, page.offset) == (3, 1, 1, 1)
+    with pytest.raises(ValidationError):
+        await service.list_staff(_actor(owner), limit=0)
 
 
 # ---------------------------------------------------------------- роль и имя
@@ -258,7 +268,7 @@ async def test_invite_staff_can_be_accepted(
     assert user.telegram_id == 910_777
     tokens = (await db_session.execute(select(AuthToken).where(AuthToken.user_id == user.id))).all()
     assert len(tokens) == 1
-    staff = {i.user_id: i for i in await service.list_staff(_actor(owner))}
+    staff = {i.user_id: i for i in (await service.list_staff(_actor(owner))).items}
     assert staff[created.user_id].telegram_linked is True
     assert staff[created.user_id].invite_pending is False
 

@@ -22,12 +22,14 @@ from src.core.constants import (
 )
 from src.core.current_user import CurrentUser
 from src.core.enums import UserRole
-from src.core.exceptions import AppError, PermissionDeniedError
+from src.core.exceptions import AppError, ExternalServiceError, PermissionDeniedError
 from src.core.rate_limit import RateLimiter
 from src.core.session_store import SessionStore
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
 from src.services.auth import AuthService
 from src.services.profile import ProfileService
+from src.services.staff import StaffService
+from src.services.students import StudentService
 
 
 @lru_cache(maxsize=1)
@@ -164,3 +166,45 @@ def get_auth_service(
 def get_profile_service(session: Annotated[AsyncSession, Depends(get_session)]) -> ProfileService:
     """Собрать ``ProfileService`` на запрос."""
     return ProfileService(session)
+
+
+# Сотрудник (owner или manager) и только владелец: зависимости эндпоинтов /admin/*.
+StaffActor = Annotated[CurrentUser, Depends(require_role(UserRole.OWNER, UserRole.MANAGER))]
+OwnerActor = Annotated[CurrentUser, Depends(require_role(UserRole.OWNER))]
+
+
+def get_student_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    auth: Annotated[AuthService, Depends(get_auth_service)],
+) -> StudentService:
+    """Собрать ``StudentService`` на запрос."""
+    return StudentService(session, auth)
+
+
+def get_staff_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    auth: Annotated[AuthService, Depends(get_auth_service)],
+) -> StaffService:
+    """Собрать ``StaffService`` на запрос."""
+    return StaffService(session, auth)
+
+
+async def get_bot_username(request: Request) -> str:
+    """Username бота для ссылок-приглашений: ``BOT_USERNAME`` или ``getMe`` у запущенного бота.
+
+    Raises:
+        ExternalServiceError: Имя неизвестно (нет настройки и бот не запущен).
+    """
+    configured = get_settings().bot_username.strip().lstrip("@")
+    if configured:
+        return configured
+    cached: str | None = getattr(request.app.state, "bot_username", None)
+    if cached:
+        return cached
+    runtime = getattr(request.app.state, "bot_runtime", None)
+    if runtime is not None:
+        me = await runtime.bot.get_me()
+        if me.username:
+            request.app.state.bot_username = me.username
+            return str(me.username)
+    raise ExternalServiceError(texts.BOT_USERNAME_UNKNOWN)

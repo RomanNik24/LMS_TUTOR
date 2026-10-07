@@ -40,7 +40,7 @@ from src.schemas.students import (
     StudentSelfProfile,
     StudentUpdate,
 )
-from src.services.auth import AUDIT_ENTITY_USER, STAFF_ROLES, AuthService
+from src.services.auth import AUDIT_ENTITY_USER, STAFF_ROLES, AuthService, IssuedToken
 
 AUDIT_STUDENT_CREATED = "student.created"
 AUDIT_STUDENT_PRICE_CHANGED = "student.price_changed"
@@ -279,11 +279,34 @@ class StudentService:
                 board_url=profile.board_url,
                 subjects=await self._codes(user.id),
             )
+        return await self.get_student_card_for_staff(actor, student_id)
+
+    async def get_student_card_for_staff(self, actor: CurrentUser, student_id: int) -> StudentCard:
+        """Карточка ученика для персонала (``GET /admin/students/{id}``).
+
+        Менеджер получает ``StudentCardManager`` (без цены), владелец — ``StudentCardOwner``.
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+            NotFoundError: Ученика нет.
+        """
         self._require_staff(actor)
         user, profile = await self._load_student(student_id)
         return self._card(actor, user, profile, await self._codes(user.id))
 
-    # ------------------------------------------------------------------ Telegram
+    # ------------------------------------------------------------------ приглашение и Telegram
+
+    async def invite_student(self, actor: CurrentUser, student_id: int) -> IssuedToken:
+        """Выпустить приглашение ученика (прежние отзываются, TTL 7 дней).
+
+        Raises:
+            PermissionDeniedError: Не сотрудник.
+            NotFoundError: Ученика нет.
+            BusinessRuleError: Ученик в архиве.
+        """
+        self._require_staff(actor)
+        await self._load_student(student_id)
+        return await self._auth.create_invite(actor, student_id)
 
     async def unlink_telegram(self, actor: CurrentUser, student_id: int) -> None:
         """Снять привязку Telegram ученика (сессии удаляются, запись в ``audit_log``).

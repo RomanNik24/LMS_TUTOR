@@ -131,5 +131,5 @@
 ## 7. Конфигурация
 - Бэкенд: `pydantic-settings`, шаблон `.env.example`.
 - Фронтенд: переменные `VITE_*` (только публичные значения: имя бота, адрес API). Секретов во фронтенде **нет и быть не может**.
-- Основные переменные бэкенда: `APP_ENV`, `DATABASE_URL`, `REDIS_URL`, `BOT_TOKEN`, `BOT_MODE`, `WEBHOOK_URL`, `WEBHOOK_SECRET`, `OWNER_TELEGRAM_ID`, `TEACHER_CONTACT_URL`, `PUBLIC_BASE_URL`, `SESSION_SECRET`, `SESSION_COOKIE_SECURE` (по умолчанию `true`; `false` допустим только в `local` по HTTP), `S3_*`, `SENTRY_DSN`, `SCHEDULE_HORIZON_WEEKS`, `DEFAULT_TIMEZONE`, `TELEGRAM_API_BASE`, `TELEGRAM_PROXY_URL`.
+- Основные переменные бэкенда: `APP_ENV`, `DATABASE_URL`, `REDIS_URL`, `BOT_TOKEN`, `BOT_USERNAME` (необязательно: иначе `getMe`), `BOT_MODE`, `WEBHOOK_URL`, `WEBHOOK_SECRET`, `OWNER_TELEGRAM_ID`, `TEACHER_CONTACT_URL`, `PUBLIC_BASE_URL`, `SESSION_SECRET`, `SESSION_COOKIE_SECURE` (по умолчанию `true`; `false` допустим только в `local` по HTTP), `S3_*`, `SENTRY_DSN`, `SCHEDULE_HORIZON_WEEKS`, `DEFAULT_TIMEZONE`, `TELEGRAM_API_BASE`, `TELEGRAM_PROXY_URL`.
 - Фронтенд: сейчас используется только `VITE_BOT_USERNAME`; `VITE_API_BASE_URL` (по умолчанию `/api/v1`; пока пути задаёт сгенерированная схема API) и `VITE_SENTRY_DSN` появятся вместе с подключением Sentry (T9.07).
