@@ -921,6 +921,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T3.03 (CODE). В timeutils: «локальное время + IANA-пояс → UTC», генерация дат по дням недели с учётом перехода на летнее/зимнее время (локальное время урока НЕ должно сдвигаться при смене DST), границы суток пользователя. Тесты (>= 15): Europe/Moscow, Europe/Kaliningrad, Asia/Yekaterinburg и пояс с DST (Europe/Berlin) — для проверки алгоритма; границы суток, високосный день.
 ```
 **Проверка:** 🤖 `uv run pytest -q -k timeutils` ≥ 15 тестов.
+**Статус:** ✅ в `src/core/timeutils.py`: `local_to_utc`, `local_date_of`, `day_bounds_utc`, `dates_on_weekday`, `weekly_starts_utc`; тесты `tests/unit/test_timeutils_schedule.py` (21 новый, всего по `-k timeutils` 28). Правила DST: несуществующее время сдвигается вперёд, неоднозначное — первое вхождение; сутки с DST длятся 23/25 часов.
 
 ### T3.04 · Создание урока и защита от пересечений
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t3-04-create-lesson` · **Коммит:** `feat(schedule): create lessons with overlap protection`
