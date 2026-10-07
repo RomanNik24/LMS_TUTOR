@@ -3,7 +3,8 @@
 # Backend `app` — только в профиле `full` (`docker compose --profile full up`): при обычной
 # разработке backend запускается на хосте (uvicorn), иначе он займёт порт 8000 и запустит
 # второй polling того же бота.
-# Worker, scheduler и nginx появятся на более поздних этапах roadmap.
+# Профиль `full` (T1.17): app + nginx со сборкой фронтенда (http://127.0.0.1:8080).
+# Worker и scheduler появятся на более поздних этапах roadmap.
 # Продакшен-окружение настраивается отдельно (docker-compose.prod.yml) — не здесь.
 #
 # Все пароли и ключи ниже — безопасные тестовые значения для локальной
@@ -130,6 +131,24 @@ services:
       redis:
         condition: service_healthy
     # Миграции запускаются вручную (`alembic upgrade head`), не автоматически.
+
+  # --- Nginx со сборкой фронтенда (frontend/Dockerfile), профиль `full` ---
+  # Раздаёт SPA и проксирует /api, /telegram, /health на app. Порт 8080 только на localhost:
+  # сюда направляется HTTPS-туннель (`scripts/dev_tunnel.sh 8080`), порт 5173 остаётся за pnpm dev.
+  nginx:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Публичное значение (username бота без @) вшивается в сборку фронтенда.
+        VITE_BOT_USERNAME: ${VITE_BOT_USERNAME:-}
+    container_name: my-lms-nginx
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      app:
+        condition: service_healthy
 
 volumes:
   postgres_data:

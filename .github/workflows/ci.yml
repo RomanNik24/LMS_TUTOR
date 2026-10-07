@@ -180,3 +180,18 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Сборка образа Nginx со фронтендом и проверка синтаксиса конфигурации (T1.17).
+  # `app` в конфиге — имя контейнера backend: для nginx -t подсовываем его как локальный хост.
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build nginx image with frontend
+        run: docker build -f frontend/Dockerfile -t lms-nginx .
+
+      - name: Check nginx config syntax
+        run: docker run --rm --add-host app:127.0.0.1 lms-nginx nginx -t

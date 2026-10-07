@@ -28,6 +28,7 @@ scripts/dev_tunnel.sh 5173          # Linux / macOS / Git Bash
 ```
 
 Порт по умолчанию — 5173 (dev-сервер фронтенда `pnpm dev`; Vite проксирует `/api` на backend).
+Для полного стека (`docker compose --profile full`, README) укажите порт Nginx: `scripts/dev_tunnel.sh 8080`.
 Установка `cloudflared` (Windows): `winget install --id Cloudflare.cloudflared`.
 
 Адрес меняется при каждом запуске, поэтому после старта туннеля:
