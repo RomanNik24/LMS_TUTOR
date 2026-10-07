@@ -122,6 +122,10 @@ services:
       DATABASE_URL: postgresql+asyncpg://lms:lms_dev_password@postgres:5432/lms
       REDIS_URL: redis://redis:6379/0
       S3_ENDPOINT: http://minio:9000
+      # Подписанные ссылки строятся от публичного адреса: minio:9000 виден только внутри сети
+      # compose. Пусто в .env.local - 127.0.0.1:9000 (открывается на ПК; для телефона задайте
+      # в .env.local публичный адрес, например туннель на порт 9000).
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://127.0.0.1:9000}
     ports:
       # Порт API — только на localhost (nginx появится позже, docs/10 §3).
       - "127.0.0.1:8000:8000"
