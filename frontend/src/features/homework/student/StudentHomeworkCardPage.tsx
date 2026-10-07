@@ -14,10 +14,10 @@ import { Input } from "@/components/ui/input";
 import { useMe } from "@/features/auth/api";
 import { formatDate, formatTime } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
+import { useSubjectName } from "@/features/reference/api";
 
 import { PhotoViewer } from "../PhotoViewer";
 import { FileUploader } from "./FileUploader";
-import { subjectLabel } from "./StudentHomeworkPage";
 import { materialUrl, useSelfReport, useStudentAssignment, useSubmitHomework } from "./studentApi";
 import type { StudentAssignmentDetail } from "./studentApi";
 
@@ -109,6 +109,7 @@ function SolutionBlock({ detail }: { detail: StudentAssignmentDetail }) {
 }
 
 function Body({ detail, timeZone }: { detail: StudentAssignmentDetail; timeZone: string }) {
+  const subjectLabel = useSubjectName();
   const status = detail.is_overdue ? "homework.overdue" : (`homework.${detail.status}` as const);
   const mine = detail.files.filter((file) => file.role === "student_solution");
   const reviews = detail.files.filter((file) => file.role === "teacher_review");

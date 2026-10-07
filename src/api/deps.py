@@ -37,6 +37,7 @@ from src.services.files import FileService
 from src.services.grading import GradingService
 from src.services.homework import HomeworkService
 from src.services.profile import ProfileService
+from src.services.reference import ReferenceService
 from src.services.schedule import ScheduleService
 from src.services.staff import StaffService
 from src.services.students import StudentService
@@ -177,6 +178,13 @@ def get_auth_service(
 def get_profile_service(session: Annotated[AsyncSession, Depends(get_session)]) -> ProfileService:
     """Собрать ``ProfileService`` на запрос."""
     return ProfileService(session)
+
+
+def get_reference_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ReferenceService:
+    """Собрать ``ReferenceService`` на запрос."""
+    return ReferenceService(session)
 
 
 # Сотрудник (owner или manager) и только владелец: зависимости эндпоинтов /admin/*.

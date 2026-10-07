@@ -88,6 +88,46 @@ export interface paths {
         patch: operations["update_me"];
         trace?: never;
     };
+    "/api/v1/reference/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Предметы
+         * @description Активные предметы: код и название.
+         */
+        get: operations["list_subjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reference/exam-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Типы экзаменов
+         * @description Активные типы экзаменов: код, предмет, вид, формат результата, максимальный балл.
+         */
+        get: operations["list_exam_types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/students": {
         parameters: {
             query?: never;
@@ -1162,6 +1202,36 @@ export interface components {
             error: components["schemas"]["ErrorBody"];
         };
         /**
+         * ExamKind
+         * @description Вид экзамена: `exam_types.kind` (docs/04 §1.2).
+         * @enum {string}
+         */
+        ExamKind: "oge" | "ege";
+        /**
+         * ExamResultKind
+         * @description Тип результата перевода по шкале: `exam_types.result_kind` (docs/04 §1.2).
+         * @enum {string}
+         */
+        ExamResultKind: "grade_2_5" | "test_100";
+        /**
+         * ExamTypeItem
+         * @description Тип экзамена: код, предмет, вид (ОГЭ/ЕГЭ), формат результата и максимальный балл.
+         */
+        ExamTypeItem: {
+            /** Id */
+            id: number;
+            /** Code */
+            code: string;
+            /** Subject Code */
+            subject_code: string;
+            kind: components["schemas"]["ExamKind"];
+            result_kind: components["schemas"]["ExamResultKind"];
+            /** Max Primary */
+            max_primary: number;
+            /** Name */
+            name: string;
+        };
+        /**
          * ExtendRequest
          * @description Перенос дедлайна: без ``due_at`` — на ближайшее занятие, с ``due_at`` — на дату вручную.
          */
@@ -2058,6 +2128,16 @@ export interface components {
             teacher_id?: number | null;
         };
         /**
+         * SubjectItem
+         * @description Предмет: код (в запросах API) и отображаемое имя.
+         */
+        SubjectItem: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
+        /**
          * SubmissionItem
          * @description Итог сдачи для ученика: статус, тип сдачи и признак «в срок».
          */
@@ -2505,6 +2585,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_subjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubjectItem"][];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_exam_types: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamTypeItem"][];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
             /** @description Превышен лимит запросов */

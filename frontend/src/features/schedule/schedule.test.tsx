@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { routes } from "@/router";
 import { texts } from "@/lib/texts";
 import { mockMe } from "@/test/mockMe";
+import { chooseSubject } from "@/test/chooseSubject";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 import { setViewport } from "@/test/viewport";
@@ -170,6 +171,7 @@ describe("Расписание: создание урока", () => {
     );
     renderRoutes(routes, ["/admin/schedule"]);
     fireEvent.click(await screen.findByRole("button", { name: t.newLesson }));
+    await chooseSubject();
     fireEvent.click(await screen.findByRole("checkbox", { name: "Аня Иванова" }));
     fireEvent.click(screen.getByRole("button", { name: t.form.submitCreate }));
     await waitFor(() => {
@@ -216,6 +218,7 @@ describe("Расписание: создание урока", () => {
     );
     renderRoutes(routes, ["/admin/schedule"]);
     fireEvent.click(await screen.findByRole("button", { name: t.newLesson }));
+    await chooseSubject();
     fireEvent.click(await screen.findByRole("checkbox", { name: "Аня Иванова" }));
     fireEvent.click(screen.getByRole("button", { name: t.form.submitCreate }));
     const alert = await screen.findByText(/В это время уже есть урок/);
@@ -244,6 +247,7 @@ describe("Расписание: шаблон", () => {
         .getAllByRole("listitem")
         .map((li) => li.textContent),
     ).toEqual(["вт, 20 окт", "вт, 27 окт", "вт, 3 нояб", "вт, 10 нояб"]);
+    await chooseSubject();
     fireEvent.click(await screen.findByRole("checkbox", { name: "Борис Орлов" }));
     fireEvent.click(screen.getByRole("button", { name: t.template.submit }));
     await waitFor(() => {

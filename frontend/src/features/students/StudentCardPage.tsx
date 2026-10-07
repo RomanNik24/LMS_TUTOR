@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InvitationDialog } from "@/features/invitations/InvitationDialog";
 import { texts } from "@/lib/texts";
+import { useSubjectName } from "@/features/reference/api";
 
 import { useArchiveStudent, useRestoreStudent, useStudent, useUnlinkTelegram } from "./api";
 import type { StudentCard } from "./api";
@@ -43,12 +44,6 @@ function LinkValue({ url }: { url: string | null }) {
   );
 }
 
-function subjectLabel(code: string): string {
-  return code in texts.admin.subjects
-    ? texts.admin.subjects[code as keyof typeof texts.admin.subjects]
-    : code;
-}
-
 function zoneLabel(zone: string): string {
   return zone in texts.admin.timezones
     ? texts.admin.timezones[zone as keyof typeof texts.admin.timezones]
@@ -56,6 +51,7 @@ function zoneLabel(zone: string): string {
 }
 
 function Overview({ card }: { card: StudentCard }) {
+  const subjectLabel = useSubjectName();
   return (
     <Card>
       <h2 className="mb-3 text-lg font-bold font-heading">{o.profile}</h2>

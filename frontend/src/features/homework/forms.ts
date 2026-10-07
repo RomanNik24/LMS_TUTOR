@@ -21,7 +21,7 @@ export const homeworkFormSchema = z
   .object({
     title: z.string().trim().min(1, e.nameRequired).max(TITLE_MAX, e.nameTooLong),
     description: z.string().trim().max(DESCRIPTION_MAX, e.descriptionTooLong),
-    subject_code: z.string().min(1),
+    subject_code: z.string().min(1, e.subjectRequired),
     max_score: z
       .string()
       .trim()

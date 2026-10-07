@@ -14,17 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 import { texts } from "@/lib/texts";
+import { useSubjectName } from "@/features/reference/api";
 
 import { PAGE_SIZE, useStudents } from "./api";
 import type { StudentListItem, StudentStatus } from "./api";
 
 const t = texts.admin.students;
-
-function subjectLabel(code: string): string {
-  return code in texts.admin.subjects
-    ? texts.admin.subjects[code as keyof typeof texts.admin.subjects]
-    : code;
-}
 
 function Flags({ student }: { student: StudentListItem }) {
   return (
@@ -42,7 +37,7 @@ function Flags({ student }: { student: StudentListItem }) {
   );
 }
 
-function meta(student: StudentListItem): string {
+function meta(student: StudentListItem, subjectLabel: (code: string) => string): string {
   const parts: string[] = [];
   if (student.school_class !== null) parts.push(t.classLabel(student.school_class));
   if (student.subjects.length > 0) parts.push(student.subjects.map(subjectLabel).join(", "));
@@ -50,6 +45,7 @@ function meta(student: StudentListItem): string {
 }
 
 function StudentCards({ items }: { items: StudentListItem[] }) {
+  const subjectLabel = useSubjectName();
   return (
     <ul className="flex flex-col gap-3">
       {items.map((student) => (
@@ -60,7 +56,9 @@ function StudentCards({ items }: { items: StudentListItem[] }) {
           >
             <Card className="flex flex-col gap-1.5">
               <span className="text-base font-bold font-heading">{student.display_name}</span>
-              <span className="text-sm text-muted-foreground font-body">{meta(student)}</span>
+              <span className="text-sm text-muted-foreground font-body">
+                {meta(student, subjectLabel)}
+              </span>
               <Flags student={student} />
             </Card>
           </Link>
@@ -71,6 +69,7 @@ function StudentCards({ items }: { items: StudentListItem[] }) {
 }
 
 function StudentTable({ items }: { items: StudentListItem[] }) {
+  const subjectLabel = useSubjectName();
   return (
     <table className="w-full border-collapse text-left font-body">
       <thead>

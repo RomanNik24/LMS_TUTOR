@@ -49,7 +49,7 @@ describe("Ученики: список", () => {
     mockList([item]);
     renderRoutes(routes, ["/admin/students"]);
     expect(await screen.findByText("Аня Иванова")).toBeInTheDocument();
-    expect(screen.getByText(/9 класс · Информатика/)).toBeInTheDocument();
+    expect(await screen.findByText(/9 класс · Информатика/)).toBeInTheDocument();
     expect(screen.getByText(texts.status["bot.blocked"])).toBeInTheDocument();
     expect(screen.queryByRole("table")).toBeNull();
   });

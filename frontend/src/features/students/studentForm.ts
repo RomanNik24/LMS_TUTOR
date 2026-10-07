@@ -13,8 +13,6 @@ export const URL_MAX_LENGTH = 500;
 export const NOTES_MAX_LENGTH = 5000;
 export const PRICE_MAX = 1_000_000;
 
-/** Коды предметов (справочник subjects); каталог предметов в админке появится позже. */
-export const SUBJECT_CODES = ["informatics", "math"] as const;
 export const TIMEZONES = Object.keys(texts.admin.timezones);
 export const DEFAULT_TIMEZONE = "Europe/Moscow";
 

@@ -23,6 +23,7 @@ import {
 import { texts } from "@/lib/texts";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 import { cn } from "@/lib/utils";
+import { useSubjectName } from "@/features/reference/api";
 
 import { useLessons } from "./api";
 import type { Lesson, LessonStatus } from "./api";
@@ -34,16 +35,11 @@ const t = texts.admin.schedule;
 const STUDENTS_FILTER_LIMIT = 200;
 const STATUSES: LessonStatus[] = ["scheduled", "completed", "cancelled"];
 
-function subjectLabel(code: string): string {
-  return code in texts.admin.subjects
-    ? texts.admin.subjects[code as keyof typeof texts.admin.subjects]
-    : code;
-}
-
 type LessonBlockProps = { lesson: Lesson; timeZone: string; onOpen: (lesson: Lesson) => void };
 
 /** Блок урока: время, предмет, участники; отменённые приглушены (docs/07 §9.2.5). */
 function LessonBlock({ lesson, timeZone, onOpen }: LessonBlockProps) {
+  const subjectLabel = useSubjectName();
   const names = lesson.participants.map((p) => p.display_name);
   const people =
     names.length > 2

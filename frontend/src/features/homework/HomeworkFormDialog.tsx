@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Field, Input } from "@/components/ui/input";
 import { dialogScroll, selectClasses } from "@/features/schedule/LessonFormDialog";
 import { StudentPicker } from "@/features/schedule/StudentPicker";
-import { SUBJECT_CODES } from "@/features/students/studentForm";
+import { SubjectOptions } from "@/features/reference/SubjectOptions";
 import { texts } from "@/lib/texts";
 
 import { useCreateHomework, useUploadMaterial } from "./api";
@@ -46,7 +46,7 @@ export function HomeworkFormDialog({
     defaultValues: {
       title: "",
       description: "",
-      subject_code: SUBJECT_CODES[0],
+      subject_code: "",
       max_score: "5",
       due_mode: "next_lesson",
       date: defaultDate,
@@ -119,11 +119,7 @@ export function HomeworkFormDialog({
           <Field label={t.subject} error={errors.subject_code?.message}>
             {({ id }) => (
               <select id={id} className={selectClasses} {...register("subject_code")}>
-                {SUBJECT_CODES.map((code) => (
-                  <option key={code} value={code}>
-                    {texts.admin.subjects[code]}
-                  </option>
-                ))}
+                <SubjectOptions />
               </select>
             )}
           </Field>

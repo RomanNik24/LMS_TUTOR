@@ -25,6 +25,11 @@ class SubjectRepository(BaseRepository[Subject]):
         stmt = select(Subject).where(Subject.code.in_(list(codes)), Subject.is_active.is_(True))
         return list((await self._session.execute(stmt)).scalars())
 
+    async def list_active(self) -> list[Subject]:
+        """Активные предметы в порядке ``id`` (справочник ``GET /reference/subjects``)."""
+        stmt = select(Subject).where(Subject.is_active.is_(True)).order_by(Subject.id)
+        return list((await self._session.execute(stmt)).scalars())
+
 
 class StudentSubjectRepository(BaseRepository[StudentSubject]):
     """Доступ к таблице ``student_subjects``."""

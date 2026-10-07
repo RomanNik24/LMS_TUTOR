@@ -10,6 +10,7 @@ import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { useMe } from "@/features/auth/api";
+import { useSubjects } from "@/features/reference/api";
 import { texts } from "@/lib/texts";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,6 @@ import { useCreateStudent, useStudent, useUpdateStudent } from "./api";
 import type { StudentCard } from "./api";
 import {
   EMPTY_STUDENT_FORM,
-  SUBJECT_CODES,
   TIMEZONES,
   cardToFormValues,
   studentFormSchema,
@@ -58,6 +58,7 @@ export function StudentForm({
     resolver: zodResolver(studentFormSchema),
     defaultValues: initial,
   });
+  const subjects = useSubjects();
 
   return (
     <form
@@ -92,7 +93,7 @@ export function StudentForm({
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium text-foreground font-body">{f.subjects}</legend>
         <div className="flex flex-wrap gap-4">
-          {SUBJECT_CODES.map((code) => (
+          {(subjects.data ?? []).map(({ code, name }) => (
             <label key={code} className="flex min-h-11 items-center gap-2 font-body">
               <input
                 type="checkbox"
@@ -100,7 +101,7 @@ export function StudentForm({
                 className="size-5 accent-primary"
                 {...register("subject_codes")}
               />
-              {texts.admin.subjects[code]}
+              {name}
             </label>
           ))}
         </div>
