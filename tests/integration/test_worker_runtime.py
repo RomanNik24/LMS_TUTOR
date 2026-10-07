@@ -1,6 +1,15 @@
-"""Воркер TaskIQ как процесс: задача доходит через Redis, SIGTERM завершает его (T5.04)."""
+"""Воркер TaskIQ как процесс: задача доходит через Redis, SIGTERM завершает его (T5.04).
+
+Остановка зависит от ОС (аудит 2026-10-08, п. 2). В POSIX (Linux в Docker и CI) воркер получает
+SIGTERM и обязан корректно завершиться с кодом 0. В Windows SIGTERM — это ``TerminateProcess``
+только главного процесса: TaskIQ слушает лишь SIGINT/SIGTERM, а его дочерний процесс
+(``multiprocessing.spawn``) оставался сиротой, держал вывод, и тест (а с ним ``check.py``)
+зависал навсегда. Поэтому в Windows останавливается всё дерево процессов воркера по PID,
+и тест проверяет остальное поведение; ожидание вывода везде ограничено по времени.
+"""
 
 import asyncio
+import contextlib
 import importlib
 import os
 import signal
@@ -17,6 +26,44 @@ ROOT = Path(__file__).resolve().parents[2]
 WAIT_SECONDS = 30
 # Дольше пяти секунд: столько redis-py 8 по умолчанию ждёт ответ, пока воркер простаивает
 IDLE_SECONDS = 9
+IS_WINDOWS = sys.platform == "win32"
+
+
+async def _kill_tree(process: asyncio.subprocess.Process) -> None:
+    """Принудительно остановить воркер вместе с дочерними процессами (только его PID)."""
+    if IS_WINDOWS:
+        killer = await asyncio.create_subprocess_exec(
+            "taskkill",
+            "/PID",
+            str(process.pid),
+            "/T",
+            "/F",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await killer.wait()
+    else:
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+
+
+async def _stop_worker(process: asyncio.subprocess.Process) -> bytes:
+    """Остановить воркер штатным для ОС способом и вернуть остаток вывода.
+
+    Raises:
+        AssertionError: Воркер не завершился вовремя (дерево процессов уже остановлено).
+    """
+    if IS_WINDOWS:
+        await _kill_tree(process)
+    else:
+        process.send_signal(signal.SIGTERM)
+    try:
+        rest, _ = await asyncio.wait_for(process.communicate(), WAIT_SECONDS)
+    except TimeoutError:
+        await _kill_tree(process)
+        rest, _ = await asyncio.wait_for(process.communicate(), WAIT_SECONDS)
+        pytest.fail(f"Воркер не завершился вовремя: {rest.decode()[-500:]}")
+    return rest
 
 
 async def hc_server() -> tuple[TestServer, list[str], asyncio.Event]:
@@ -48,7 +95,11 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
         "SESSION_SECRET": "",
         "HEALTHCHECK_URL": str(server.make_url("/ping/runtime-check")),
         "SENTRY_DSN": "",
+        # Журнал воркера по-русски: без этого в Windows он идёт в кодировке консоли (cp1251)
+        "PYTHONIOENCODING": "utf-8",
     }
+    from src.core import config as config_module  # noqa: PLC0415
+
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
@@ -62,6 +113,8 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
         env=env,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
+        # В POSIX своя группа процессов: при сбое её можно остановить целиком (killpg).
+        start_new_session=not IS_WINDOWS,
     )
     seen: list[str] = []
 
@@ -78,7 +131,6 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
         await asyncio.sleep(IDLE_SECONDS)
         for name, value in env.items():
             monkeypatch.setenv(name, value)
-        from src.core import config as config_module  # noqa: PLC0415
         from src.worker import broker as broker_module  # noqa: PLC0415
         from src.worker import tasks as tasks_module  # noqa: PLC0415
 
@@ -94,18 +146,16 @@ async def test_worker_process_runs_heartbeat_and_stops_on_sigterm(
             await client.shutdown()
         assert hits == ["/ping/runtime-check"]
     finally:
-        process.send_signal(signal.SIGTERM)
         try:
-            rest, _ = await asyncio.wait_for(process.communicate(), WAIT_SECONDS)
-        except TimeoutError:
-            process.kill()
-            rest, _ = await process.communicate()
-            pytest.fail(f"Воркер не завершился по SIGTERM: {rest.decode()[-500:]}")
+            rest = await _stop_worker(process)
         finally:
             await server.close()
             config_module.get_settings.cache_clear()
     output = "".join(seen) + rest.decode()
-    assert process.returncode == 0, output[-800:]
+    if not IS_WINDOWS:
+        # Корректное завершение по SIGTERM — поведение POSIX (прод и CI); в Windows сигнала нет.
+        assert process.returncode == 0, output[-800:]
+    assert process.returncode is not None
     assert "is dead" not in output
     assert "TimeoutError" not in output
 
