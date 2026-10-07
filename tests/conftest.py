@@ -38,6 +38,18 @@ REDIS_IMAGE = "redis:7"
 TEST_DB_NAME = "lms_test"
 
 
+@pytest.fixture(autouse=True)
+def _ignore_local_env_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Тесты не читают ``.env.local``: значения разработчика (токен, владелец) в них не попадают.
+
+    Окружение тесты задают сами через ``monkeypatch.setenv``; без этого ``delenv`` не помогает,
+    потому что настройки подтянули бы значение из файла.
+    """
+    from src.core.config import Settings  # noqa: PLC0415 - импорт только при необходимости
+
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
+
+
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """Автоматически помечает всё из tests/integration маркером `integration`."""
     for item in items:
