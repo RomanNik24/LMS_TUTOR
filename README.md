@@ -62,6 +62,10 @@ docker compose --profile full exec app python scripts/create_owner.py
   (или переменной окружения) до `--build`.
 - `PUBLIC_BASE_URL` в `.env.local` — адрес, по которому открывают приложение: `http://127.0.0.1:8080`
   или адрес туннеля (`scripts/dev_tunnel.sh 8080`).
+- IP клиента для лимита `/auth/*` — адрес соединения с Nginx: `X-Forwarded-For` от клиента не
+  принимается (подделка невозможна). Локально Docker Desktop показывает Nginx адрес шлюза Docker
+  для всего, что приходит с хоста (и через туннель), поэтому лимит там общий; на сервере Nginx
+  смотрит в интернет напрямую и видит реальный адрес.
 - Конфигурация Nginx — `nginx/conf.d/default.conf` и `nginx/snippets/`. Заголовки безопасности
   (CSP, `nosniff`, `Referrer-Policy`) уже включены; TLS и HSTS добавляются на сервере (T9.02).
 - Остановить: `docker compose --profile full down`.
