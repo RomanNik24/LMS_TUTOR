@@ -930,6 +930,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T3.04 (CODE). ScheduleService.create_lesson (предмет, участники — только активные ученики, время, переопределения ссылок Телемост/доска, тема). Нарушение EXCLUDE → ConflictError с кодом lesson_overlap и понятным сообщением. Тесты US-02: пересечение запрещено, групповой урок с N участниками, архивный ученик нельзя добавить.
 ```
 **Проверка:** 🤖 тесты зелёные.
+**Статус:** ✅ `src/services/schedule.py` (`ScheduleService.create_lesson`), схемы `src/schemas/schedule.py`, `src/repositories/lessons.py`; нарушение `EXCLUDE` → `ConflictError` `lesson_overlap` (409); тесты `tests/unit/test_schedule_schemas.py`, `tests/integration/test_schedule_service.py`. Эндпоинт — следующие задачи этапа 3.
 
 ### T3.05 · Перенос, отмена, отметка проведения
 **Кто:** 💻 CODE · **Размер:** L (3 коммита) · **Ветка:** `feature/t3-05-lesson-lifecycle` · **Коммит:** `feat(schedule): implement reschedule cancel and complete`

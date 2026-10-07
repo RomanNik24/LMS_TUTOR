@@ -48,6 +48,16 @@ STAFF_NOT_FOUND = "Сотрудник не найден."
 STAFF_LAST_OWNER = "Нельзя понизить или архивировать последнего владельца."
 STAFF_ALREADY_ARCHIVED = "Сотрудник уже в архиве."
 
+# --- Расписание и уроки (docs/08 §5.4, T3.04) ---
+LESSON_OVERLAP = "У преподавателя уже есть урок в это время. Выберите другое время."
+LESSON_END_BEFORE_START = "Урок должен заканчиваться позже, чем начинается."
+LESSON_TOO_LONG = "Урок не может быть длиннее 12 часов."
+LESSON_STUDENT_NOT_FOUND = "Ученик не найден."
+LESSON_STUDENT_ARCHIVED = "Ученик в архиве: добавить его на урок нельзя."
+LESSON_STUDENTS_DUPLICATE = "Один ученик указан дважды."
+LESSON_UNKNOWN_SUBJECT = "Неизвестный предмет."
+LESSON_INVALID_TEACHER = "Урок может вести только активный владелец или менеджер."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."

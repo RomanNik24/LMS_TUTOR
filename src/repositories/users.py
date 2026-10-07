@@ -1,5 +1,7 @@
 """Репозиторий пользователей (задача T1.06, docs/04 §2.1, docs/08 §2)."""
 
+from collections.abc import Collection
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -79,4 +81,11 @@ class UserRepository(BaseRepository[User]):
         if not include_archived:
             stmt = stmt.where(User.is_active.is_(True))
         stmt = stmt.order_by(User.display_name, User.id)
+        return list((await self._session.execute(stmt)).scalars())
+
+    async def list_by_ids(self, user_ids: Collection[int]) -> list[User]:
+        """Пользователи по списку id (любые роли и состояния), по возрастанию id."""
+        if not user_ids:
+            return []
+        stmt = select(User).where(User.id.in_(list(user_ids))).order_by(User.id)
         return list((await self._session.execute(stmt)).scalars())
