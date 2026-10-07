@@ -964,6 +964,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T3.07 (CODE). GET /student/lessons, GET /student/lessons/{id} (ссылки: переопределение урока → профиль ученика; в групповом уроке ученик видит только число участников, без цен, заметок и чужих данных) и admin-эндпоинты docs/08 §5.4; период фильтра ≤ 1 года. Чужой урок → 404. Тест privacy из T2.01 должен остаться зелёным. Запусти gen:api.
 ```
 **Проверка:** 🤖 `scripts/check.py` PASS (в т.ч. privacy и drift).
+**Статус:** ✅ `src/api/v1/admin_schedule.py` (уроки и шаблоны, docs/08 §5.4) и `src/api/v1/student_lessons.py` (`GET /student/lessons`, `/student/lessons/{id}`); период ≤ 366 дней (`invalid_period`), чужой урок → 404; ссылки «урок → профиль»; у ученика только число участников; `PATCH /admin/lessons/{id}` помечает урок шаблона как изменённый вручную; `schema.d.ts` перегенерирован; тесты `tests/integration/test_schedule_api.py`, privacy-контракт зелёный. Ссылки «привязанные ДЗ» в карточке урока добавятся с этапом 4.
 
 ### T3.08 · Бот: расписание
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `feature/t3-08-bot-schedule` · **Коммит:** `feat(bot): add today and schedule commands`

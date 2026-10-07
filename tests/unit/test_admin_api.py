@@ -437,4 +437,17 @@ async def test_operation_ids_are_stable(app: FastAPI) -> None:
         "update_staff",
         "create_staff_invitation",
         "archive_staff",
+        # расписание (T3.07)
+        "list_lessons",
+        "create_lesson",
+        "get_lesson",
+        "update_lesson",
+        "reschedule_lesson",
+        "cancel_lesson",
+        "complete_lesson",
+        "list_schedule_templates",
+        "create_schedule_template",
+        "generate_lessons",
+        "update_schedule_template",
+        "deactivate_schedule_template",
     }

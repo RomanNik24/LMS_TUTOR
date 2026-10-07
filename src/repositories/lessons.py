@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from datetime import date, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, exists, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from src.core.enums import LessonStatus
@@ -110,3 +110,110 @@ class LessonRepository(BaseRepository[Lesson]):
             [LessonParticipant(lesson_id=lid, student_id=sid) for lid, sid in pairs]
         )
         await self._session.flush()
+
+    async def remove_participants(self, lesson_id: int, student_ids: Sequence[int]) -> None:
+        """Убрать участников из урока."""
+        if not student_ids:
+            return
+        await self._session.execute(
+            delete(LessonParticipant).where(
+                LessonParticipant.lesson_id == lesson_id,
+                LessonParticipant.student_id.in_(list(student_ids)),
+            )
+        )
+
+    async def subject_codes(self, subject_ids: Sequence[int]) -> dict[int, str]:
+        """Коды предметов по id одним запросом."""
+        if not subject_ids:
+            return {}
+        stmt = select(Subject.id, Subject.code).where(Subject.id.in_(list(subject_ids)))
+        return {row[0]: row[1] for row in (await self._session.execute(stmt)).all()}
+
+    async def participants_for(
+        self, lesson_ids: Sequence[int]
+    ) -> dict[int, list[tuple[LessonParticipant, str]]]:
+        """Участники с именами для нескольких уроков одним запросом."""
+        if not lesson_ids:
+            return {}
+        stmt = (
+            select(LessonParticipant, User.display_name)
+            .join(User, User.id == LessonParticipant.student_id)
+            .where(LessonParticipant.lesson_id.in_(list(lesson_ids)))
+            .order_by(LessonParticipant.lesson_id, LessonParticipant.student_id)
+        )
+        grouped: dict[int, list[tuple[LessonParticipant, str]]] = {}
+        for participant, name in (await self._session.execute(stmt)).all():
+            grouped.setdefault(participant.lesson_id, []).append((participant, name))
+        return grouped
+
+    async def participant_counts(self, lesson_ids: Sequence[int]) -> dict[int, int]:
+        """Число участников для нескольких уроков."""
+        if not lesson_ids:
+            return {}
+        stmt = (
+            select(LessonParticipant.lesson_id, func.count())
+            .where(LessonParticipant.lesson_id.in_(list(lesson_ids)))
+            .group_by(LessonParticipant.lesson_id)
+        )
+        return {row[0]: row[1] for row in (await self._session.execute(stmt)).all()}
+
+    async def list_in_period(
+        self,
+        start: datetime,
+        end: datetime,
+        *,
+        student_id: int | None,
+        teacher_id: int | None,
+        status: LessonStatus | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Lesson], int]:
+        """Уроки с началом в ``[start, end)`` по фильтрам; страница и общее число."""
+        conditions = [Lesson.start_at >= start, Lesson.start_at < end]
+        if teacher_id is not None:
+            conditions.append(Lesson.teacher_id == teacher_id)
+        if status is not None:
+            conditions.append(Lesson.status == status)
+        if student_id is not None:
+            conditions.append(
+                exists().where(
+                    LessonParticipant.lesson_id == Lesson.id,
+                    LessonParticipant.student_id == student_id,
+                )
+            )
+        total = (
+            await self._session.execute(select(func.count()).select_from(Lesson).where(*conditions))
+        ).scalar_one()
+        stmt = (
+            select(Lesson)
+            .where(*conditions)
+            .order_by(Lesson.start_at, Lesson.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        return list((await self._session.execute(stmt)).scalars()), total
+
+    async def list_for_student(
+        self, student_id: int, start: datetime, end: datetime
+    ) -> list[Lesson]:
+        """Уроки ученика с началом в ``[start, end)``."""
+        stmt = (
+            select(Lesson)
+            .join(LessonParticipant, LessonParticipant.lesson_id == Lesson.id)
+            .where(
+                LessonParticipant.student_id == student_id,
+                Lesson.start_at >= start,
+                Lesson.start_at < end,
+            )
+            .order_by(Lesson.start_at, Lesson.id)
+        )
+        return list((await self._session.execute(stmt)).scalars())
+
+    async def get_for_student(self, lesson_id: int, student_id: int) -> Lesson | None:
+        """Урок, только если ученик в нём участвует; иначе ``None`` (чужой урок = «нет»)."""
+        stmt = (
+            select(Lesson)
+            .join(LessonParticipant, LessonParticipant.lesson_id == Lesson.id)
+            .where(Lesson.id == lesson_id, LessonParticipant.student_id == student_id)
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none()

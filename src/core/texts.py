@@ -66,6 +66,9 @@ LESSON_NOT_PARTICIPANT = "Этот ученик не участвует в ур�
 LESSON_MARK_PENDING = "Посещаемость должна быть «был», «не пришёл» или «отменено»."
 LESSON_CANCEL_REASON_TOO_LONG = "Причина отмены не длиннее 255 символов."
 
+LESSON_PERIOD_INVALID = "Период указан неверно: конец позже начала и не больше года."
+LESSON_UPDATE_EMPTY = "Укажите хотя бы одно поле для изменения."
+LESSON_FIELD_NOT_NULLABLE = "Это поле нельзя очистить."
 TEMPLATE_TIME_HAS_TZ = "Время начала задаётся без часового пояса: пояс указывается отдельно."
 TEMPLATE_NOT_FOUND = "Шаблон расписания не найден."
 TEMPLATE_ENDS_BEFORE_START = "Дата окончания не может быть раньше даты начала."
