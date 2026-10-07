@@ -84,7 +84,7 @@
 ### 5.2. Ученики и приглашения
 | Метод | Путь | Описание |
 |---|---|---|
-| GET | `/admin/students?status=active|archived&q=&limit=&offset=` | Список |
+| GET | `/admin/students?status=active|archived&q=&limit=&offset=` | Список: `items` (`user_id`, `display_name`, `school_class`, `is_active`, `bot_blocked`, `telegram_linked`, `invite_pending` — приглашение не принято, `subjects`), `total`, `limit`, `offset`; `q` — подстрока имени без учёта регистра; цены в списке нет |
 | POST | `/admin/students` | Создать профиль (имя, класс, предметы, часовой пояс, ссылки; цена только `owner`) |
 | GET | `/admin/students/{id}` | Карточка. Поля `lesson_price` и финансовый блок есть **только** в ответе для `owner` |
 | PATCH | `/admin/students/{id}` | Правка (цена только `owner`, изменение пишется в `audit_log`) |

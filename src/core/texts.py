@@ -29,6 +29,18 @@ OWNER_CANNOT_UNLINK = (
 )
 OWNER_DISPLAY_NAME = "Владелец"
 
+# --- Ученики (docs/08 §5.2, T2.02) ---
+STUDENT_NOT_FOUND = "Ученик не найден."
+STUDENT_PRICE_OWNER_ONLY = "Цену занятия видит и меняет только владелец."
+STUDENT_UNKNOWN_SUBJECT = "Неизвестный предмет."
+STUDENT_INVALID_TEACHER = "Ведущим преподавателем может быть только активный владелец или менеджер."
+STUDENT_ALREADY_ARCHIVED = "Ученик уже в архиве."
+STUDENT_NOT_ARCHIVED = "Ученик не в архиве."
+STUDENT_URL_NOT_HTTPS = "Ссылка должна начинаться с https://."
+STUDENT_UPDATE_EMPTY = "Укажите хотя бы одно поле для изменения."
+STUDENT_FIELD_NOT_NULLABLE = "Это поле нельзя очистить."
+LIST_PARAMS_INVALID = "Неверные параметры списка: limit от 1 до 200, offset не меньше 0."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."
