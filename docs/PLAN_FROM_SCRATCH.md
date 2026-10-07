@@ -462,6 +462,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 3) В README допиши: «Проверка: uv run python scripts/check.py».
 ```
 **Проверка:** 🤖 `uv run python scripts/check.py` печатает таблицу и `ALL CHECKS PASSED` (frontend пока SKIPPED). 🤖 Сломайте нарочно файл (пробел лишний в строке `import`) → команда вернёт FAIL; верните обратно.
+**Исправление после аудита 2026-10-08 (п. 2):** на Windows `check.py` зависал на `tests/integration/test_worker_runtime.py`: SIGTERM там — `TerminateProcess` только главного процесса `taskiq worker`, его дочерний процесс оставался сиротой и держал вывод. Теперь у каждого шага `check.py` есть предел времени (30 минут) с остановкой всего дерева процессов шага, а тест останавливает воркер штатно для ОС (POSIX — SIGTERM и обязательный код 0, Windows — дерево процессов по PID) и всегда ждёт с таймаутом; заодно вывод воркера читается в UTF-8. Тесты: `tests/unit/test_check_script.py`.
 
 ### T0.11 · Каркас фронтенда
 **Кто:** 💻 CODE · **Размер:** L (разбить при необходимости) · **Ветка:** `feature/t0-11-frontend-skeleton` · **Коммит:** `feat(frontend): add vite react skeleton with design tokens`
