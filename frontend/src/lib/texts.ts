@@ -99,6 +99,42 @@ export const texts = {
     logout: "Выйти",
     logoutFailed: "Не получилось выйти. Попробуй ещё раз",
   },
+  /** Расписание ученика (docs/07 §9.1.1–9.1.3) */
+  student: {
+    schedule: {
+      today: "Сегодня",
+      tomorrow: "Завтра",
+      nextLesson: "Ближайший урок",
+      list: "Список",
+      week: "Неделя",
+      prevWeek: "Предыдущая неделя",
+      nextWeek: "Следующая неделя",
+      thisWeek: "Эта неделя",
+      loadError: "Не получилось загрузить расписание",
+      noLessonsWeek: "На этой неделе уроков нет",
+      until: (minutes: number): string => {
+        if (minutes <= 0) return "идёт сейчас";
+        if (minutes < 60) return `через ${String(minutes)} мин`;
+        if (minutes < 24 * 60) {
+          const hours = Math.floor(minutes / 60);
+          const rest = minutes % 60;
+          return rest === 0
+            ? `через ${String(hours)} ч`
+            : `через ${String(hours)} ч ${String(rest)} мин`;
+        }
+        return `через ${String(Math.floor(minutes / (24 * 60)))} дн.`;
+      },
+      card: {
+        back: "К расписанию",
+        notFound: "Урок не найден",
+        group: (count: number) => `Групповой урок · ${String(count)} уч.`,
+        video: "Телемост",
+        board: "Доска",
+        noLinks: "Ссылку добавит Роман",
+        topic: "Тема",
+      },
+    },
+  },
   /** Админка: ученики, сотрудники, приглашения (docs/07 §9.2.2–9.2.4, §9.2.13) */
   admin: {
     students: {

@@ -3,10 +3,11 @@
  * Особое внимание — границам суток: момент 00:00 в одном поясе может быть
  * другим календарным днём в поясе пользователя.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   addMinutesIso,
+  minutesUntil,
   dayStartUtcIso,
   daysBetween,
   formatDate,
@@ -175,5 +176,23 @@ describe("дни и недели (T3.09)", () => {
   it("число дней между ключами", () => {
     expect(daysBetween("2026-10-01", "2026-10-31")).toBe(30);
     expect(daysBetween("2026-10-31", "2026-10-01")).toBe(-30);
+  });
+});
+
+describe("minutesUntil", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("считает минуты до момента и округляет вверх", () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-14T12:00:00Z") });
+    expect(minutesUntil("2026-10-14T14:15:00Z")).toBe(135);
+    expect(minutesUntil("2026-10-14T12:00:30Z")).toBe(1);
+  });
+
+  it("для прошедшего момента — ноль или отрицательное", () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-14T12:00:00Z") });
+    expect(minutesUntil("2026-10-14T12:00:00Z")).toBe(0);
+    expect(minutesUntil("2026-10-14T11:00:00Z")).toBe(-60);
   });
 });
