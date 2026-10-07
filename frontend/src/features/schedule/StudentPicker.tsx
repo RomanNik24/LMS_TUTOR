@@ -3,6 +3,7 @@ import type { UseFormRegisterReturn } from "react-hook-form";
 
 import { errorMessage } from "@/api/errors";
 import { ErrorState } from "@/components/common/ErrorState";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStudents } from "@/features/students/api";
@@ -15,17 +16,23 @@ type StudentPickerProps = {
   /** Результат ``register("student_ids")``: чекбоксы с id учеников. */
   field: UseFormRegisterReturn;
   error?: string;
+  /** Если задана, показывается кнопка «Выбрать всех»: ей передают id всех активных учеников. */
+  onSelectAll?: (ids: string[]) => void;
+  /** Подпись группы; по умолчанию — «Участники». */
+  legend?: string;
 };
 
 /** Мультивыбор участников: список активных учеников с поиском по имени (docs/07 §9.2.6). */
-export function StudentPicker({ field, error }: StudentPickerProps) {
+export function StudentPicker({ field, error, onSelectAll, legend }: StudentPickerProps) {
   const [search, setSearch] = useState("");
   const query = useStudents({ status: "active", q: "", limit: ACTIVE_STUDENTS_LIMIT });
   const needle = search.trim().toLowerCase();
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium text-foreground font-body">{t.participants}</legend>
+      <legend className="text-sm font-medium text-foreground font-body">
+        {legend ?? t.participants}
+      </legend>
       {query.isPending && <Skeleton className="h-24 w-full" />}
       {query.isError && (
         <ErrorState
@@ -49,6 +56,18 @@ export function StudentPicker({ field, error }: StudentPickerProps) {
               setSearch(event.target.value);
             }}
           />
+          {onSelectAll !== undefined && (
+            <Button
+              type="button"
+              variant="outline"
+              size="compact"
+              onClick={() => {
+                onSelectAll(query.data.items.map((student) => String(student.user_id)));
+              }}
+            >
+              {texts.admin.homework.form.selectAll}
+            </Button>
+          )}
           <div className="flex max-h-44 flex-col overflow-y-auto rounded-md border border-border">
             {query.data.items.map((student) => (
               <label

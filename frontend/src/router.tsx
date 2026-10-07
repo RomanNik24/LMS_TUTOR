@@ -3,7 +3,7 @@
  * Админская часть подгружается лениво (React.lazy): ученику её код не нужен.
  * Разделы без данных показывают «пустое состояние» (`SectionPlaceholder`) — их заменят экраны этапов 2–8.
  */
-import { BookOpen, ClipboardCheck, ClipboardList, LineChart, Sun, Wallet } from "lucide-react";
+import { BookOpen, ClipboardCheck, LineChart, Sun, Wallet } from "lucide-react";
 import { Suspense, lazy } from "react";
 import { createBrowserRouter, createMemoryRouter, Navigate } from "react-router-dom";
 import type { RouteObject } from "react-router-dom";
@@ -13,6 +13,11 @@ import { RequireRole } from "@/features/auth/RequireRole";
 import { HelloPage } from "@/features/auth/pages/HelloPage";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { AdminHomeworkPage } from "@/features/homework/AdminHomeworkPage";
+import { HomeworkDetailPage } from "@/features/homework/HomeworkDetailPage";
+import { ReviewPage } from "@/features/homework/ReviewPage";
+import { StudentHomeworkCardPage } from "@/features/homework/student/StudentHomeworkCardPage";
+import { StudentHomeworkPage } from "@/features/homework/student/StudentHomeworkPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
 import { StudentLessonPage } from "@/features/schedule/StudentLessonPage";
 import { StudentSchedulePage } from "@/features/schedule/StudentSchedulePage";
@@ -49,16 +54,8 @@ const studentRoutes: RouteObject = {
         { path: "profile", element: <ProfilePage /> },
         { path: "schedule", element: <StudentSchedulePage /> },
         { path: "schedule/:lessonId", element: <StudentLessonPage /> },
-        {
-          path: "homework",
-          element: (
-            <SectionPlaceholder
-              icon={ClipboardList}
-              title={texts.empty.studentHomework.title}
-              text={texts.empty.studentHomework.text}
-            />
-          ),
-        },
+        { path: "homework", element: <StudentHomeworkPage /> },
+        { path: "homework/:assignmentId", element: <StudentHomeworkCardPage /> },
         {
           path: "reports",
           element: (
@@ -88,16 +85,9 @@ const adminRoutes: RouteObject = {
         { index: true, element: <Navigate to="today" replace /> },
         { path: "today", element: soon(texts.nav.admin.today, Sun) },
         { path: "schedule", element: <SchedulePage /> },
-        {
-          path: "homework",
-          element: (
-            <SectionPlaceholder
-              icon={ClipboardList}
-              title={texts.empty.adminReviewQueue.title}
-              text={texts.empty.adminReviewQueue.text}
-            />
-          ),
-        },
+        { path: "homework", element: <AdminHomeworkPage /> },
+        { path: "homework/:homeworkId", element: <HomeworkDetailPage /> },
+        { path: "assignments/:assignmentId", element: <ReviewPage /> },
         { path: "students", element: <StudentsListPage /> },
         { path: "students/new", element: <StudentFormPage /> },
         { path: "students/:id", element: <StudentCardPage /> },
