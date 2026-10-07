@@ -102,3 +102,7 @@ BOT_WEBHOOK_PATH = "/telegram/webhook"
 BOT_WEBHOOK_AUTH_HEADER = "x-telegram-bot-api-secret-token"
 # Маска секретного сегмента пути вебхука в логах и Sentry (docs/09 §4).
 WEBHOOK_PATH_REDACTED = BOT_WEBHOOK_PATH + "/***"
+
+# Повторы отправки уведомлений при сетевых сбоях (docs/05 §6.4): паузы 1, 5, 15 минут,
+# после третьего повтора уведомление получает статус failed.
+NOTIFICATION_RETRY_DELAYS_SECONDS = (60, 300, 900)
