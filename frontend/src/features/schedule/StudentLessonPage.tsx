@@ -11,19 +11,15 @@ import { useMe } from "@/features/auth/api";
 import { DEFAULT_TIMEZONE } from "@/features/students/studentForm";
 import { formatDayLabel, formatTimeRange } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
+import { useSubjectName } from "@/features/reference/api";
 
 import { useStudentLesson } from "./studentApi";
 
 const t = texts.student.schedule.card;
 
-function subjectLabel(code: string): string {
-  return code in texts.admin.subjects
-    ? texts.admin.subjects[code as keyof typeof texts.admin.subjects]
-    : code;
-}
-
 /** Карточка урока ученика (docs/07 §9.1.3): время, статус, ссылки; без цен и заметок. */
 export function StudentLessonPage() {
+  const subjectLabel = useSubjectName();
   const { lessonId } = useParams();
   const { data: me } = useMe();
   const timeZone = me?.timezone ?? DEFAULT_TIMEZONE;

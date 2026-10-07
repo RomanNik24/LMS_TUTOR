@@ -128,6 +128,16 @@ class ExamTypeRepository(BaseRepository[ExamType]):
         stmt = select(ExamType).where(ExamType.id == exam_type_id)
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
+    async def list_active_with_subject_codes(self) -> list[tuple[ExamType, str]]:
+        """Активные типы экзаменов с кодом предмета, в порядке ``id`` (одним запросом)."""
+        stmt = (
+            select(ExamType, Subject.code)
+            .join(Subject, Subject.id == ExamType.subject_id)
+            .where(ExamType.is_active.is_(True))
+            .order_by(ExamType.id)
+        )
+        return [(exam_type, code) for exam_type, code in (await self._session.execute(stmt)).all()]
+
 
 class HomeworkAssignmentRepository(BaseRepository[HomeworkAssignment]):
     """Доступ к таблице ``homework_assignments``."""

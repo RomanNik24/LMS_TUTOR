@@ -16,6 +16,7 @@ import {
 import { Field, Input } from "@/components/ui/input";
 import { formatDayLabel, formatTimeRange, minutesBetween, toLocalParts } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
+import { useSubjectName } from "@/features/reference/api";
 
 import { useCancelLesson, useCompleteLesson, useRescheduleLesson } from "./api";
 import type { Attendance, Lesson } from "./api";
@@ -33,12 +34,6 @@ type LessonDetailDialogProps = {
   timeZone: string;
   onClose: () => void;
 };
-
-function subjectLabel(code: string): string {
-  return code in texts.admin.subjects
-    ? texts.admin.subjects[code as keyof typeof texts.admin.subjects]
-    : code;
-}
 
 function statusKey(lesson: Lesson): "lesson.scheduled" | "lesson.completed" | "lesson.cancelled" {
   return `lesson.${lesson.status}`;
@@ -61,6 +56,7 @@ function Details({
   timeZone: string;
   onView: (view: View) => void;
 }) {
+  const subjectLabel = useSubjectName();
   const link = (url: string | null) =>
     url === null ? (
       d.none
