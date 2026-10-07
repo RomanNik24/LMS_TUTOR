@@ -1101,6 +1101,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `feature/t4-10-expiry` · **Коммит:** `feat(homework): add assignment expiry service`
 **Промпт:** `Задача T4.10 (CODE). expire_due_assignments: now() > due_at AND extensions_count = 2 AND status IN (assigned, needs_revision) → expired, expired_at; идемпотентно; без побочных вызовов Telegram (уведомления подключим на этапе 5). Тесты на границе времени (time-machine).`
 **Проверка:** 🤖 повторный вызов не меняет данные (тест идемпотентности).
+**Статус:** ✅ `src/services/expiry.py` (`ExpiryService.expire_due_assignments(now=None)`) и `HomeworkAssignmentRepository.expire_due`: один `UPDATE ... RETURNING` переводит в `expired` выдачи с `now > due_at` (строго), `extensions_count = 2` и статусом `assigned` / `needs_revision`, ставит `expired_at`, пишет аудит `assignment.expired` без пользователя; повторный запуск ничего не меняет; Telegram не вызывается (уведомления — этап 5); запуск по расписанию воркером — этап 7; тесты `tests/integration/test_expiry_service.py` (граница времени, идемпотентность).
 
 ### T4.11 · REST ДЗ и файлов
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t4-11-homework-api` · **Коммит:** `feat(api): add homework and files endpoints`

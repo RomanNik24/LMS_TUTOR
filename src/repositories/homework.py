@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, select, update
 
 from src.core.enums import AssignmentStatus, HomeworkFileRole
 from src.db.models import (
@@ -138,6 +138,28 @@ class HomeworkAssignmentRepository(BaseRepository[HomeworkAssignment]):
         if for_update:
             stmt = stmt.with_for_update()
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def expire_due(self, now: datetime, max_extensions: int) -> list[int]:
+        """Перевести просроченные выдачи в ``expired`` одним запросом; вернуть их id.
+
+        Условие (docs/04 §5.4): ``now > due_at``, переносы исчерпаны и статус ``assigned`` или
+        ``needs_revision``. Условие повторно проверяется самой БД при обновлении, поэтому
+        параллельная оценка или сдача не потеряются, а повторный запуск ничего не меняет.
+        """
+        stmt = (
+            update(HomeworkAssignment)
+            .where(
+                HomeworkAssignment.due_at < now,
+                HomeworkAssignment.extensions_count >= max_extensions,
+                HomeworkAssignment.status.in_(
+                    [AssignmentStatus.ASSIGNED, AssignmentStatus.NEEDS_REVISION]
+                ),
+            )
+            .values(status=AssignmentStatus.EXPIRED, expired_at=now, updated_at=now)
+            .returning(HomeworkAssignment.id)
+            .execution_options(synchronize_session=False)
+        )
+        return sorted((await self._session.execute(stmt)).scalars())
 
 
 class HomeworkFileRepository(BaseRepository[HomeworkFile]):
