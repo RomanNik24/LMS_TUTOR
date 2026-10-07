@@ -1085,6 +1085,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T4.08 (CODE). grade_assignment (балл 0…max_score, иначе 400 score_out_of_range; комментарий; файлы проверки), return_for_revision (комментарий + новый due_at, по умолчанию следующее занятие), оценка expired-выдачи вручную с флагом graded_after_expiry и записью в аудит. Конвертацию пробников НЕ делай (этап 6). Тесты US-06.
 ```
 **Проверка:** 🤖 тесты зелёные; 👁 есть тест `score_out_of_range`.
+**Статус:** ✅ `src/services/grading.py` (`GradingService.grade_assignment`, `return_for_revision`), схемы `GradeRequest`, `ReturnRequest`, `GradeItem`; балл — целое `0..max_score`, иначе 400 `score_out_of_range` (с `max_score` в деталях); оценить можно `submitted`, `expired` (вручную: `graded_after_expiry = true` и запись `assignment.graded_after_expiry` в аудите) и исправить уже оценённую (прежний балл в аудите); возврат — только из `submitted`, комментарий обязателен, новый срок заданный или начало ближайшего урока ученика (`no_next_lesson`), `original_due_at` и `extensions_count` не меняются; файлы проверки — `FileService.upload_review`; конвертации пробников нет (этап 6); тесты `tests/unit/test_grading_schemas.py`, `tests/integration/test_grading_service.py` (в т. ч. `score_out_of_range`). Эндпоинты — T4.11.
 
 ### T4.09 · Перенос дедлайна
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t4-09-deadline-extension` · **Коммит:** `feat(homework): implement deadline extensions`
