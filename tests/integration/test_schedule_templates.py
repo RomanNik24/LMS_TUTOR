@@ -376,3 +376,54 @@ async def test_system_generation_without_actor_and_list(
     templates = await service.list_templates(_actor(owner))
     assert [t.id for t in templates] == [item.id]
     assert templates[0].subject_code == "informatics"
+
+
+# ---------------------------------------------------------------- срок генерации (период и правка)
+
+
+async def test_template_with_period_generates_whole_period_beyond_horizon(
+    service: ScheduleService, db_session: AsyncSession, owner: User, anya: User
+) -> None:
+    """Горизонт службы — 2 недели, но шаблон с датой окончания заполняется весь период."""
+    item = await service.create_template(_actor(owner), tpl([anya.id], ends_on=date(2026, 11, 3)))
+    dates = [d for d, _ in local_times(await _lessons(db_session, item.id), MSK)]
+    assert dates == [date(2026, 10, d) for d in (6, 13, 20, 27)] + [date(2026, 11, 3)]
+    assert item.generated_until == date(2026, 11, 3)
+
+
+async def test_unbounded_template_is_limited_by_horizon(
+    service: ScheduleService, db_session: AsyncSession, owner: User, anya: User
+) -> None:
+    item = await service.create_template(_actor(owner), tpl([anya.id]))
+    assert len(await _lessons(db_session, item.id)) == 3
+
+
+async def test_update_keeps_the_generated_extent(
+    service: ScheduleService, db_session: AsyncSession, owner: User, anya: User
+) -> None:
+    """Если уроки сгенерированы на 4 недели, правка шаблона не должна сокращать их до горизонта."""
+    item = await service.create_template(_actor(owner), tpl([anya.id]))
+    await service.generate_lessons(_actor(owner), horizon_weeks=4)
+    assert len(await _lessons(db_session, item.id)) == 5
+    await service.update_template(_actor(owner), item.id, TemplateUpdate(duration_minutes=45))
+    lessons = await _lessons(db_session, item.id)
+    assert len(lessons) == 5
+    assert {lesson.end_at - lesson.start_at for lesson in lessons} == {timedelta(minutes=45)}
+
+
+async def test_update_of_bounded_template_regenerates_whole_period(
+    service: ScheduleService, db_session: AsyncSession, owner: User, anya: User
+) -> None:
+    item = await service.create_template(_actor(owner), tpl([anya.id], ends_on=date(2026, 11, 3)))
+    await service.update_template(_actor(owner), item.id, TemplateUpdate(duration_minutes=75))
+    assert len(await _lessons(db_session, item.id)) == 5
+
+
+async def test_very_long_period_is_capped_at_52_weeks(
+    service: ScheduleService, db_session: AsyncSession, owner: User, anya: User
+) -> None:
+    item = await service.create_template(_actor(owner), tpl([anya.id], ends_on=date(2030, 12, 31)))
+    lessons = await _lessons(db_session, item.id)
+    assert len(lessons) == 53  # 52 недель вперёд включительно, по одному вторнику
+    assert item.generated_until is not None
+    assert (item.generated_until - date(2026, 10, 6)).days <= 52 * 7

@@ -478,7 +478,9 @@ class ScheduleService:
             )
         )
         await self._templates.replace_participants(template.id, data.student_ids)
-        created, skipped = await self._generate(template, utcnow(), self._horizon_weeks)
+        created, skipped = await self._generate(
+            template, utcnow(), self._horizon_weeks, extend_to=template.ends_on
+        )
         await self._audit.record(
             actor_user_id=actor.id,
             action=AUDIT_TEMPLATE_CREATED,
@@ -736,11 +738,17 @@ class ScheduleService:
         """
         now = utcnow()
         removed = await self._lessons.delete_future_generated(template.id, now)
+        # Уроки пересоздаются на тот же срок, что был до правки (но не короче горизонта): иначе
+        # правка шаблона «съедала» бы уроки дальше горизонта.
+        previous_until = template.generated_until
         template.generated_until = None
         if not template.is_active:
             return removed, 0, 0
+        extend_to = max(
+            (day for day in (previous_until, template.ends_on) if day is not None), default=None
+        )
         created, skipped = await self._generate(
-            template, now, self._horizon_weeks, skip_existing_dates=True
+            template, now, self._horizon_weeks, skip_existing_dates=True, extend_to=extend_to
         )
         return removed, created, skipped
 
@@ -751,15 +759,20 @@ class ScheduleService:
         horizon_weeks: int,
         *,
         skip_existing_dates: bool = False,
+        extend_to: date | None = None,
     ) -> tuple[int, int]:
         """Создать уроки шаблона на горизонт; вернуть ``(создано, пропущено)``.
 
         Окно: от «сегодня» (в поясе шаблона) или ``starts_on`` до горизонта или ``ends_on``;
         при обычном запуске — только после ``generated_until``, чтобы перенесённый или
         отменённый урок не возвращался на своё прежнее место. Прошедшее время не создаётся.
+        ``extend_to`` расширяет окно за горизонт (период шаблона ``ends_on`` или уже
+        сгенерированный срок); предел — ``HORIZON_WEEKS_MAX`` недель от сегодняшнего дня.
         """
         today = local_date_of(now, template.timezone)
         upper = today + timedelta(weeks=horizon_weeks)
+        if extend_to is not None:
+            upper = max(upper, min(extend_to, today + timedelta(weeks=HORIZON_WEEKS_MAX)))
         if template.ends_on is not None:
             upper = min(upper, template.ends_on)
         lower = max(template.starts_on, today)

@@ -23,7 +23,7 @@
 ```
 | HTTP | Когда | Примеры `code` |
 |---|---|---|
-| 400 | Нарушено бизнес-правило | `homework_extension_limit`, `lesson_overlap`, `score_out_of_range` |
+| 400 | Нарушено бизнес-правило | `homework_extension_limit`, `score_out_of_range` |
 | 401 | Нет или истекла сессия | `unauthenticated` |
 | 403 | Нет прав | `permission_denied` |
 | 404 | Не найдено (в том числе чужие данные ученика) | `not_found` |
