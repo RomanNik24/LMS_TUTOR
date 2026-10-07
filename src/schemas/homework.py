@@ -9,7 +9,7 @@ from typing import Self
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.core import texts
-from src.core.enums import AssignmentStatus, DueMode, HomeworkKind
+from src.core.enums import AssignmentStatus, DueMode, HomeworkKind, SubmissionType
 from src.schemas.files import MaterialItem
 
 TITLE_MAX_LENGTH = 200
@@ -134,3 +134,30 @@ class HomeworkListPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+STUDENT_COMMENT_MAX_LENGTH = 2000
+
+
+class SubmitRequest(BaseModel):
+    """Сдача работы: необязательный комментарий ученика."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    student_comment: str | None = Field(default=None, max_length=STUDENT_COMMENT_MAX_LENGTH)
+
+    @field_validator("student_comment")
+    @classmethod
+    def _comment(cls, value: str | None) -> str | None:
+        return None if value is None or not value.strip() else value.strip()
+
+
+class SubmissionItem(BaseModel):
+    """Итог сдачи для ученика: статус, тип сдачи и признак «в срок»."""
+
+    assignment_id: int
+    status: AssignmentStatus
+    submission_type: SubmissionType
+    submitted_at: datetime
+    on_time: bool
+    files_count: int

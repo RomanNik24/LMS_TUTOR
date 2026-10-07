@@ -103,6 +103,11 @@ HOMEWORK_LESSON_UNKNOWN = "Урок не найден."
 HOMEWORK_SUBJECT_MISMATCH = "Предмет не совпадает с предметом экзамена."
 HOMEWORK_STUDENTS_REQUIRED = "Выберите хотя бы одного ученика."
 
+ASSIGNMENT_EXPIRED = "Срок сдачи вышел, работу сдать нельзя. Обратитесь к преподавателю."
+ASSIGNMENT_NOT_SUBMITTABLE = "Работа уже сдана или проверена."
+SUBMISSION_NO_FILES = "Загрузите хотя бы один файл или нажмите «Сделал»."
+STUDENT_COMMENT_TOO_LONG = "Комментарий не длиннее 2000 символов."
+
 # --- Общие ошибки API (docs/08 §1) ---
 API_UNAUTHENTICATED = "Требуется вход."
 API_RATE_LIMITED = "Слишком много запросов. Попробуйте позже."
