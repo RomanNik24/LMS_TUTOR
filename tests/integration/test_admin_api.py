@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.api import deps
 from src.core import config as config_module
-from src.core.constants import SESSION_COOKIE_NAME
+from src.core.constants import RATE_LIMIT_AUTH_PER_MINUTE, SESSION_COOKIE_NAME
 from src.core.enums import AuthTokenPurpose, UserRole
 from src.core.security import hash_token
 from src.core.session_store import SessionStore
@@ -333,3 +333,106 @@ async def test_owner_manages_staff_and_last_owner_is_protected(
     # понижение удалило сессии владельца и сменило роль: прежняя сессия больше не действует
     after = await owner.get("/api/v1/admin/staff")
     assert after.status_code == 401
+
+
+# ---------------------------------------------------------------- сводные проверки T2.08
+
+OWNER_ONLY_PREFIX = "/api/v1/admin/staff"
+BODY = {"display_name": "X"}
+
+
+def _admin_operations(app: FastAPI) -> list[tuple[str, str]]:
+    """Все операции ``/api/v1/admin/*`` из OpenAPI: новый эндпоинт попадает в матрицу сам."""
+    operations: list[tuple[str, str]] = []
+    for path, item in app.openapi()["paths"].items():
+        if not path.startswith("/api/v1/admin"):
+            continue
+        for method in item:
+            if method in {"get", "post", "patch", "put", "delete"}:
+                operations.append((method.upper(), path.replace("{student_id}", "1")))
+    return [
+        (m, p.replace("{staff_id}", "1").replace("{invitation_id}", "1")) for m, p in operations
+    ]
+
+
+async def test_every_admin_operation_rejects_anonymous_and_student(
+    app: FastAPI, student: AuthedClient
+) -> None:
+    operations = _admin_operations(app)
+    assert len(operations) >= 12  # матрица не пустая: эндпоинты нашлись
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url=BASE, headers=CSRF) as anonymous:
+        for method, url in operations:
+            body = BODY if method in {"POST", "PATCH", "PUT"} else None
+            assert (await anonymous.request(method, url, json=body)).status_code == 401, (
+                method,
+                url,
+            )
+            assert (await student.request(method, url, json=body)).status_code == 403, (
+                method,
+                url,
+            )
+
+
+async def test_manager_gets_403_on_every_owner_only_operation(
+    app: FastAPI, manager: AuthedClient
+) -> None:
+    owner_only = [(m, u) for m, u in _admin_operations(app) if u.startswith(OWNER_ONLY_PREFIX)]
+    assert owner_only
+    for method, url in owner_only:
+        body = BODY if method in {"POST", "PATCH", "PUT"} else None
+        response = await manager.request(method, url, json=body)
+        assert response.status_code == 403, (method, url)
+
+
+async def test_admin_writes_require_csrf_headers(
+    app: FastAPI, owner: AuthedClient, db_session: AsyncSession
+) -> None:
+    """Сессия верна, но без X-Requested-With или с чужим Origin запись отклоняется."""
+    cookies = {SESSION_COOKIE_NAME: owner.cookies[SESSION_COOKIE_NAME]}
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url=BASE, cookies=cookies) as bare:
+        no_header = await bare.post("/api/v1/admin/students", json=BODY, headers={"Origin": BASE})
+        foreign = await bare.post(
+            "/api/v1/admin/students",
+            json=BODY,
+            headers={"Origin": "https://evil.example", "X-Requested-With": "XMLHttpRequest"},
+        )
+        no_origin = await bare.post(
+            "/api/v1/admin/students", json=BODY, headers={"X-Requested-With": "XMLHttpRequest"}
+        )
+    assert no_header.status_code == 403
+    assert foreign.status_code == 403
+    assert no_origin.status_code == 403
+    listing = await owner.get("/api/v1/admin/students")
+    assert listing.json()["total"] == 0
+
+
+async def test_manager_never_receives_price_anywhere(
+    owner: AuthedClient, manager: AuthedClient
+) -> None:
+    created = await owner.post(
+        "/api/v1/admin/students", json={"display_name": "Аня", "lesson_price": 2500}
+    )
+    assert created.status_code == 201
+    student_id = created.json()["user_id"]
+    assert created.json()["lesson_price"] == 2500
+    for url in (
+        "/api/v1/admin/students",
+        f"/api/v1/admin/students/{student_id}",
+        "/api/v1/me",
+    ):
+        text = (await manager.get(url)).text
+        assert "lesson_price" not in text, url
+        assert "2500" not in text, url
+
+
+async def test_auth_link_is_rate_limited(app: FastAPI) -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url=BASE, headers=CSRF) as anonymous:
+        statuses = [
+            (await anonymous.post("/api/v1/auth/link", json={"token": "x" * 20})).status_code
+            for _ in range(RATE_LIMIT_AUTH_PER_MINUTE + 1)
+        ]
+    assert statuses[-1] == 429
+    assert 429 not in statuses[:RATE_LIMIT_AUTH_PER_MINUTE]
