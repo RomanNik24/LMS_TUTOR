@@ -6,7 +6,18 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addMinutesIso,
+  dayStartUtcIso,
+  daysBetween,
   formatDate,
+  formatDayKey,
+  isoWeekday,
+  minutesBetween,
+  shiftDayKey,
+  toLocalParts,
+  upcomingWeekdayKeys,
+  weekDayKeys,
+  weekStartKey,
   formatDayLabel,
   formatTime,
   formatTimeRange,
@@ -81,5 +92,88 @@ describe("localToUtcIso — обратный перевод из пояса по
 
   it("бросает ошибку на неверном формате даты", () => {
     expect(() => localToUtcIso("2026-13", "09:00", "Europe/Moscow")).toThrowError();
+  });
+});
+
+describe("дни и недели (T3.09)", () => {
+  it("сдвиг дня переходит через границу месяца и високосный день", () => {
+    expect(shiftDayKey("2026-10-31", 1)).toBe("2026-11-01");
+    expect(shiftDayKey("2028-02-28", 1)).toBe("2028-02-29");
+    expect(shiftDayKey("2028-03-01", -1)).toBe("2028-02-29");
+    expect(shiftDayKey("2026-12-31", 1)).toBe("2027-01-01");
+  });
+
+  it("день недели ISO: понедельник = 1, воскресенье = 7", () => {
+    expect(isoWeekday("2026-10-12")).toBe(1);
+    expect(isoWeekday("2026-10-18")).toBe(7);
+  });
+
+  it("неделя начинается с понедельника", () => {
+    expect(weekStartKey("2026-10-14")).toBe("2026-10-12");
+    expect(weekStartKey("2026-10-18")).toBe("2026-10-12");
+    expect(weekStartKey("2026-10-12")).toBe("2026-10-12");
+    expect(weekDayKeys("2026-10-14")).toEqual([
+      "2026-10-12",
+      "2026-10-13",
+      "2026-10-14",
+      "2026-10-15",
+      "2026-10-16",
+      "2026-10-17",
+      "2026-10-18",
+    ]);
+  });
+
+  it("неделя через переход на зимнее время остаётся из 7 разных дней", () => {
+    const keys = weekDayKeys("2026-10-25");
+    expect(new Set(keys).size).toBe(7);
+    expect(keys[0]).toBe("2026-10-19");
+    expect(keys[6]).toBe("2026-10-25");
+  });
+
+  it("подпись дня по-русски", () => {
+    expect(formatDayKey("2026-10-14")).toBe("ср, 14 окт");
+  });
+
+  it("начало суток в Москве и Екатеринбурге в UTC", () => {
+    expect(dayStartUtcIso("2026-10-14", "Europe/Moscow")).toBe("2026-10-13T21:00:00.000Z");
+    expect(dayStartUtcIso("2026-10-14", "Asia/Yekaterinburg")).toBe("2026-10-13T19:00:00.000Z");
+  });
+
+  it("начало суток в день перехода на летнее время в Берлине (UTC+1 → UTC+2)", () => {
+    expect(dayStartUtcIso("2026-03-29", "Europe/Berlin")).toBe("2026-03-28T23:00:00.000Z");
+    expect(dayStartUtcIso("2026-03-30", "Europe/Berlin")).toBe("2026-03-29T22:00:00.000Z");
+  });
+
+  it("длительность: прибавление минут и разница", () => {
+    const end = addMinutesIso("2026-10-14T14:00:00.000Z", 90);
+    expect(end).toBe("2026-10-14T15:30:00.000Z");
+    expect(minutesBetween("2026-10-14T14:00:00.000Z", end)).toBe(90);
+  });
+
+  it("локальные дата и время для формы", () => {
+    expect(toLocalParts("2026-10-14T21:30:00Z", "Europe/Moscow")).toEqual({
+      date: "2026-10-15",
+      time: "00:30",
+    });
+  });
+
+  it("ближайшие даты шаблона: включительно, по неделям, с ограничением", () => {
+    // 14 октября — среда; ближайшие вторники — 20 и 27 октября
+    expect(upcomingWeekdayKeys("2026-10-14", 2, 3)).toEqual([
+      "2026-10-20",
+      "2026-10-27",
+      "2026-11-03",
+    ]);
+    expect(upcomingWeekdayKeys("2026-10-13", 2, 2)).toEqual(["2026-10-13", "2026-10-20"]);
+    expect(upcomingWeekdayKeys("2026-10-14", 2, 4, "2026-10-27")).toEqual([
+      "2026-10-20",
+      "2026-10-27",
+    ]);
+    expect(upcomingWeekdayKeys("2026-10-14", 2, 4, "2026-10-01")).toEqual([]);
+  });
+
+  it("число дней между ключами", () => {
+    expect(daysBetween("2026-10-01", "2026-10-31")).toBe(30);
+    expect(daysBetween("2026-10-31", "2026-10-01")).toBe(-30);
   });
 });
