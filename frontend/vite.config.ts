@@ -14,6 +14,28 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Библиотеки редко меняются, код приложения — часто: разные файлы кешируются отдельно, и
+        // после обновления приложения браузер не скачивает React и остальное заново (Rolldown).
+        manualChunks(rawId: string) {
+          // Разделитель путей зависит от ОС: приводим к «/», чтобы проверки работали везде.
+          const id = rawId.replaceAll("\\", "/");
+          if (!id.includes("/node_modules/")) return undefined;
+          const inPackage = (...names: string[]) =>
+            names.some((name) => id.includes(`/node_modules/${name}/`));
+          if (inPackage("react", "react-dom", "react-router", "react-router-dom", "scheduler")) {
+            return "vendor-react";
+          }
+          if (inPackage("zod", "react-hook-form", "@hookform/resolvers")) return "vendor-forms";
+          if (inPackage("date-fns", "@date-fns/tz")) return "vendor-date";
+          if (id.includes("/node_modules/@telegram-apps/")) return "vendor-telegram";
+          return "vendor";
+        },
+      },
+    },
+  },
   server: {
     // Туннель для Mini App (scripts/dev_tunnel.*): Vite иначе блокирует незнакомые хосты
     allowedHosts: [".trycloudflare.com"],
