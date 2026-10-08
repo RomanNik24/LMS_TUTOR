@@ -13,7 +13,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import ErrorEvent
 from redis.asyncio import Redis
 
-from src.bot.handlers import homework, membership, menu, schedule, start
+from src.bot.handlers import catalog, homework, membership, menu, schedule, start
 from src.bot.middlewares import AuthMiddleware, DbSessionMiddleware, SessionScope
 from src.core import texts
 from src.core.config import Settings
@@ -68,5 +68,6 @@ def create_dispatcher(
     dispatcher.include_router(start.create_router())
     dispatcher.include_router(schedule.create_router())
     dispatcher.include_router(homework.create_router())
+    dispatcher.include_router(catalog.create_router())
     dispatcher.include_router(menu.create_router())
     return dispatcher

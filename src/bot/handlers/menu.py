@@ -97,11 +97,6 @@ async def logout_no(callback: CallbackQuery) -> None:
         await callback.message.answer(texts.BOT_LOGOUT_CANCELLED)
 
 
-async def catalog(message: Message) -> None:
-    """Каталог услуг: пока пуст (карточки появятся позже, docs/05 §3.4)."""
-    await message.answer(texts.BOT_CATALOG_EMPTY)
-
-
 async def contact(message: Message, settings: Settings) -> None:
     """Ссылка на личный Telegram преподавателя (``TEACHER_CONTACT_URL``)."""
     url = settings.teacher_contact_url.strip()
@@ -128,7 +123,6 @@ def create_router() -> Router:
     router.message.register(logout, Command("logout"))
     router.callback_query.register(logout_yes, F.data == keyboards.CALLBACK_LOGOUT_YES)
     router.callback_query.register(logout_no, F.data == keyboards.CALLBACK_LOGOUT_NO)
-    router.message.register(catalog, F.text == texts.BOT_BUTTON_CATALOG)
     router.message.register(contact, F.text == texts.BOT_BUTTON_CONTACT)
     router.message.register(fallback)
     return router
