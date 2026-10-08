@@ -131,7 +131,7 @@
 | GET | `/admin/assignments?status=&student_id=&overdue=&limit=&offset=` | Выдачи с фильтрами |
 | GET | `/admin/assignments/review-queue` | Очередь проверки (статус `submitted`) |
 | GET | `/admin/assignments/{id}` | Выдача: файлы ученика, журнал переносов |
-| POST | `/admin/assignments/{id}/grade` | `{ "score", "comment" }`; 400 `score_out_of_range`; для `mock_exam` создаёт результат пробника |
+| POST | `/admin/assignments/{id}/grade` | `{ "score", "comment", "geometry_score?" }`; 400 `score_out_of_range`; для `mock_exam` создаёт или обновляет результат пробника, а ответ содержит `conversion` (`geometry_score` — только ОГЭ математика, иначе 422 `geometry_not_applicable`); для обычного ДЗ `conversion = null` |
 | POST | `/admin/assignments/{id}/return` | Возврат на доработку `{ "comment", "new_due_at?" }` |
 | POST | `/admin/assignments/{id}/extend` | Перенос дедлайна: без тела — на следующее занятие; `{ "due_at" }` — вручную, если следующего урока нет. 400 `homework_extension_limit` после двух переносов |
 | POST | `/admin/assignments/{id}/review-files` | Файл преподавателя к проверке (multipart) |
@@ -139,10 +139,11 @@
 ### 5.6. Пробные экзамены
 | Метод | Путь | Описание |
 |---|---|---|
-| GET | `/admin/mock-exams?student_id=&exam_type_id=` | Результаты |
-| POST | `/admin/mock-exams` | Ввести результат без ДЗ: `student_id`, `exam_type_id`, `exam_date`, `primary_score`, `max_primary`, `geometry_score?`. Ответ включает `converted_value` и `scale_applicable` |
-| PATCH | `/admin/mock-exams/{id}` | Исправить |
-| DELETE | `/admin/mock-exams/{id}` | Удалить (только ручные; связанные с ДЗ правятся через оценку) |
+| GET | `/admin/mock-exams?student_id=&exam_type_id=&limit=&offset=` | Результаты (пагинация, новые первыми); у каждого `converted_value`, `scale_year`, `scale_applicable`, `warning`, `assignment_id` (источник-ДЗ или `null`) |
+| POST | `/admin/mock-exams` | Ввести результат без ДЗ: `student_id`, `exam_type_id`, `exam_date`, `primary_score`, `max_primary`, `geometry_score?`, `comment?`. Ответ `201` включает `converted_value` и `scale_applicable`. 400 `score_out_of_range` (балл больше `max_primary`); 422 `geometry_not_applicable` / `geometry_too_big`; 404 `student_not_found` / `exam_type_not_found` |
+| POST | `/admin/mock-exams/convert` | Предпросмотр конвертации без сохранения (те же поля, что у создания, без `student_id` и `comment`): `{converted_value, scale_year, scale_applicable, warning}`. Нужен форме ввода: фронтенд сам баллы не переводит |
+| PATCH | `/admin/mock-exams/{id}` | Исправить `exam_date`, `primary_score`, `max_primary`, `geometry_score`, `comment` (конвертация пересчитывается). Результат из ДЗ: 400 `mock_exam_linked_to_homework` |
+| DELETE | `/admin/mock-exams/{id}` | Удалить (только ручные; связанные с ДЗ — 400 `mock_exam_linked_to_homework`, они правятся через оценку). Ответ `204` |
 
 ### 5.7. Каталог услуг
 | Метод | Путь | Описание |

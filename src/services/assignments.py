@@ -282,6 +282,7 @@ class AssignmentQueryService:
             homework_id=homework.id,
             title=homework.title,
             kind=homework.kind,
+            exam_type_id=homework.exam_type_id,
             student_id=assignment.student_id,
             student_name=name,
             status=assignment.status,

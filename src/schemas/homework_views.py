@@ -69,6 +69,8 @@ class AdminAssignmentItem(BaseModel):
     homework_id: int
     title: str
     kind: HomeworkKind
+    # тип экзамена пробника: по нему экран проверки показывает конвертацию (docs/07 §9.2.9)
+    exam_type_id: int | None
     student_id: int
     student_name: str
     status: AssignmentStatus

@@ -32,6 +32,7 @@ from src.core.storage import ObjectStorage, S3Storage
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
 from src.services.assignments import AssignmentQueryService
 from src.services.auth import AuthService
+from src.services.exams import ExamService
 from src.services.extensions import ExtensionService
 from src.services.files import FileService
 from src.services.grading import GradingService
@@ -276,6 +277,11 @@ def get_submission_service(
 ) -> SubmissionService:
     """Собрать ``SubmissionService`` на запрос."""
     return SubmissionService(session)
+
+
+def get_exam_service(session: Annotated[AsyncSession, Depends(get_session)]) -> ExamService:
+    """Собрать ``ExamService`` на запрос."""
+    return ExamService(session)
 
 
 def get_grading_service(session: Annotated[AsyncSession, Depends(get_session)]) -> GradingService:
