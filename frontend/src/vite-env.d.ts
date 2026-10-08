@@ -4,6 +4,8 @@
 interface ImportMetaEnv {
   /** Username бота без @ — для кнопки «Открыть бота» на экране входа. */
   readonly VITE_BOT_USERNAME?: string;
+  /** Публичный DSN Sentry; без него Sentry не загружается (docs/09 §6). */
+  readonly VITE_SENTRY_DSN?: string;
 }
 
 interface ImportMeta {

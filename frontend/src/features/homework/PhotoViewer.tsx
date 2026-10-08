@@ -6,6 +6,7 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { texts } from "@/lib/texts";
+import { externalLinkProps } from "@/lib/externalLink";
 
 import { useFileUrl } from "./api";
 import type { AssignmentFile } from "./api";
@@ -31,9 +32,7 @@ function CurrentFile({ file, zoom }: { file: AssignmentFile; zoom: number }) {
   if (!file.content_type.startsWith("image/")) {
     return (
       <a
-        href={query.data.url}
-        target="_blank"
-        rel="noreferrer"
+        {...externalLinkProps(query.data.url)}
         className="flex min-h-24 items-center justify-center gap-2 text-base font-semibold text-primary font-body"
       >
         <FileText className="size-6" aria-hidden />

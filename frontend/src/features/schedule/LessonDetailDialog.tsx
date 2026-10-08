@@ -17,6 +17,7 @@ import { Field, Input } from "@/components/ui/input";
 import { formatDayLabel, formatTimeRange, minutesBetween, toLocalParts } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
 import { useSubjectName } from "@/features/reference/api";
+import { externalLinkProps } from "@/lib/externalLink";
 
 import { useCancelLesson, useCompleteLesson, useRescheduleLesson } from "./api";
 import type { Attendance, Lesson } from "./api";
@@ -61,12 +62,7 @@ function Details({
     url === null ? (
       d.none
     ) : (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="break-all text-primary underline"
-      >
+      <a {...externalLinkProps(url)} className="break-all text-primary underline">
         {url}
       </a>
     );

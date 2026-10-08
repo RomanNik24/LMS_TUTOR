@@ -87,3 +87,13 @@ describe("тексты интерфейса: docs/07 §8.1", () => {
     expect(strings.filter((text) => /\p{Extended_Pictographic}/u.test(text))).toEqual([]);
   });
 });
+
+describe("безопасность ссылок: docs/09", () => {
+  it("нет сырых target blank: внешние ссылки только через externalLinkProps", () => {
+    expect(offenders(/target="_blank"/)).toEqual([]);
+  });
+
+  it("нет dangerouslySetInnerHTML и eval", () => {
+    expect(offenders(/dangerouslySetInnerHTML|\beval\(|new Function\(/)).toEqual([]);
+  });
+});

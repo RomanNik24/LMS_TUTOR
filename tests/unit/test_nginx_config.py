@@ -21,6 +21,11 @@ def test_csp_allows_images_from_public_s3_endpoint() -> None:
     img_src = next(d.strip() for d in csp.group(1).split(";") if d.strip().startswith("img-src"))
     assert img_src == "img-src 'self' data: ${S3_PUBLIC_ENDPOINT}"
     assert not (NGINX / "snippets" / "security-headers.conf").exists()  # только шаблон
+    connect_src = next(
+        d.strip() for d in csp.group(1).split(";") if d.strip().startswith("connect-src")
+    )
+    # свой домен + необязательный адрес Sentry (по умолчанию пустой): никаких внешних хостов
+    assert connect_src == "connect-src 'self' ${CSP_CONNECT_EXTRA}"
 
     dockerfile = (ROOT / "frontend" / "Dockerfile").read_text(encoding="utf-8")
     assert "COPY nginx/templates/ /etc/nginx/templates/" in dockerfile

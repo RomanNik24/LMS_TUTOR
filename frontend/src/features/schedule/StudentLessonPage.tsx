@@ -13,6 +13,7 @@ import { formatDayLabel, formatTime, formatTimeRange } from "@/lib/datetime";
 import { formatDate } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
 import { useSubjectName } from "@/features/reference/api";
+import { externalLinkProps } from "@/lib/externalLink";
 
 import { useStudentLesson } from "./studentApi";
 
@@ -79,7 +80,7 @@ export function StudentLessonPage() {
       <div className="flex flex-col gap-2">
         {lesson.video_url !== null && (
           <Button asChild variant="highlight">
-            <a href={lesson.video_url} target="_blank" rel="noopener noreferrer">
+            <a {...externalLinkProps(lesson.video_url)}>
               <ExternalLink className="size-4" aria-hidden />
               {t.video}
             </a>
@@ -87,7 +88,7 @@ export function StudentLessonPage() {
         )}
         {lesson.board_url !== null && (
           <Button asChild variant="outline">
-            <a href={lesson.board_url} target="_blank" rel="noopener noreferrer">
+            <a {...externalLinkProps(lesson.board_url)}>
               <ExternalLink className="size-4" aria-hidden />
               {t.board}
             </a>

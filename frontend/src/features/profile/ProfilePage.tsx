@@ -13,6 +13,7 @@ import { useLogout, useMe } from "@/features/auth/api";
 import type { Me } from "@/features/auth/api";
 import { TIMEZONES } from "@/features/students/studentForm";
 import { texts } from "@/lib/texts";
+import { externalLinkProps } from "@/lib/externalLink";
 
 import { useUpdateMe } from "./api";
 import { profileFormSchema } from "./profileForm";
@@ -110,9 +111,7 @@ export function ProfilePage() {
         <p className="text-sm text-muted-foreground font-body">{t.webLoginHint}</p>
         {BOT_USERNAME !== undefined && BOT_USERNAME !== "" && (
           <Button asChild variant="outline">
-            <a href={`https://t.me/${BOT_USERNAME}`} target="_blank" rel="noopener noreferrer">
-              {t.openBot}
-            </a>
+            <a {...externalLinkProps(`https://t.me/${BOT_USERNAME}`)}>{t.openBot}</a>
           </Button>
         )}
       </Card>

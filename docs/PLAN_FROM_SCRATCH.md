@@ -1400,6 +1400,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Промпт:** `Задача T8.06 (CODE). Ленивая загрузка админ-части; бюджет размера бандла фиксируется в CI; нет внешних скриптов/шрифтов/картинок (тест на CSP); внешние ссылки только https:// + rel="noopener noreferrer"; Sentry-интеграция (включается только при заданном VITE_SENTRY_DSN, без PII, токены из URL вырезаются).`
 **Проверка:** 🤖 `pnpm build` печатает размеры; CI проверяет бюджет.
 
+**Статус T8.06:** ✅ админка и тяжёлые зависимости загружаются лениво (с аудита); `pnpm build` печатает размеры и падает при превышении бюджета (`frontend/scripts/check-bundle.mjs`: стартовый JS ≤ 280 КБ gzip, сейчас 251; стили ≤ 12, сейчас 9; любой чанк ≤ 100, сейчас 90); тест CSP — нет внешних адресов, встроенных скриптов и шрифтов (`src/test/csp.test.ts`); внешние ссылки только через `externalLinkProps` (https, `rel="noopener noreferrer"`, `src/lib/externalLink.ts`) и сырой `target` запрещён тестом; Sentry (`@sentry/react@10.75.3`) грузится динамически и только при `VITE_SENTRY_DSN`, события очищаются от PII, токенов и query (`src/lib/sentry.ts`), адрес приёма добавляется в CSP через `CSP_CONNECT_EXTRA`.
+
 ### T8.07 · Сквозные и компонентные тесты
 **Кто:** 💻 CODE · **Размер:** L · **Ветка:** `test/t8-07-e2e` · **Коммит:** `test: add e2e and frontend regression tests`
 **Читать:** `docs/06` B7.

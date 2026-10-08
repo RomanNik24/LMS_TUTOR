@@ -6,6 +6,7 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { FullScreenLoader } from "@/components/common/FullScreenLoader";
 import { getInitData, isTelegramMiniApp } from "@/lib/telegram";
 import { texts } from "@/lib/texts";
+import { externalLinkProps } from "@/lib/externalLink";
 
 import { useTelegramLogin } from "../api";
 
@@ -66,7 +67,7 @@ export function LoginPage() {
           <p className="text-base text-hero-foreground font-body">{texts.login.openViaBot}</p>
           {BOT_USERNAME !== undefined && BOT_USERNAME !== "" && (
             <a
-              href={`https://t.me/${BOT_USERNAME}`}
+              {...externalLinkProps(`https://t.me/${BOT_USERNAME}`)}
               className="inline-flex min-h-11 items-center rounded-md bg-background px-5 text-primary font-body"
             >
               {texts.login.openBot}

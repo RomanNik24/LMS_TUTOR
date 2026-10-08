@@ -13,7 +13,9 @@ add_header Referrer-Policy "no-referrer" always;
 # img-src: фото решений ДЗ показываются по подписанной ссылке хранилища (docs/09 §4), а она ведёт
 # на публичный адрес S3 (S3_PUBLIC_ENDPOINT), то есть на другой origin. Без него браузер
 # блокировал фото на экране проверки (аудит 2026-10-08, п. 3).
+# connect-src: ${CSP_CONNECT_EXTRA} — необязательный адрес приёма ошибок Sentry (https://oXXXX.ingest...),
+# пусто по умолчанию: запросы только на свой домен (T8.06).
 # frame-ancestors: Mini App открывается во встроенном окне Telegram; для веб-клиентов Telegram
 # разрешаем их домены. X-Frame-Options не ставим: он конфликтует с frame-ancestors.
 # Точный список доменов уточняется при проверке на iOS/Android и в Telegram Web (T1.19).
-add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: ${S3_PUBLIC_ENDPOINT}; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org" always;
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: ${S3_PUBLIC_ENDPOINT}; font-src 'self'; connect-src 'self' ${CSP_CONNECT_EXTRA}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org" always;
