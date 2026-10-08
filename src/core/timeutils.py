@@ -147,6 +147,13 @@ def day_bounds_utc(day: date, tz_name: str) -> tuple[datetime, datetime]:
     )
 
 
+def month_bounds_utc(day: date, tz_name: str) -> tuple[datetime, datetime]:
+    """Границы местного календарного месяца, в котором лежит ``day``: ``[начало, конец)`` в UTC."""
+    first = day.replace(day=1)
+    following = (first + timedelta(days=32)).replace(day=1)
+    return day_bounds_utc(first, tz_name)[0], day_bounds_utc(following, tz_name)[0]
+
+
 def dates_on_weekday(first: date, last: date, iso_weekday: int) -> list[date]:
     """Все даты от ``first`` до ``last`` включительно, выпадающие на день недели ISO.
 

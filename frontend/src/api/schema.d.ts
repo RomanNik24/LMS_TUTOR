@@ -924,6 +924,26 @@ export interface paths {
         patch: operations["update_mock_exam"];
         trace?: never;
     };
+    "/api/v1/admin/dashboard/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Дашборд «Сегодня»
+         * @description Пять блоков дня; у владельца — ещё заработано и ожидается за месяц.
+         */
+        get: operations["get_today_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/homework": {
         parameters: {
             query?: never;
@@ -1319,6 +1339,162 @@ export interface components {
             max_primary: number;
             /** Geometry Score */
             geometry_score?: number | null;
+        };
+        /**
+         * DashboardAssignmentItem
+         * @description Несданная или скоро истекающая выдача.
+         */
+        DashboardAssignmentItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Student Id */
+            student_id: number;
+            /** Student Name */
+            student_name: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+        };
+        /**
+         * DashboardAssignmentsBlock
+         * @description Блок выдач: общее число и ближайшие по сроку.
+         */
+        DashboardAssignmentsBlock: {
+            /** Total */
+            total: number;
+            /** Items */
+            items: components["schemas"]["DashboardAssignmentItem"][];
+        };
+        /**
+         * DashboardLesson
+         * @description Урок сегодня; ``needs_mark`` — он уже закончился, а отметки о проведении нет.
+         */
+        DashboardLesson: {
+            /** Id */
+            id: number;
+            /** Subject Code */
+            subject_code: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            status: components["schemas"]["LessonStatus"];
+            /** Student Names */
+            student_names: string[];
+            /** Needs Mark */
+            needs_mark: boolean;
+        };
+        /**
+         * DashboardLessonsBlock
+         * @description Блок «Уроки сегодня».
+         */
+        DashboardLessonsBlock: {
+            /** Total */
+            total: number;
+            /** Items */
+            items: components["schemas"]["DashboardLesson"][];
+        };
+        /**
+         * DashboardOwner
+         * @description Дашборд для владельца: плюс заработок текущего месяца (рубли).
+         */
+        DashboardOwner: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            lessons: components["schemas"]["DashboardLessonsBlock"];
+            review_queue: components["schemas"]["DashboardReviewBlock"];
+            unsubmitted: components["schemas"]["DashboardAssignmentsBlock"];
+            unmarked_lessons: components["schemas"]["DashboardUnmarkedBlock"];
+            deadlines: components["schemas"]["DashboardAssignmentsBlock"];
+            /** Earned Month */
+            earned_month: number;
+            /** Expected Month */
+            expected_month: number;
+        };
+        /**
+         * DashboardReviewBlock
+         * @description Блок «ДЗ на проверку»: общее число и самые давние работы.
+         */
+        DashboardReviewBlock: {
+            /** Total */
+            total: number;
+            /** Items */
+            items: components["schemas"]["DashboardReviewItem"][];
+        };
+        /**
+         * DashboardReviewItem
+         * @description Работа в очереди проверки.
+         */
+        DashboardReviewItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Student Name */
+            student_name: string;
+            /** Title */
+            title: string;
+            /** Submitted At */
+            submitted_at: string | null;
+        };
+        /**
+         * DashboardStaff
+         * @description Дашборд для менеджера: без финансовых полей.
+         */
+        DashboardStaff: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            lessons: components["schemas"]["DashboardLessonsBlock"];
+            review_queue: components["schemas"]["DashboardReviewBlock"];
+            unsubmitted: components["schemas"]["DashboardAssignmentsBlock"];
+            unmarked_lessons: components["schemas"]["DashboardUnmarkedBlock"];
+            deadlines: components["schemas"]["DashboardAssignmentsBlock"];
+        };
+        /**
+         * DashboardUnmarkedBlock
+         * @description Блок «Уроки без отметки».
+         */
+        DashboardUnmarkedBlock: {
+            /** Total */
+            total: number;
+            /** Items */
+            items: components["schemas"]["DashboardUnmarkedLesson"][];
+        };
+        /**
+         * DashboardUnmarkedLesson
+         * @description Прошедший урок без отметки о проведении.
+         */
+        DashboardUnmarkedLesson: {
+            /** Id */
+            id: number;
+            /** Subject Code */
+            subject_code: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /** Student Names */
+            student_names: string[];
         };
         /**
          * DueMode
@@ -6596,6 +6772,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_today_dashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOwner"] | components["schemas"]["DashboardStaff"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
             /** @description Превышен лимит запросов */

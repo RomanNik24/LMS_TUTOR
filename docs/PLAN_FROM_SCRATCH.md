@@ -1299,6 +1299,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Промпт:** `Задача T7.01 (CODE). GET /admin/dashboard/today по docs/01 §4.3: (1) уроки сегодня, (2) очередь проверки, (3) не сдали к сегодняшним урокам, (4) прошедшие без отметки, (5) дедлайны в 24 часа, (6) ТОЛЬКО owner — earned_month и expected_month. Именованные запросы в репозиториях, без N+1; разные схемы для owner и manager. Тест: число SQL-запросов не растёт с числом учеников.`
 **Проверка:** 🤖 тесты зелёные.
 
+**Статус T7.01:** ✅ `GET /admin/dashboard/today`: `DashboardService`, `DashboardRepository`/`FinanceRepository`, схемы `DashboardOwner`/`DashboardStaff`; число запросов постоянно (15) и не растёт с числом учеников — `tests/integration/test_dashboard.py`.
+
 ### T7.02 · Финансы и статистика
 **Кто:** 💻 CODE · **Размер:** L · **Ветка:** `feature/t7-02-finance` · **Коммит:** `feat(finance): add earnings stats and csv export`
 **Читать:** `docs/01` (US-07), `docs/04` §11, `docs/08` §5.7.

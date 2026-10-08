@@ -423,6 +423,7 @@ async def test_operation_ids_are_stable(app: FastAPI) -> None:
         for operation in methods.values()
     }
     assert ids == {
+        "get_today_dashboard",
         "list_students",
         "create_student",
         "get_student",

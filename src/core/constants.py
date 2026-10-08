@@ -146,6 +146,11 @@ CRON_LINKS_CLEANUP = "30 3 * * *"
 DIGEST_LOCAL_HOUR = 8
 DIGEST_TOP_ITEMS = 5
 DIGEST_LESSON_LINES = 15
+
+# Дашборд «Сегодня» (docs/01 §4.3): в блоке показаны первые элементы, остальное — счётчиком
+DASHBOARD_TOP_ITEMS = 5
+DASHBOARD_LESSONS_MAX = 50
+DASHBOARD_DEADLINE_HOURS = 24
 CRON_EVERY_HOUR = "0 * * * *"
 
 # Подключение брокера воркера к Redis: ожидание соединения (чтение блокирующее, без таймаута)

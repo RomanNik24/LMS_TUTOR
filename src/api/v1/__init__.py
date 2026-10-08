@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from src.api.v1 import (
+    admin_dashboard,
     admin_exams,
     admin_homework,
     admin_schedule,
@@ -30,5 +31,6 @@ api_router.include_router(student_lessons.router)
 api_router.include_router(student_reports.router)
 api_router.include_router(admin_homework.router)
 api_router.include_router(admin_exams.router)
+api_router.include_router(admin_dashboard.router)
 api_router.include_router(student_homework.router)
 api_router.include_router(files.router)
