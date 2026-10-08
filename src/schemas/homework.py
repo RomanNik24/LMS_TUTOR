@@ -10,6 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validato
 
 from src.core import texts
 from src.core.enums import AssignmentStatus, DueMode, HomeworkKind, SubmissionType
+from src.schemas.exams import ScoreConversion
 from src.schemas.files import MaterialItem
 
 TITLE_MAX_LENGTH = 200
@@ -174,6 +175,8 @@ class GradeRequest(BaseModel):
 
     score: int
     comment: str | None = Field(default=None, max_length=STUDENT_COMMENT_MAX_LENGTH)
+    # Баллы по геометрии: только для пробника ОГЭ математики (правило «не менее 2», docs/04 §6)
+    geometry_score: int | None = Field(default=None, ge=0)
 
     @field_validator("comment")
     @classmethod
@@ -213,6 +216,8 @@ class GradeItem(BaseModel):
     graded_after_expiry: bool
     teacher_comment: str | None
     due_at: datetime
+    # для ДЗ типа mock_exam: конвертация результата; для обычного ДЗ — пусто
+    conversion: ScoreConversion | None = None
 
 
 class ExtendRequest(BaseModel):

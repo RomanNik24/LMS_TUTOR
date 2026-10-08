@@ -8,7 +8,8 @@
 - балл — целое от 0 до ``homeworks.max_score``, иначе 400 ``score_out_of_range``;
 - вернуть на доработку можно только сданную работу: комментарий обязателен, новый срок — заданный
   или начало ближайшего урока ученика (``no_next_lesson``, если урока нет и срок не задан);
-- конвертация баллов пробников в оценку — этап 6, здесь её нет;
+- оценка ДЗ типа ``mock_exam`` создаёт или обновляет результат пробника и его конвертацию
+  (``ExamService.record_from_assignment``, docs/04 §6) в той же транзакции;
 - commit выполняет только этот сервис, один публичный метод = одна транзакция.
 """
 
@@ -18,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core import texts
 from src.core.current_user import CurrentUser
-from src.core.enums import AssignmentStatus
+from src.core.enums import AssignmentStatus, HomeworkKind
 from src.core.exceptions import (
     BusinessRuleError,
     NotFoundError,
@@ -30,8 +31,10 @@ from src.db.models import Homework, HomeworkAssignment
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.homework import HomeworkAssignmentRepository, HomeworkRepository
 from src.repositories.lessons import LessonRepository
+from src.schemas.exams import ScoreConversion
 from src.schemas.homework import GradeItem, GradeRequest, ReturnRequest
 from src.services.auth import STAFF_ROLES
+from src.services.exams import ExamService
 from src.services.notification_events import NotificationEvents
 
 AUDIT_GRADED = "assignment.graded"
@@ -60,6 +63,7 @@ class GradingService:
         self._lessons = LessonRepository(session)
         self._audit = AuditLogRepository(session)
         self._events = NotificationEvents(session)
+        self._exams = ExamService(session)
 
     async def grade_assignment(
         self, actor: CurrentUser, assignment_id: int, data: GradeRequest
@@ -81,6 +85,7 @@ class GradingService:
                 code="score_out_of_range",
                 details={"max_score": homework.max_score},
             )
+        await self._exams.check_homework_grade(homework, data.score, data.geometry_score)
         now = utcnow()
         after_expiry = assignment.status == AssignmentStatus.EXPIRED
         previous_score = assignment.score
@@ -102,11 +107,16 @@ class GradingService:
             entity_id=assignment.id,
             data=audit_data,
         )
+        conversion: ScoreConversion | None = None
+        if homework.kind == HomeworkKind.MOCK_EXAM:
+            conversion = await self._exams.record_from_assignment(
+                assignment, homework, graded_by=actor.id, geometry_score=data.geometry_score
+            )
         await self._events.homework_graded(
             assignment.student_id, assignment.id, homework.title, data.score, homework.max_score
         )
         await self._session.commit()
-        return self._item(assignment, homework)
+        return self._item(assignment, homework, conversion)
 
     async def return_for_revision(
         self, actor: CurrentUser, assignment_id: int, data: ReturnRequest
@@ -176,7 +186,11 @@ class GradingService:
         return due
 
     @staticmethod
-    def _item(assignment: HomeworkAssignment, homework: Homework) -> GradeItem:
+    def _item(
+        assignment: HomeworkAssignment,
+        homework: Homework,
+        conversion: ScoreConversion | None = None,
+    ) -> GradeItem:
         percent = (
             None
             if assignment.score is None
@@ -192,4 +206,5 @@ class GradingService:
             graded_after_expiry=assignment.graded_after_expiry,
             teacher_comment=assignment.teacher_comment,
             due_at=assignment.due_at,
+            conversion=conversion,
         )

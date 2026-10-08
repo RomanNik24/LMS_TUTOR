@@ -816,6 +816,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/mock-exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Результаты пробников
+         * @description Результаты с фильтрами по ученику и типу экзамена, новые первыми.
+         */
+        get: operations["list_mock_exams"];
+        put?: never;
+        /**
+         * Ввести результат пробника
+         * @description Ручной ввод без ДЗ; ответ содержит ``converted_value`` и ``scale_applicable``.
+         */
+        post: operations["create_mock_exam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mock-exams/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Предпросмотр конвертации баллов
+         * @description Перевод первичного балла по шкале без сохранения (форма ввода показывает результат сразу).
+         */
+        post: operations["convert_mock_exam_score"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/mock-exams/{result_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Удалить результат пробника
+         * @description Удалить ручной результат (созданные из ДЗ удалять нельзя).
+         */
+        delete: operations["delete_mock_exam"];
+        options?: never;
+        head?: never;
+        /**
+         * Исправить результат пробника
+         * @description Исправление ручного результата; связанные с ДЗ — только через оценку.
+         */
+        patch: operations["update_mock_exam"];
+        trace?: never;
+    };
     "/api/v1/student/homework": {
         parameters: {
             query?: never;
@@ -1015,6 +1083,8 @@ export interface components {
             /** Title */
             title: string;
             kind: components["schemas"]["HomeworkKind"];
+            /** Exam Type Id */
+            exam_type_id: number | null;
             /** Student Id */
             student_id: number;
             /** Student Name */
@@ -1072,6 +1142,8 @@ export interface components {
             /** Title */
             title: string;
             kind: components["schemas"]["HomeworkKind"];
+            /** Exam Type Id */
+            exam_type_id: number | null;
             /** Student Id */
             student_id: number;
             /** Student Name */
@@ -1168,6 +1240,31 @@ export interface components {
         Body_upload_solution_file: {
             /** File */
             file: string;
+        };
+        /**
+         * ConversionWarning
+         * @description Предупреждение конвертации (результат всё равно посчитан).
+         * @enum {string}
+         */
+        ConversionWarning: "geometry_missing";
+        /**
+         * ConvertRequest
+         * @description Предпросмотр конвертации в форме ввода пробника (без сохранения).
+         */
+        ConvertRequest: {
+            /** Exam Type Id */
+            exam_type_id: number;
+            /**
+             * Exam Date
+             * Format: date
+             */
+            exam_date: string;
+            /** Primary Score */
+            primary_score: number;
+            /** Max Primary */
+            max_primary: number;
+            /** Geometry Score */
+            geometry_score?: number | null;
         };
         /**
          * DueMode
@@ -1331,6 +1428,7 @@ export interface components {
              * Format: date-time
              */
             due_at: string;
+            conversion?: components["schemas"]["ScoreConversion"] | null;
         };
         /**
          * GradeRequest
@@ -1344,6 +1442,8 @@ export interface components {
             score: number;
             /** Comment */
             comment?: string | null;
+            /** Geometry Score */
+            geometry_score?: number | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1761,6 +1861,99 @@ export interface components {
             display_name?: string | null;
         };
         /**
+         * MockExamCreate
+         * @description Ручной ввод результата пробника без ДЗ (docs/08 §5.6).
+         */
+        MockExamCreate: {
+            /** Exam Type Id */
+            exam_type_id: number;
+            /**
+             * Exam Date
+             * Format: date
+             */
+            exam_date: string;
+            /** Primary Score */
+            primary_score: number;
+            /** Max Primary */
+            max_primary: number;
+            /** Geometry Score */
+            geometry_score?: number | null;
+            /** Student Id */
+            student_id: number;
+            /** Comment */
+            comment?: string | null;
+        };
+        /**
+         * MockExamItem
+         * @description Результат пробника в ответах для персонала (денег и заметок преподавателя нет).
+         */
+        MockExamItem: {
+            /** Id */
+            id: number;
+            /** Student Id */
+            student_id: number;
+            /** Student Name */
+            student_name: string;
+            /** Exam Type Id */
+            exam_type_id: number;
+            /** Exam Type Code */
+            exam_type_code: string;
+            /** Exam Type Name */
+            exam_type_name: string;
+            /**
+             * Exam Date
+             * Format: date
+             */
+            exam_date: string;
+            /** Primary Score */
+            primary_score: number;
+            /** Max Primary */
+            max_primary: number;
+            /** Geometry Score */
+            geometry_score: number | null;
+            /** Converted Value */
+            converted_value: number | null;
+            /** Scale Year */
+            scale_year: number | null;
+            /** Scale Applicable */
+            scale_applicable: boolean;
+            warning: components["schemas"]["ConversionWarning"] | null;
+            /** Assignment Id */
+            assignment_id: number | null;
+            /** Comment */
+            comment: string | null;
+        };
+        /**
+         * MockExamPage
+         * @description Страница списка результатов (docs/08 §1).
+         */
+        MockExamPage: {
+            /** Items */
+            items: components["schemas"]["MockExamItem"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /**
+         * MockExamUpdate
+         * @description Исправление ручного результата; ученика и тип экзамена менять нельзя.
+         */
+        MockExamUpdate: {
+            /** Exam Date */
+            exam_date?: string | null;
+            /** Primary Score */
+            primary_score?: number | null;
+            /** Max Primary */
+            max_primary?: number | null;
+            /** Geometry Score */
+            geometry_score?: number | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /**
          * ReturnRequest
          * @description Возврат на доработку: что исправить и (необязательно) новый срок.
          *
@@ -1771,6 +1964,22 @@ export interface components {
             comment: string;
             /** New Due At */
             new_due_at?: string | null;
+        };
+        /**
+         * ScoreConversion
+         * @description Результат перевода первичного балла по шкале.
+         *
+         *     ``scale_applicable = false`` — шкала неприменима (нестандартный максимум варианта или шкалы
+         *     нет): тогда ``converted_value`` и ``scale_year`` пусты, интерфейс показывает процент.
+         */
+        ScoreConversion: {
+            /** Converted Value */
+            converted_value: number | null;
+            /** Scale Year */
+            scale_year: number | null;
+            /** Scale Applicable */
+            scale_applicable: boolean;
+            warning?: components["schemas"]["ConversionWarning"] | null;
         };
         /**
          * StaffCreate
@@ -5714,6 +5923,387 @@ export interface operations {
             };
             /** @description Неподдерживаемый тип файла */
             415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_mock_exams: {
+        parameters: {
+            query?: {
+                student_id?: number | null;
+                exam_type_id?: number | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockExamPage"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_mock_exam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MockExamCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockExamItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    convert_mock_exam_score: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConvertRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScoreConversion"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_mock_exam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_mock_exam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MockExamUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockExamItem"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

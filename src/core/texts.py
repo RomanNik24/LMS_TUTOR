@@ -109,6 +109,17 @@ SUBMISSION_NO_FILES = "Загрузите хотя бы один файл или
 STUDENT_COMMENT_TOO_LONG = "Комментарий не длиннее 2000 символов."
 
 SCORE_OUT_OF_RANGE = "Балл должен быть целым числом от 0 до {max_score}."
+
+# --- Пробные экзамены (docs/04 §6, docs/08 §5.6) ---
+MOCK_EXAM_UPDATE_EMPTY = "Укажите хотя бы одно поле для изменения."
+MOCK_EXAM_NOT_FOUND = "Результат пробника не найден."
+MOCK_EXAM_EXAM_TYPE_UNKNOWN = "Тип экзамена не найден."
+MOCK_EXAM_LINKED_TO_HOMEWORK = (
+    "Результат создан из ДЗ: исправьте оценку выдачи, и он обновится сам."
+)
+MOCK_EXAM_GEOMETRY_NOT_APPLICABLE = "Баллы по геометрии указываются только для ОГЭ математики."
+MOCK_EXAM_GEOMETRY_TOO_BIG = "Баллы по геометрии не могут превышать первичный балл."
+MOCK_EXAM_SCORE_ABOVE_MAX = "Первичный балл не может быть больше максимума варианта."
 ASSIGNMENT_NOT_GRADABLE = "Эту работу пока нельзя оценить: ученик ещё не сдал её."
 ASSIGNMENT_NOT_RETURNABLE = "Вернуть на доработку можно только сданную работу."
 RETURN_COMMENT_REQUIRED = "Напишите, что нужно доработать."

@@ -463,4 +463,10 @@ async def test_operation_ids_are_stable(app: FastAPI) -> None:
         "return_assignment",
         "extend_assignment",
         "upload_review_file",
+        # пробные экзамены (T6.03)
+        "list_mock_exams",
+        "create_mock_exam",
+        "convert_mock_exam_score",
+        "update_mock_exam",
+        "delete_mock_exam",
     }
