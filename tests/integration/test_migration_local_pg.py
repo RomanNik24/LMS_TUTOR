@@ -71,6 +71,7 @@ T102_TABLES = {
     "homework_extensions",
     "homework_files",
     "notifications",
+    "mock_exam_results",
 }
 
 EXPECTED_FK_DELETE_RULES = {
@@ -108,6 +109,10 @@ EXPECTED_FK_DELETE_RULES = {
     "fk_homework_files_assignment_id": "c",
     "fk_homework_files_uploaded_by": "r",
     "fk_notifications_user_id": "c",
+    "fk_mock_exam_results_student_id": "r",
+    "fk_mock_exam_results_exam_type_id": "r",
+    "fk_mock_exam_results_assignment_id": "n",
+    "fk_mock_exam_results_created_by": "r",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -133,6 +138,7 @@ EXPECTED_CHECK_NAMES = {
     "ck_homework_assignments_score_nonneg",
     "ck_homework_files_role",
     "ck_notifications_status",
+    "ck_mock_exam_results_primary_score_non_negative",
 }
 
 
@@ -453,6 +459,7 @@ def test_constraints_created_by_migration_local(
                 "uq_lessons_template_id_start_at",
                 "uq_homework_assignments_homework_id_student_id",
                 "uq_notifications_dedup_key",
+                "uq_mock_exam_results_assignment_id",
                 "uq_grade_scales_exam_type_id_valid_year_primary_score",
             }
 

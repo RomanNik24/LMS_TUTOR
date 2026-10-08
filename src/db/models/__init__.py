@@ -44,6 +44,7 @@
 
 from src.db.models._enum import enum_varchar
 from src.db.models.audit import AuditLog
+from src.db.models.exams import MockExamResult
 from src.db.models.homework import (
     Homework,
     HomeworkAssignment,
@@ -72,6 +73,7 @@ __all__ = [
     "HomeworkExtension",
     "HomeworkFile",
     "HomeworkMaterial",
+    "MockExamResult",
     "Lesson",
     "LessonParticipant",
     "Notification",

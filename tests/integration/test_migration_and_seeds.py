@@ -66,6 +66,7 @@ T102_TABLES = {
     "homework_extensions",
     "homework_files",
     "notifications",
+    "mock_exam_results",
 }
 
 EXPECTED_CHECK_NAMES = {
@@ -91,6 +92,7 @@ EXPECTED_CHECK_NAMES = {
     "ck_homework_assignments_score_nonneg",
     "ck_homework_files_role",
     "ck_notifications_status",
+    "ck_mock_exam_results_primary_score_non_negative",
 }
 
 
