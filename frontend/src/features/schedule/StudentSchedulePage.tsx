@@ -24,18 +24,13 @@ import {
 } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
 import { cn } from "@/lib/utils";
+import { useSubjectName } from "@/features/reference/api";
 
 import { useStudentLessons } from "./studentApi";
 import type { StudentLesson } from "./studentApi";
 
 const t = texts.student.schedule;
 const LIST_DAYS = 28;
-
-function subjectLabel(code: string): string {
-  return code in texts.admin.subjects
-    ? texts.admin.subjects[code as keyof typeof texts.admin.subjects]
-    : code;
-}
 
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -58,6 +53,7 @@ function group(lessons: StudentLesson[], timeZone: string): [string, StudentLess
 }
 
 function LessonCard({ lesson, timeZone }: { lesson: StudentLesson; timeZone: string }) {
+  const subjectLabel = useSubjectName();
   return (
     <Link
       to={`/app/schedule/${String(lesson.id)}`}
@@ -87,6 +83,7 @@ function Hero({
   next: StudentLesson | undefined;
   timeZone: string;
 }) {
+  const subjectLabel = useSubjectName();
   return (
     <section className="-mx-4 -mt-4 flex flex-col gap-4 bg-[image:var(--hero-gradient)] px-4 pb-6 pt-5 text-hero-foreground">
       <h1 className="text-xl font-extrabold font-heading">
@@ -152,6 +149,7 @@ function ListView({
 }
 
 function WeekView({ timeZone, today }: { timeZone: string; today: string }) {
+  const subjectLabel = useSubjectName();
   const [anchor, setAnchor] = useState(today);
   const days = weekDayKeys(anchor);
   const first = days[0] ?? anchor;

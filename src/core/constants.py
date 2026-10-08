@@ -150,3 +150,8 @@ CRON_EVERY_HOUR = "0 * * * *"
 
 # Подключение брокера воркера к Redis: ожидание соединения (чтение блокирующее, без таймаута)
 REDIS_CONNECT_TIMEOUT_SECONDS = 5
+# Соединение, простоявшее дольше этого, перед командой проверяется PING (мёртвое — пересоздаётся)
+REDIS_HEALTH_CHECK_INTERVAL_SECONDS = 30
+# Повтор команды брокера при обрыве соединения: попыток и предел паузы между ними
+REDIS_RETRY_ATTEMPTS = 3
+REDIS_RETRY_BACKOFF_CAP_SECONDS = 2

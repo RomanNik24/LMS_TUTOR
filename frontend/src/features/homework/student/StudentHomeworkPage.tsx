@@ -14,19 +14,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMe } from "@/features/auth/api";
 import { formatDate, formatTime } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
+import { useSubjectName } from "@/features/reference/api";
 
 import { PAGE_SIZE, useStudentHomework } from "./studentApi";
 import type { StudentAssignment, StudentHomeworkFilter } from "./studentApi";
 
 const t = texts.student.homework;
 
-export function subjectLabel(code: string): string {
-  return code in texts.admin.subjects
-    ? texts.admin.subjects[code as keyof typeof texts.admin.subjects]
-    : code;
-}
-
 function Row({ item, timeZone }: { item: StudentAssignment; timeZone: string }) {
+  const subjectLabel = useSubjectName();
   const status = item.is_overdue ? "homework.overdue" : (`homework.${item.status}` as const);
   return (
     <Link

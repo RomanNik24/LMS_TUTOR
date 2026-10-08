@@ -6,7 +6,7 @@ import { errorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
-import { SUBJECT_CODES } from "@/features/students/studentForm";
+import { SubjectOptions } from "@/features/reference/SubjectOptions";
 import { texts } from "@/lib/texts";
 
 import { useCreateLesson } from "./api";
@@ -43,7 +43,7 @@ export function LessonFormDialog({
   } = useForm<LessonFormValues>({
     resolver: zodResolver(lessonFormSchema),
     defaultValues: {
-      subject_code: SUBJECT_CODES[0],
+      subject_code: "",
       student_ids: [],
       date: defaultDate,
       time: "17:00",
@@ -77,11 +77,7 @@ export function LessonFormDialog({
           <Field label={t.subject} error={errors.subject_code?.message}>
             {({ id }) => (
               <select id={id} className={selectClasses} {...register("subject_code")}>
-                {SUBJECT_CODES.map((code) => (
-                  <option key={code} value={code}>
-                    {texts.admin.subjects[code]}
-                  </option>
-                ))}
+                <SubjectOptions />
               </select>
             )}
           </Field>

@@ -41,6 +41,7 @@ export const texts = {
     profileAvatar: "Профиль",
     notFound: "Эта страница недоступна",
     toHome: "На главную",
+    chooseSubject: "Выберите предмет",
   },
   nav: {
     student: {
@@ -229,6 +230,7 @@ export const texts = {
           dateRequired: "Выбери дату срока",
           timeRequired: "Выбери время срока",
           studentsRequired: "Выбери хотя бы одного ученика",
+          subjectRequired: "Выберите предмет",
         },
       },
       detail: {
@@ -452,7 +454,6 @@ export const texts = {
       },
       generate: { done: "Расписание дополнено" },
     },
-    subjects: { informatics: "Информатика", math: "Математика" },
     timezones: {
       "Europe/Moscow": "Москва (UTC+3)",
       "Europe/Samara": "Самара (UTC+4)",

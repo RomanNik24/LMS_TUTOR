@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { texts } from "@/lib/texts";
 import { routes } from "@/router";
 import { mockMe } from "@/test/mockMe";
+import { chooseSubject } from "@/test/chooseSubject";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 
@@ -163,6 +164,7 @@ describe("ДЗ: создание", () => {
     fireEvent.change(await screen.findByLabelText(t.form.name), {
       target: { value: "Задачи 1-5" },
     });
+    await chooseSubject();
     fireEvent.click(await screen.findByRole("button", { name: t.form.selectAll }));
     await waitFor(() => {
       expect(screen.getByRole("checkbox", { name: "Борис Орлов" })).toBeChecked();
@@ -198,6 +200,9 @@ describe("ДЗ: создание", () => {
     fireEvent.click(await screen.findByRole("button", { name: t.form.submit }));
     expect(await screen.findByText(t.form.errors.nameRequired)).toBeInTheDocument();
     expect(screen.getByText(t.form.errors.studentsRequired)).toBeInTheDocument();
+    expect(
+      screen.getByText(t.form.errors.subjectRequired, { ignore: "option, script, style" }),
+    ).toBeInTheDocument();
     expect(posted).toBe(false);
   });
 });
