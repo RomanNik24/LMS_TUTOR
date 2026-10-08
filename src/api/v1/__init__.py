@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from src.api.v1 import (
+    admin_catalog,
     admin_dashboard,
     admin_exams,
     admin_finance,
@@ -33,6 +34,8 @@ api_router.include_router(student_reports.router)
 api_router.include_router(admin_homework.router)
 api_router.include_router(admin_exams.router)
 api_router.include_router(admin_dashboard.router)
+api_router.include_router(admin_catalog.admin_router)
+api_router.include_router(admin_catalog.public_router)
 api_router.include_router(admin_finance.finance_router)
 api_router.include_router(admin_finance.stats_router)
 api_router.include_router(admin_finance.audit_router)

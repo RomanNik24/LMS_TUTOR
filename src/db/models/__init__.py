@@ -44,6 +44,7 @@
 
 from src.db.models._enum import enum_varchar
 from src.db.models.audit import AuditLog
+from src.db.models.catalog import CatalogItem
 from src.db.models.exams import MockExamResult
 from src.db.models.homework import (
     Homework,
@@ -63,6 +64,7 @@ from src.db.models.schedule import (
 from src.db.models.users import AuthToken, Guardian, StudentProfile, StudentSubject, User
 
 __all__ = [
+    "CatalogItem",
     "AuditLog",
     "AuthToken",
     "ExamType",

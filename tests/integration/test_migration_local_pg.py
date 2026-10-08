@@ -72,6 +72,7 @@ T102_TABLES = {
     "homework_files",
     "notifications",
     "mock_exam_results",
+    "catalog_items",
 }
 
 EXPECTED_FK_DELETE_RULES = {

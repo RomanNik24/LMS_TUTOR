@@ -1359,6 +1359,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Промпт:** `Задача T8.01 (CODE). Модель catalog_items + ревизия Alembic (downgrade), CatalogService, /admin/catalog (CRUD, порядок, публикация), GET /catalog (только опубликованное). gen:api. Тесты, privacy зелёный.`
 **Проверка:** 🤖 тесты зелёные.
 
+**Статус T8.01:** ✅ модель `CatalogItem`, ревизия `a8b9c0d1e2f3` (с downgrade), `CatalogService`, `/admin/catalog` (CRUD, `PUT /order`, публикация), `GET /catalog` (только опубликованное, без служебных полей); тесты `tests/integration/test_catalog.py`.
+
 ### T8.02 · Каталог: бот и админ-экран
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t8-02-catalog-ui` · **Коммит:** `feat(catalog): add bot catalog and admin screen`
 **Читать:** `docs/05` (каталог), `docs/07` §9.2.12.
