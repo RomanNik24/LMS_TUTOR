@@ -43,6 +43,11 @@ STUDENT_UPDATE_EMPTY = "Укажите хотя бы одно поле для и
 STUDENT_FIELD_NOT_NULLABLE = "Это поле нельзя очистить."
 LIST_PARAMS_INVALID = "Неверные параметры списка: limit от 1 до 200, offset не меньше 0."
 
+# --- Каталог услуг (docs/08 §5.7, T8.01) ---
+CATALOG_ITEM_NOT_FOUND = "Карточка каталога не найдена."
+CATALOG_FIELD_BLANK = "Поле не может быть пустым."
+CATALOG_REORDER_INVALID = "Список порядка должен содержать все карточки каталога по одному разу."
+
 BOT_USERNAME_UNKNOWN = "Не удалось определить имя бота. Задайте BOT_USERNAME в настройках."
 
 # --- Сотрудники (docs/08 §5.3, T2.03) ---

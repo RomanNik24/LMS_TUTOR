@@ -32,6 +32,7 @@ from src.core.storage import ObjectStorage, S3Storage
 from src.db.session import SessionFactory, create_engine, create_session_factory, session_scope
 from src.services.assignments import AssignmentQueryService
 from src.services.auth import AuthService
+from src.services.catalog import CatalogService
 from src.services.dashboard import DashboardService
 from src.services.exams import ExamService
 from src.services.extensions import ExtensionService
@@ -181,6 +182,13 @@ def get_auth_service(
 def get_profile_service(session: Annotated[AsyncSession, Depends(get_session)]) -> ProfileService:
     """Собрать ``ProfileService`` на запрос."""
     return ProfileService(session)
+
+
+def get_catalog_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CatalogService:
+    """Собрать ``CatalogService`` на запрос."""
+    return CatalogService(session)
 
 
 def get_reference_service(

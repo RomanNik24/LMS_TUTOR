@@ -150,7 +150,8 @@
 |---|---|---|
 | GET | `/admin/catalog` | Все карточки, включая неопубликованные |
 | POST | `/admin/catalog` | Создать |
-| PATCH | `/admin/catalog/{id}` | Править, порядок, публикация |
+| PUT | `/admin/catalog/order` | Задать порядок: тело `{"ids": [...]}` — все карточки сверху вниз (для перетаскивания); неполный список или повтор — `422 catalog_reorder_invalid` |
+| PATCH | `/admin/catalog/{id}` | Править, порядок (`sort_order`), публикация |
 | DELETE | `/admin/catalog/{id}` | Удалить |
 
 ### 5.8. Финансы и статистика
