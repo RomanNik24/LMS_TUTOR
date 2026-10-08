@@ -1,9 +1,7 @@
 /**
  * Маршруты (docs/12 §5.4): вход, страница «Привет», Student App (`/app/*`) и Admin App (`/admin/*`).
  * Админская часть и её страницы подгружаются лениво (React.lazy): ученику их код не нужен.
- * Разделы без данных показывают «пустое состояние» (`SectionPlaceholder`) — их заменят экраны этапов 2–8.
  */
-import { BookOpen } from "lucide-react";
 import { Suspense, lazy } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { createBrowserRouter, createMemoryRouter, Navigate } from "react-router-dom";
@@ -21,9 +19,7 @@ import { ProfilePage } from "@/features/profile/ProfilePage";
 import { StudentLessonPage } from "@/features/schedule/StudentLessonPage";
 import { StudentSchedulePage } from "@/features/schedule/StudentSchedulePage";
 import { StudentLayout } from "@/layouts/StudentLayout";
-import { texts } from "@/lib/texts";
 import { MorePage } from "@/pages/MorePage";
-import { SectionPlaceholder } from "@/pages/SectionPlaceholder";
 
 const AdminLayout = lazy(() =>
   import("@/layouts/AdminLayout").then((module) => ({ default: module.AdminLayout })),
@@ -49,6 +45,11 @@ const StudentReportsPage = withSkeleton(
     import("@/features/reports/StudentReportsPage").then((module) => ({
       default: module.StudentReportsPage,
     })),
+  ),
+);
+const CatalogPage = withSkeleton(
+  lazy(() =>
+    import("@/features/catalog/CatalogPage").then((module) => ({ default: module.CatalogPage })),
   ),
 );
 const DashboardPage = withSkeleton(
@@ -148,10 +149,6 @@ const studentRoutes: RouteObject = {
   ],
 };
 
-const soon = (title: string, icon: typeof BookOpen) => (
-  <SectionPlaceholder icon={icon} title={title} text={texts.empty.soon} />
-);
-
 const adminRoutes: RouteObject = {
   path: "/admin",
   element: <RequireRole allowed={["owner", "manager"]} />,
@@ -171,7 +168,7 @@ const adminRoutes: RouteObject = {
         { path: "students/:id/edit", element: <StudentFormPage /> },
         { path: "more", element: <MorePage /> },
         { path: "exams", element: <AdminExamsPage /> },
-        { path: "catalog", element: soon(texts.nav.admin.catalog, BookOpen) },
+        { path: "catalog", element: <CatalogPage /> },
         {
           element: <RequireRole allowed={["owner"]} />,
           children: [

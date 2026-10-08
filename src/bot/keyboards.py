@@ -15,6 +15,7 @@ CALLBACK_RELINK_YES = "relink:yes"
 CALLBACK_RELINK_NO = "relink:no"
 CALLBACK_LOGOUT_YES = "logout:yes"
 CALLBACK_LOGOUT_NO = "logout:no"
+CALLBACK_CATALOG_PREFIX = "cat:"
 
 STUDENT_APP_PATH = "/app/"
 STUDENT_HOMEWORK_PATH = "/app/homework/{assignment_id}"
@@ -108,6 +109,39 @@ def contact_button(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text=texts.BOT_CONTACT_LINK, url=url)]]
     )
+
+
+def catalog_navigation(
+    index: int, total: int, contact_url: str | None
+) -> InlineKeyboardMarkup | None:
+    """Листание каталога: «Назад» / номер / «Далее» и URL-кнопка «Связаться с преподавателем».
+
+    ``None``, если одна карточка и контакт не настроен (кнопок нет).
+    """
+    nav: list[InlineKeyboardButton] = []
+    if index > 0:
+        nav.append(
+            InlineKeyboardButton(
+                text=texts.BOT_CATALOG_PREV, callback_data=f"{CALLBACK_CATALOG_PREFIX}{index - 1}"
+            )
+        )
+    if total > 1:
+        nav.append(
+            InlineKeyboardButton(
+                text=texts.BOT_CATALOG_POSITION.format(number=index + 1, total=total),
+                callback_data=f"{CALLBACK_CATALOG_PREFIX}{index}",
+            )
+        )
+    if index < total - 1:
+        nav.append(
+            InlineKeyboardButton(
+                text=texts.BOT_CATALOG_NEXT, callback_data=f"{CALLBACK_CATALOG_PREFIX}{index + 1}"
+            )
+        )
+    rows = [nav] if nav else []
+    if contact_url:
+        rows.append([InlineKeyboardButton(text=texts.BOT_BUTTON_CONTACT, url=contact_url)])
+    return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
 
 
 def lesson_links(video_url: str | None, board_url: str | None) -> InlineKeyboardMarkup | None:
