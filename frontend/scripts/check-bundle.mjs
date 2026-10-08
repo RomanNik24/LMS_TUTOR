@@ -20,6 +20,8 @@ const BUDGET = {
   initialJs: 280,
   initialCss: 12,
   anyChunk: 100,
+  // Sentry грузится динамически и только при заданном VITE_SENTRY_DSN: на старт не влияет.
+  optionalSentry: 180,
 };
 
 function gzipKb(file) {
@@ -32,6 +34,7 @@ function initialFiles() {
   return [...new Set(refs.map((match) => match[1]))];
 }
 
+const isSentry = (file) => file.includes("vendor-sentry");
 const all = readdirSync(join(DIST, "assets"))
   .filter((name) => name.endsWith(".js") || name.endsWith(".css"))
   .map((name) => ({ file: `assets/${name}`, kb: gzipKb(`assets/${name}`) }));
@@ -43,14 +46,26 @@ const sum = (files) => files.reduce((total, file) => total + gzipKb(file), 0);
 const rows = [
   ["Стартовый JS (gzip)", sum(initialJs), BUDGET.initialJs],
   ["Стартовые стили (gzip)", sum(initialCss), BUDGET.initialCss],
-  ["Самый большой чанк (gzip)", Math.max(...all.map((item) => item.kb)), BUDGET.anyChunk],
+  [
+    "Самый большой чанк (gzip)",
+    Math.max(...all.filter((item) => !isSentry(item.file)).map((item) => item.kb)),
+    BUDGET.anyChunk,
+  ],
+  [
+    "Необязательный чанк Sentry (gzip)",
+    Math.max(0, ...all.filter((item) => isSentry(item.file)).map((item) => item.kb)),
+    BUDGET.optionalSentry,
+  ],
 ];
 
 console.log("\nРазмеры сборки (gzip), КБ:");
 for (const file of [...initialJs, ...initialCss]) {
   console.log(`  стартовый  ${gzipKb(file).toFixed(1).padStart(7)}  ${file}`);
 }
-for (const item of [...all].sort((a, b) => b.kb - a.kb).slice(0, 5)) {
+for (const item of [...all]
+  .filter((i) => !isSentry(i.file))
+  .sort((a, b) => b.kb - a.kb)
+  .slice(0, 5)) {
   console.log(`  крупнейший ${item.kb.toFixed(1).padStart(7)}  ${item.file}`);
 }
 let failed = false;
