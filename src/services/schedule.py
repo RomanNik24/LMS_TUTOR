@@ -22,7 +22,7 @@ from src.core.constants import (
     SCHEDULE_HORIZON_WEEKS_DEFAULT,
 )
 from src.core.current_user import CurrentUser
-from src.core.enums import AttendanceStatus, LessonStatus, UserRole
+from src.core.enums import AssignmentStatus, AttendanceStatus, LessonStatus, UserRole
 from src.core.exceptions import (
     BusinessRuleError,
     ConflictError,
@@ -33,6 +33,7 @@ from src.core.exceptions import (
 from src.core.timeutils import day_bounds_utc, local_date_of, utcnow, weekly_starts_utc
 from src.db.models import Lesson, ScheduleTemplate, User
 from src.repositories.audit_log import AuditLogRepository
+from src.repositories.homework import HomeworkAssignmentRepository
 from src.repositories.lessons import LessonRepository
 from src.repositories.schedule_templates import ScheduleTemplateRepository
 from src.repositories.student_profiles import StudentProfileRepository
@@ -45,11 +46,13 @@ from src.schemas.schedule import (
     LessonCancel,
     LessonComplete,
     LessonCreate,
+    LessonHomeworkItem,
     LessonItem,
     LessonListPage,
     LessonParticipantItem,
     LessonReschedule,
     LessonUpdate,
+    StudentLessonDetail,
     StudentLessonItem,
     TemplateCreate,
     TemplateItem,
@@ -70,6 +73,10 @@ AUDIT_LESSONS_GENERATED = "lessons.generated"
 AUDIT_ENTITY_TEMPLATE = "schedule_template"
 AUDIT_ENTITY_LESSON = "lesson"
 OVERLAP_CONSTRAINT = "ex_lessons_teacher_no_overlap"
+
+
+# Выдача ещё может быть сдана: просрочена, если срок вышел (docs/04 §5.3, вычисляемо)
+_ACTIVE_ASSIGNMENT = (AssignmentStatus.ASSIGNED, AssignmentStatus.NEEDS_REVISION)
 
 
 class ScheduleService:
@@ -391,8 +398,8 @@ class ScheduleService:
         lessons = await self._lessons.list_for_student(actor.id, start, end)
         return await self._student_items(actor.id, lessons)
 
-    async def get_student_lesson(self, actor: CurrentUser, lesson_id: int) -> StudentLessonItem:
-        """Карточка урока ученика; чужой или несуществующий урок — одинаково 404.
+    async def get_student_lesson(self, actor: CurrentUser, lesson_id: int) -> StudentLessonDetail:
+        """Карточка урока ученика с привязанными ДЗ; чужой или несуществующий урок — 404.
 
         Raises:
             PermissionDeniedError: Не ученик.
@@ -402,7 +409,24 @@ class ScheduleService:
         lesson = await self._lessons.get_for_student(lesson_id, actor.id)
         if lesson is None:
             raise NotFoundError(texts.LESSON_NOT_FOUND, code="lesson_not_found")
-        return (await self._student_items(actor.id, [lesson]))[0]
+        item = (await self._student_items(actor.id, [lesson]))[0]
+        now = utcnow()
+        assignments = await HomeworkAssignmentRepository(self._session).for_lesson_and_student(
+            lesson.id, actor.id
+        )
+        return StudentLessonDetail(
+            **item.model_dump(),
+            homework=[
+                LessonHomeworkItem(
+                    assignment_id=assignment.id,
+                    title=title,
+                    status=assignment.status,
+                    due_at=assignment.due_at,
+                    is_overdue=assignment.status in _ACTIVE_ASSIGNMENT and now > assignment.due_at,
+                )
+                for assignment, title in assignments
+            ],
+        )
 
     async def _student_items(
         self, student_id: int, lessons: list[Lesson]

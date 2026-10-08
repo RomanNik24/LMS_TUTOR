@@ -44,14 +44,14 @@ Telegram-бот и связанный с ним веб-интерфейс (Mini 
 
 ## Полный локальный стек (профиль `full`)
 
-Профиль `full` поднимает backend (`app`) и Nginx со сборкой фронтенда — так же, как будет на сервере.
+Профиль `full` поднимает backend (`app`), Nginx со сборкой фронтенда, а также `worker` и `scheduler` (TaskIQ: напоминания, утренняя сводка, истечение ДЗ) — так же, как будет на сервере. `scheduler` всегда ровно один.
 Nginx слушает `http://127.0.0.1:8080`: раздаёт SPA и проксирует `/api/`, `/telegram/`, `/health` на `app`.
 Адреса БД, Redis и MinIO для контейнера `app` задаёт `docker-compose.yml` (по именам сервисов).
 
 ```bash
 # останови backend на хосте: app займёт порт 8000, а второй polling бота не нужен
 docker compose --env-file .env.local --profile full up -d --build
-docker compose --profile full ps              # postgres, redis, minio, app, nginx — healthy
+docker compose --profile full ps              # postgres, redis, minio, app, nginx — healthy; worker и scheduler — Up
 curl http://127.0.0.1:8080/health             # через Nginx → app
 docker compose --profile full exec app alembic upgrade head   # миграции (разово)
 docker compose --profile full exec app python scripts/seed_reference.py
@@ -68,6 +68,8 @@ docker compose --profile full exec app python scripts/create_owner.py
   смотрит в интернет напрямую и видит реальный адрес.
 - Конфигурация Nginx — `nginx/conf.d/default.conf` и `nginx/snippets/`. Заголовки безопасности
   (CSP, `nosniff`, `Referrer-Policy`) уже включены; TLS и HSTS добавляются на сервере (T9.02).
+- `worker` и `scheduler` берут `BOT_TOKEN` из `.env.local`: с токеном уведомления уходят в Telegram по-настоящему (получателям с привязанным Telegram). Чтобы ничего не отправлять, запускайте воркер с пустым `BOT_TOKEN`.
+- `S3_PUBLIC_ENDPOINT` передаётся и `app`, и `nginx`: на этот адрес ведут подписанные ссылки на фото, и он же разрешён в CSP (`img-src`).
 - Остановить: `docker compose --profile full down`.
 
 ## Запуск для разработки

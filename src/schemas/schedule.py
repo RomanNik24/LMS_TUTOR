@@ -7,7 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validato
 
 from src.core import texts
 from src.core.constants import DEFAULT_USER_TIMEZONE
-from src.core.enums import AttendanceStatus, LessonStatus
+from src.core.enums import AssignmentStatus, AttendanceStatus, LessonStatus
 from src.schemas.validators import https_url, iana_timezone
 
 LESSON_MAX_MINUTES = 12 * 60
@@ -220,6 +220,22 @@ class StudentLessonItem(BaseModel):
     video_url: str | None
     board_url: str | None
     participants_count: int
+
+
+class LessonHomeworkItem(BaseModel):
+    """ДЗ, привязанное к уроку, в карточке урока ученика: только его собственная выдача."""
+
+    assignment_id: int
+    title: str
+    status: AssignmentStatus
+    due_at: datetime
+    is_overdue: bool
+
+
+class StudentLessonDetail(StudentLessonItem):
+    """Карточка урока ученика: урок и привязанные к нему ДЗ ученика (docs/08 §4, docs/07 §9.1.3)."""
+
+    homework: list[LessonHomeworkItem]
 
 
 # ---------------------------------------------------------------- шаблоны (T3.06)

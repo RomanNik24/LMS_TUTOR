@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Path, Query
 
 from src.api.deps import StudentActor, get_schedule_service
 from src.api.v1.responses import error_responses
-from src.schemas.schedule import StudentLessonItem
+from src.schemas.schedule import StudentLessonDetail, StudentLessonItem
 from src.services.schedule import ScheduleService
 
 router = APIRouter(prefix="/student/lessons", tags=["student-lessons"])
@@ -38,13 +38,13 @@ async def list_student_lessons(
 
 @router.get(
     "/{lesson_id}",
-    response_model=StudentLessonItem,
+    response_model=StudentLessonDetail,
     summary="Карточка урока",
     operation_id="get_student_lesson",
     responses=error_responses(401, 403, 404, 429),
 )
 async def get_student_lesson(
     lesson_id: Annotated[int, Path(ge=1)], actor: StudentActor, service: Service
-) -> StudentLessonItem:
-    """Карточка: ссылки Телемоста и доски (урок → профиль), число участников."""
+) -> StudentLessonDetail:
+    """Карточка: ссылки Телемоста и доски (урок → профиль), число участников, свои ДЗ урока."""
     return await service.get_student_lesson(actor, lesson_id)

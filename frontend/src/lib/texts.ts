@@ -181,6 +181,8 @@ export const texts = {
         board: "Доска",
         noLinks: "Ссылку добавит Роман",
         topic: "Тема",
+        homework: "Домашнее задание",
+        homeworkDue: (value: string) => `Сдать до ${value}`,
       },
     },
   },

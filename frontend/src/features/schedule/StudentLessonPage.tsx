@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useMe } from "@/features/auth/api";
 import { DEFAULT_TIMEZONE } from "@/features/students/studentForm";
-import { formatDayLabel, formatTimeRange } from "@/lib/datetime";
+import { formatDayLabel, formatTime, formatTimeRange } from "@/lib/datetime";
+import { formatDate } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
 import { useSubjectName } from "@/features/reference/api";
 
@@ -91,6 +92,33 @@ export function StudentLessonPage() {
           <p className="text-sm text-muted-foreground font-body">{t.noLinks}</p>
         )}
       </div>
+      {lesson.homework.length > 0 && (
+        <section aria-labelledby="lesson-homework" className="flex flex-col gap-2">
+          <h2 id="lesson-homework" className="text-base font-bold font-heading">
+            {t.homework}
+          </h2>
+          {lesson.homework.map((item) => (
+            <Card key={item.assignment_id} className="flex flex-col gap-2">
+              <Link
+                to={`/app/homework/${String(item.assignment_id)}`}
+                className="text-base font-semibold text-primary font-body"
+              >
+                {item.title}
+              </Link>
+              <p className="text-sm text-muted-foreground font-body">
+                {t.homeworkDue(
+                  `${formatDate(item.due_at, timeZone)}, ${formatTime(item.due_at, timeZone)}`,
+                )}
+              </p>
+              <div>
+                <StatusBadge
+                  status={item.is_overdue ? "homework.overdue" : `homework.${item.status}`}
+                />
+              </div>
+            </Card>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
