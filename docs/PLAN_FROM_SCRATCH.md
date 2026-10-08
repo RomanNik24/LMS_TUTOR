@@ -1317,6 +1317,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Промпт:** `Задача T7.03 (CODE). Строка «Заработано в этом месяце: N ₽» в утренней сводке ТОЛЬКО для owner; /today для персонала использует DashboardService. Тесты: менеджер строки не получает.`
 **Проверка:** 🤖 тесты зелёные.
 
+**Статус T7.03:** ✅ строка «Заработано в этом месяце» в утренней сводке считается через `FinanceRepository` (`month_bounds_utc`, те же правила, что у дашборда) и приходит только владельцу (менеджер — нет, тесты `test_morning_digest.py`); `/today` для персонала строится из `DashboardService` (`tests/unit/test_staff_today_text.py`, `tests/integration/test_bot_schedule.py`).
+
 ### T7.04 · Фронтенд: дашборд и финансы
 **Кто:** 💻 CODE · **Размер:** L · **Ветка:** `feature/t7-04-dashboard-finance-ui` · **Коммит:** `feat(frontend): add dashboard and finance screens`
 **Читать:** `docs/07` §9.2.1, §9.2.11.

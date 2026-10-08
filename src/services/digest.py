@@ -22,9 +22,10 @@ from src.core.constants import (
     UNMARKED_LESSON_LOOKBACK_DAYS,
 )
 from src.core.enums import NotificationType, UserRole
-from src.core.timeutils import day_bounds_utc, local_date_of, to_local, utcnow
+from src.core.timeutils import day_bounds_utc, local_date_of, month_bounds_utc, to_local, utcnow
 from src.db.models import User
 from src.repositories.digest import DigestAssignment, DigestRepository
+from src.repositories.finance import FinanceRepository
 from src.repositories.homework import HomeworkAssignmentRepository
 from src.repositories.reminders import ReminderRepository
 from src.repositories.users import UserRepository
@@ -47,6 +48,7 @@ class DigestService:
         self._session = session
         self._users = UserRepository(session)
         self._digest = DigestRepository(session)
+        self._finance = FinanceRepository(session)
         self._reminders = ReminderRepository(session)
         self._assignments = HomeworkAssignmentRepository(session)
         self._queue = NotificationService(session)
@@ -174,9 +176,6 @@ class DigestService:
         return lines + _more(len(past), DIGEST_TOP_ITEMS)
 
     async def _earned_line(self, zone: str, today: date) -> str:
-        first = today.replace(day=1)
-        following = (first + timedelta(days=32)).replace(day=1)
-        start, _ = day_bounds_utc(first, zone)
-        end, _ = day_bounds_utc(following, zone)
-        amount = await self._digest.earned_between(start, end)
+        start, end = month_bounds_utc(today, zone)
+        amount = await self._finance.earned_between(start, end)
         return texts.DIGEST_EARNED.format(amount=texts.money(amount))
