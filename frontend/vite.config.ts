@@ -60,6 +60,8 @@ export default defineConfig({
     // Глобальные expect/it/describe включены: тесты пишутся без импортов vitest
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    // Playwright-сценарии (e2e/) запускаются отдельно: `pnpm e2e`
+    exclude: ["e2e/**", "node_modules/**", "dist/**"],
     css: false,
   },
 });
