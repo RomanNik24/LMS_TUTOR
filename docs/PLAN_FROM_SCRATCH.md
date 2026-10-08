@@ -1310,6 +1310,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 ```
 **Проверка:** 🤖 тесты зелёные; 👁 есть тест `manager_forbidden_all_finance_endpoints`.
 
+**Статус T7.02:** ✅ `StatsService.earnings/cancellations/export_csv/list_audit`, `FinanceRepository`; эндпоинты `/admin/finance/earnings`, `/admin/finance/export.csv`, `/admin/stats/cancellations`, `/admin/audit`; CSV — колонки «Дата, Ученик, Предмет, Сумма, ₽», BOM для Excel, защита от формул, выгрузка пишется в журнал (`finance.exported`); тесты `tests/integration/test_finance.py`.
+
 ### T7.03 · Строка заработка в сводке и боте
 **Кто:** 💻 CODE · **Размер:** S · **Ветка:** `feature/t7-03-digest-earnings` · **Коммит:** `feat(notify): add earnings line to owner digest`
 **Промпт:** `Задача T7.03 (CODE). Строка «Заработано в этом месяце: N ₽» в утренней сводке ТОЛЬКО для owner; /today для персонала использует DashboardService. Тесты: менеджер строки не получает.`

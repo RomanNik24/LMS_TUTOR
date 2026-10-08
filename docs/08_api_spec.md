@@ -157,7 +157,7 @@
 | Метод | Путь | Описание | Доступ |
 |---|---|---|---|
 | GET | `/admin/finance/earnings?from=&to=&group_by=student|subject|week|month` | Заработано / ожидается | **owner** |
-| GET | `/admin/finance/export.csv?from=&to=` | Экспорт CSV | **owner** |
+| GET | `/admin/finance/export.csv?from=&to=` | Экспорт CSV (UTF-8 с BOM): колонки «Дата, Ученик, Предмет, Сумма, ₽» по оплаченным участиям периода; ячейки-формулы экранируются; выгрузка пишется в `audit_log` (`finance.exported`). Период ≤ 366 дней, иначе `422 invalid_period` | **owner** |
 | GET | `/admin/stats/cancellations?from=&to=` | Статистика отмен | staff |
 | GET | `/admin/audit?limit=&offset=` | Журнал аудита | **owner** |
 
