@@ -313,6 +313,9 @@ DIGEST_DEADLINE_LINE = "• {student} — {title}, {due}"
 DIGEST_MORE = "…и ещё {count}"
 DIGEST_EARNED = "Заработано в этом месяце: {amount} ₽"
 
+# Выгрузка CSV заработка (T7.02): заголовки колонок; только нужные поля
+FINANCE_CSV_HEADER = ("Дата", "Ученик", "Предмет", "Сумма, ₽")
+
 
 def money(amount: int) -> str:
     """Сумма в рублях с пробелом между тысячами: ``12 500``."""

@@ -944,6 +944,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/finance/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Заработано и ожидается
+         * @description Суммы за ``[from, to)`` с разрезом по ученику, предмету, неделе или месяцу.
+         */
+        get: operations["get_earnings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/finance/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Экспорт заработка в CSV
+         * @description CSV с колонками «Дата, Ученик, Предмет, Сумма»; период не больше года.
+         */
+        get: operations["export_earnings_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/stats/cancellations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Статистика отмен
+         * @description Число отменённых занятий за период и ученики с наибольшим числом отмен.
+         */
+        get: operations["get_cancellation_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Журнал аудита
+         * @description Записи журнала, новые первыми.
+         */
+        get: operations["list_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/student/homework": {
         parameters: {
             query?: never;
@@ -1300,6 +1380,47 @@ export interface components {
          * @enum {string}
          */
         AttendanceStatus: "pending" | "attended" | "no_show" | "cancelled";
+        /**
+         * AuditItem
+         * @description Запись журнала аудита.
+         */
+        AuditItem: {
+            /** Id */
+            id: number;
+            /** Actor User Id */
+            actor_user_id: number | null;
+            /** Actor Name */
+            actor_name: string | null;
+            /** Action */
+            action: string;
+            /** Entity Type */
+            entity_type: string;
+            /** Entity Id */
+            entity_id: number | null;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * AuditPage
+         * @description Страница журнала аудита (новые первыми).
+         */
+        AuditPage: {
+            /** Items */
+            items: components["schemas"]["AuditItem"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** Body_upload_homework_material */
         Body_upload_homework_material: {
             /** File */
@@ -1314,6 +1435,40 @@ export interface components {
         Body_upload_solution_file: {
             /** File */
             file: string;
+        };
+        /**
+         * CancellationStats
+         * @description Статистика отмен за период: уроки ``cancelled`` по дате начала (docs/04 §11).
+         */
+        CancellationStats: {
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /** Cancelled Lessons */
+            cancelled_lessons: number;
+            /** Cancelled Participations */
+            cancelled_participations: number;
+            /** By Student */
+            by_student: components["schemas"]["CancellationStudentRow"][];
+        };
+        /**
+         * CancellationStudentRow
+         * @description Сколько отменённых занятий у ученика за период.
+         */
+        CancellationStudentRow: {
+            /** Student Id */
+            student_id: number;
+            /** Student Name */
+            student_name: string;
+            /** Cancelled Lessons */
+            cancelled_lessons: number;
         };
         /**
          * ConversionWarning
@@ -1502,6 +1657,55 @@ export interface components {
          * @enum {string}
          */
         DueMode: "next_lesson" | "fixed";
+        /**
+         * EarningsGroupBy
+         * @description Разрез отчёта «Заработано / ожидается».
+         * @enum {string}
+         */
+        EarningsGroupBy: "student" | "subject" | "week" | "month";
+        /**
+         * EarningsReport
+         * @description Заработано и ожидается за период с разрезом.
+         */
+        EarningsReport: {
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            group_by: components["schemas"]["EarningsGroupBy"];
+            /** Timezone */
+            timezone: string;
+            /** Earned Total */
+            earned_total: number;
+            /** Expected Total */
+            expected_total: number;
+            /** Rows */
+            rows: components["schemas"]["EarningsRow"][];
+        };
+        /**
+         * EarningsRow
+         * @description Строка разреза: ключ, подпись и суммы (рубли).
+         */
+        EarningsRow: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Earned */
+            earned: number;
+            /** Earned Lessons */
+            earned_lessons: number;
+            /** Expected */
+            expected: number;
+            /** Planned Lessons */
+            planned_lessons: number;
+        };
         /**
          * ErrorBody
          * @description Тело ошибки.
@@ -6830,6 +7034,251 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_earnings: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                group_by?: components["schemas"]["EarningsGroupBy"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarningsReport"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_earnings_csv: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_cancellation_stats: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancellationStats"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_audit: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Превышен лимит запросов */

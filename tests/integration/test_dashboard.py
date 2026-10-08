@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
-from sqlalchemy import event
+from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.current_user import CurrentUser
 from src.core.enums import (
@@ -57,6 +57,11 @@ class Factory:
         self.counter = 0
 
     async def subject(self) -> Subject:
+        found = (
+            await self.db.execute(select(Subject).where(Subject.code == "informatics"))
+        ).scalar_one_or_none()
+        if found is not None:
+            return found
         subject = Subject(code="informatics", name="Информатика")
         self.db.add(subject)
         await self.db.flush()

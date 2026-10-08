@@ -3,7 +3,9 @@
 Журнал только пополняется: методов изменения и удаления нет.
 """
 
-from src.db.models import AuditLog
+from sqlalchemy import func, select
+
+from src.db.models import AuditLog, User
 from src.repositories.base import BaseRepository
 
 
@@ -39,3 +41,22 @@ class AuditLogRepository(BaseRepository[AuditLog]):
             data={} if data is None else data,
         )
         return await self.add(entry)
+
+    async def page(
+        self, *, limit: int, offset: int
+    ) -> tuple[list[tuple[AuditLog, str | None]], int]:
+        """Страница журнала: новые первыми, с именем автора; и общее число записей."""
+        stmt = (
+            select(AuditLog, User.display_name)
+            .outerjoin(User, User.id == AuditLog.actor_user_id)
+            .order_by(AuditLog.id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        rows: list[tuple[AuditLog, str | None]] = [
+            (row[0], row[1]) for row in (await self._session.execute(stmt)).all()
+        ]
+        total = (
+            await self._session.execute(select(func.count()).select_from(AuditLog))
+        ).scalar_one()
+        return rows, total
