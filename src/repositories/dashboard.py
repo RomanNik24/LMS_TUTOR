@@ -6,10 +6,11 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import ColumnElement, exists, func, select
 
+from src.core.constants import LESSON_MAX_MINUTES
 from src.core.enums import AssignmentStatus, LessonStatus
 from src.db.models import (
     Homework,
@@ -73,6 +74,9 @@ class DashboardRepository(BaseRepository[Lesson]):
         """Уроки ``scheduled``, закончившиеся в ``[since, now]``: самые свежие первыми."""
         conditions = [
             Lesson.status == LessonStatus.SCHEDULED,
+            # Нижняя граница по start_at (урок не длиннее LESSON_MAX_MINUTES) позволяет использовать
+            # индекс (status, start_at): иначе читались бы все запланированные уроки (issue #88).
+            Lesson.start_at >= since - timedelta(minutes=LESSON_MAX_MINUTES),
             Lesson.end_at >= since,
             Lesson.end_at <= now,
         ]

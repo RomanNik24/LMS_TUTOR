@@ -147,6 +147,9 @@ DIGEST_LOCAL_HOUR = 8
 DIGEST_TOP_ITEMS = 5
 DIGEST_LESSON_LINES = 15
 
+# Максимальная длительность урока (схемы расписания и индексный поиск «уроков без отметки»)
+LESSON_MAX_MINUTES = 12 * 60
+
 # Дашборд «Сегодня» (docs/01 §4.3): в блоке показаны первые элементы, остальное — счётчиком
 DASHBOARD_TOP_ITEMS = 5
 DASHBOARD_LESSONS_MAX = 50

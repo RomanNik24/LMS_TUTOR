@@ -383,3 +383,21 @@ async def test_http_student_and_anonymous_are_rejected(app: Any, anya: User) -> 
     ) as anonymous:
         response = await anonymous.get("/api/v1/admin/dashboard/today")
     assert response.status_code == 401
+
+
+async def test_unmarked_lookup_keeps_long_lessons_at_window_edge(
+    factory: Factory, owner_user: User
+) -> None:
+    """Issue #88: нижняя граница по start_at не должна терять длинный урок у края окна."""
+    subject = await factory.subject()
+    student = await factory.student("Аня")
+    edge_start = NOW - timedelta(days=14, hours=-1) - timedelta(hours=12)  # закончился внутри окна
+    inside = await factory.lesson(subject, [student], edge_start)
+    inside.end_at = edge_start + timedelta(hours=12)
+    outside_start = NOW - timedelta(days=15)  # закончился до начала окна
+    await factory.lesson(subject, [student], outside_start)
+    await factory.db.commit()
+
+    dashboard = await DashboardService(factory.db).get_today_dashboard(staff_actor(owner_user), NOW)
+
+    assert [item.id for item in dashboard.unmarked_lessons.items] == [inside.id]

@@ -39,6 +39,7 @@ from src.core.constants import (
 from src.core.csrf import CsrfMiddleware
 from src.core.error_handlers import register_error_handlers
 from src.core.logging import RequestIdMiddleware, setup_logging
+from src.core.security_headers import security_headers_middleware
 from src.core.sentry import init_sentry
 from src.db.session import session_scope
 from src.schemas.health import HealthResponse
@@ -115,6 +116,7 @@ def create_app(app_env: str | None = None) -> FastAPI:
             allow_methods=["*"],
             allow_headers=["*"],
         )
+    app.middleware("http")(security_headers_middleware)
     app.middleware("http")(RequestIdMiddleware(app).dispatch)
     register_error_handlers(app)
     app.include_router(api_router, prefix=API_V1_PREFIX)

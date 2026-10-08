@@ -1,10 +1,11 @@
 """Выборки для генераторов напоминаний (T5.05, docs/03 §9, docs/05 §6)."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
+from src.core.constants import LESSON_MAX_MINUTES
 from src.core.enums import AssignmentStatus, LessonStatus
 from src.db.models import (
     Homework,
@@ -131,6 +132,8 @@ class ReminderRepository(BaseRepository[Lesson]):
             .join(User, User.id == Lesson.teacher_id)
             .where(
                 Lesson.status == LessonStatus.SCHEDULED,
+                # нижняя граница по start_at: запрос использует индекс (status, start_at), issue #88
+                Lesson.start_at >= end_from - timedelta(minutes=LESSON_MAX_MINUTES),
                 Lesson.end_at >= end_from,
                 Lesson.end_at <= end_to,
                 User.is_active.is_(True),

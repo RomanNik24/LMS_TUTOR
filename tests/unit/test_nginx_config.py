@@ -63,3 +63,15 @@ def test_access_log_hides_login_tokens_and_413_is_json() -> None:
     assert re.search(r'~\^/login/\s+"/login/\*\*\*";', config)
     assert "error_page 413 = @payload_too_large;" in config
     assert '"code":"file_too_large"' in config
+
+
+def test_backend_security_headers_are_not_duplicated_behind_nginx() -> None:
+    """T8.08: nginx сам ставит заголовки безопасности, одноимённые заголовки backend скрыты."""
+    proxy = (NGINX / "snippets" / "proxy-app.conf").read_text(encoding="utf-8")
+    template = (NGINX / "templates" / "snippets" / "security-headers.conf.template").read_text(
+        encoding="utf-8"
+    )
+
+    for header in ("X-Content-Type-Options", "Referrer-Policy"):
+        assert f"proxy_hide_header {header};" in proxy
+        assert f"add_header {header} " in template

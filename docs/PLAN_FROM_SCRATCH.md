@@ -1418,6 +1418,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 ```
 **Проверка:** 🤖 тест forbidden-scan в CI зелёный; добавьте нарочно `import requests` — тест краснеет.
 
+**Статус T8.08:** ✅ (1) замечание PERF_STAGE7 (issue #88): запросы «уроки без отметки» (дашборд и напоминания) получили нижнюю границу по `start_at`, использующую индекс `(status, start_at)`; N+1 в отчёте не было; (2) `tests/unit/test_forbidden_scan.py` в CI: нет `balance/debtors/argon2/Flet/Arq/JWT`, импортов `boto3/requests/psycopg2` в `src`, `aiogram` в `src/services`, `any`/`@ts-ignore` во фронтенде (слово `balance` разрешено только в перечне денежных терминов теста приватности `src/schemas/roles.py`); (3) единые заголовки безопасности: backend ставит `nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` для `/api` (`src/core/security_headers.py`), nginx скрывает их дубли; `/openapi.json` закрыт в prod (тест `test_app_factory.py`).
+
 ### T8.09 · Прогон E2E на полном стеке
 **Кто:** 🖥️ TERM · **Размер:** M
 **Промпт:** `Ты TERM-агент. Подними полный стек в Docker, установи Playwright (npx playwright install), запусти E2E; сохрани отчёты/видео ошибок; ошибки верни CODE списком. Итог — docs/ops/E2E_STAGE8.md.`

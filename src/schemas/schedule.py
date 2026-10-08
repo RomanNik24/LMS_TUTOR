@@ -6,11 +6,10 @@ from typing import Literal, Self
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.core import texts
-from src.core.constants import DEFAULT_USER_TIMEZONE
+from src.core.constants import DEFAULT_USER_TIMEZONE, LESSON_MAX_MINUTES
 from src.core.enums import AssignmentStatus, AttendanceStatus, LessonStatus
 from src.schemas.validators import https_url, iana_timezone
 
-LESSON_MAX_MINUTES = 12 * 60
 LESSON_MAX_PARTICIPANTS = 20
 TOPIC_MAX_LENGTH = 255
 TEACHER_NOTE_MAX_LENGTH = 5000
