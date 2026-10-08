@@ -5,14 +5,16 @@
 владелец — с ценой (``StudentCardOwner``).
 """
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Response, status
 
-from src.api.deps import StaffActor, get_bot_username, get_student_service
+from src.api.deps import StaffActor, get_bot_username, get_stats_service, get_student_service
 from src.api.v1.invitations import invitation_response
 from src.api.v1.responses import error_responses
 from src.core.constants import LIST_LIMIT_DEFAULT, LIST_LIMIT_MAX
+from src.schemas.reports import StudentReport
 from src.schemas.students import (
     InvitationResponse,
     StudentCardResponse,
@@ -20,6 +22,7 @@ from src.schemas.students import (
     StudentListPage,
     StudentUpdate,
 )
+from src.services.stats import StatsService
 from src.services.students import StudentService, StudentStatus
 
 router = APIRouter(prefix="/admin/students", tags=["admin-students"])
@@ -150,3 +153,21 @@ async def unlink_student_telegram(
     """Снять привязку Telegram: сессии удаляются, запись в ``audit_log``."""
     await service.unlink_telegram(actor, student_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/{student_id}/report",
+    response_model=StudentReport,
+    summary="Отчёт по ученику",
+    operation_id="get_admin_student_report",
+    responses=error_responses(400, 401, 403, 404, 422, 429),
+)
+async def get_admin_student_report(
+    student_id: Annotated[int, Path(ge=1)],
+    actor: StaffActor,
+    service: Annotated[StatsService, Depends(get_stats_service)],
+    start: Annotated[datetime, Query(alias="from")],
+    end: Annotated[datetime, Query(alias="to")],
+) -> StudentReport:
+    """ДЗ, пробники и посещаемость ученика за ``[from, to)``; без финансов."""
+    return await service.student_report(actor, student_id, start, end)

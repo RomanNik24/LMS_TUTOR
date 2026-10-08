@@ -256,6 +256,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/students/{student_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Отчёт по ученику
+         * @description ДЗ, пробники и посещаемость ученика за ``[from, to)``; без финансов.
+         */
+        get: operations["get_admin_student_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/staff": {
         parameters: {
             query?: never;
@@ -584,6 +604,26 @@ export interface paths {
          * @description Карточка: ссылки Телемоста и доски (урок → профиль), число участников, свои ДЗ урока.
          */
         get: operations["get_student_lesson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/student/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Мой отчёт за период
+         * @description Данные для графиков за ``[from, to)``; период не больше года.
+         */
+        get: operations["get_student_report"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1220,6 +1260,20 @@ export interface components {
          * @enum {string}
          */
         AssignmentStatus: "assigned" | "submitted" | "needs_revision" | "graded" | "expired";
+        /**
+         * AttendanceStats
+         * @description Посещаемость за период: число отметок по статусам участия.
+         */
+        AttendanceStats: {
+            /** Attended */
+            attended: number;
+            /** No Show */
+            no_show: number;
+            /** Cancelled */
+            cancelled: number;
+            /** Pending */
+            pending: number;
+        };
         /**
          * AttendanceStatus
          * @description Посещаемость участника урока: `lesson_participants.attendance` (docs/04 §4.2).
@@ -1938,6 +1992,32 @@ export interface components {
             offset: number;
         };
         /**
+         * MockExamPoint
+         * @description Точка серии пробников: оценка/тестовый балл или процент для нестандартного максимума.
+         */
+        MockExamPoint: {
+            /**
+             * Exam Date
+             * Format: date
+             */
+            exam_date: string;
+            /** Exam Type Code */
+            exam_type_code: string;
+            /** Exam Type Name */
+            exam_type_name: string;
+            result_kind: components["schemas"]["ExamResultKind"];
+            /** Primary Score */
+            primary_score: number;
+            /** Max Primary */
+            max_primary: number;
+            /** Converted Value */
+            converted_value: number | null;
+            /** Scale Applicable */
+            scale_applicable: boolean;
+            /** Percent */
+            percent: number;
+        };
+        /**
          * MockExamUpdate
          * @description Исправление ручного результата; ученика и тип экзамена менять нельзя.
          */
@@ -1952,6 +2032,18 @@ export interface components {
             geometry_score?: number | null;
             /** Comment */
             comment?: string | null;
+        };
+        /**
+         * OnTimeStats
+         * @description «Сдано в срок»: ``on_time`` из ``submitted_at <= original_due_at`` (docs/04 §5.3).
+         */
+        OnTimeStats: {
+            /** On Time Count */
+            on_time_count: number;
+            /** Total Count */
+            total_count: number;
+            /** Percent */
+            percent: number | null;
         };
         /**
          * ReturnRequest
@@ -2353,6 +2445,24 @@ export interface components {
             offset: number;
         };
         /**
+         * StudentReport
+         * @description Отчёт ученика за период (``from`` включительно, ``to`` исключительно).
+         */
+        StudentReport: {
+            /** Student Id */
+            student_id: number;
+            /** Timezone */
+            timezone: string;
+            /** Homework Weekly */
+            homework_weekly: components["schemas"]["WeeklyHomeworkPoint"][];
+            /** Homework Last Percent */
+            homework_last_percent: number | null;
+            on_time: components["schemas"]["OnTimeStats"];
+            /** Mock Exams */
+            mock_exams: components["schemas"]["MockExamPoint"][];
+            attendance: components["schemas"]["AttendanceStats"];
+        };
+        /**
          * StudentStatus
          * @description Фильтр списка: ``status=active|archived`` (docs/08 §5.2).
          * @enum {string}
@@ -2550,6 +2660,21 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * WeeklyHomeworkPoint
+         * @description Точка графика «Средний процент ДЗ»: ISO-неделя по ``graded_at`` в поясе ученика.
+         */
+        WeeklyHomeworkPoint: {
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+            /** Average Percent */
+            average_percent: number;
+            /** Graded Count */
+            graded_count: number;
         };
     };
     responses: never;
@@ -3536,6 +3661,87 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_admin_student_report: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                student_id: number;
+            };
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentReport"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Не найдено */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Превышен лимит запросов */
@@ -5005,6 +5211,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Превышен лимит запросов */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_student_report: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                session_id?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentReport"];
+                };
+            };
+            /** @description Нарушено бизнес-правило */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет или истекла сессия / неверные данные входа */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Нет прав */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Ошибка валидации (details.fields) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Превышен лимит запросов */

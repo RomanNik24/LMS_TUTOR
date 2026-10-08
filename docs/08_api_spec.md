@@ -70,7 +70,7 @@
 | DELETE | `/student/homework/{assignment_id}/files/{file_id}` | Удалить свой файл (пока ДЗ не проверено) |
 | POST | `/student/homework/{assignment_id}/submit` | Сдать (после загрузки файлов). Тело: `{ "student_comment": "..." }`. Требует ≥ 1 файла |
 | POST | `/student/homework/{assignment_id}/self-report` | Кнопка «Сделал» без файлов. Тело: `{ "student_comment": "..." }` |
-| GET | `/student/reports?from=&to=` | Данные для графиков: средний процент ДЗ по неделям, результаты пробников, процент сданных в срок |
+| GET | `/student/reports?from=&to=` | Данные для графиков за `[from, to)` (период ≤ 366 дней, иначе 422 `invalid_period`; параметры обязательны): `homework_weekly` (средний процент ДЗ по ISO-неделям `graded_at` в поясе ученика: `week_start`, `average_percent`, `graded_count`), `homework_last_percent`, `on_time` (`on_time_count`, `total_count`, `percent`), `mock_exams` (серия пробников: `converted_value`, `scale_applicable`, `percent`), `attendance`. Формулы — `docs/04` §11; финансов нет |
 
 Ограничения (проверяет сервер): сдавать можно только в статусах `assigned`, `needs_revision` и не в `expired`; чужая выдача → 404.
 
@@ -93,7 +93,7 @@
 | POST | `/admin/students/{id}/invitations` | Создать/перевыпустить приглашение. Ответ `201`: `{ "id": 7, "url": "https://t.me/<bot>?start=inv_<token>", "expires_at": "..." }` (`id` — для отзыва) (токен показывается только в этот момент) |
 | DELETE | `/admin/invitations/{id}` | Отозвать приглашение |
 | POST | `/admin/students/{id}/unlink-telegram` | Снять привязку Telegram (владельцу отвязать самого себя нельзя: 400 `owner_cannot_unlink`) |
-| GET | `/admin/students/{id}/report?from=&to=` | Отчёт по ученику (ДЗ, пробники, посещаемость); для `owner` + финансы ученика |
+| GET | `/admin/students/{id}/report?from=&to=` | Отчёт по ученику (тот же `StudentReport`: ДЗ, пробники, посещаемость); неизвестный ученик или сотрудник → 404 `student_not_found`. Финансы ученика для `owner` добавятся с финансами (этап 7) |
 
 ### 5.3. Сотрудники (только `owner`)
 | Метод | Путь | Описание |

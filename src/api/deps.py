@@ -41,6 +41,7 @@ from src.services.profile import ProfileService
 from src.services.reference import ReferenceService
 from src.services.schedule import ScheduleService
 from src.services.staff import StaffService
+from src.services.stats import StatsService
 from src.services.students import StudentService
 from src.services.submissions import SubmissionService
 
@@ -277,6 +278,11 @@ def get_submission_service(
 ) -> SubmissionService:
     """Собрать ``SubmissionService`` на запрос."""
     return SubmissionService(session)
+
+
+def get_stats_service(session: Annotated[AsyncSession, Depends(get_session)]) -> StatsService:
+    """Собрать ``StatsService`` на запрос."""
+    return StatsService(session)
 
 
 def get_exam_service(session: Annotated[AsyncSession, Depends(get_session)]) -> ExamService:
