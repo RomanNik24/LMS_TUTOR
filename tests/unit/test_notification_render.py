@@ -76,7 +76,7 @@ def test_student_homework_notifications_link_to_card() -> None:
     deadline = render(
         NotificationType.HOMEWORK_DEADLINE, assignment_id=7, due_epoch=EPOCH, title="Графы"
     )
-    assert deadline.text == "📌 Завтра дедлайн ДЗ «Графы». Не забудь сдать."
+    assert deadline.text == "📌 Завтра дедлайн по ДЗ «Графы»."
 
 
 def test_staff_notifications_link_to_review_and_admin() -> None:
@@ -88,7 +88,7 @@ def test_staff_notifications_link_to_review_and_admin() -> None:
         title="Графы",
         student_name="Аня",
     )
-    assert submitted.text == "📥 Сдано ДЗ «Графы»: Аня."
+    assert submitted.text == "📥 ДЗ «Графы»: сдал Аня."
     assert submitted.buttons[0][0].url == f"{BASE}/admin/assignments/7"
     joined = render(NotificationType.STUDENT_JOINED, staff, student_id=3, student_name="Борис")
     assert joined.buttons[0][0].url == f"{BASE}/admin/"

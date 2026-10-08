@@ -453,7 +453,7 @@ async def test_dispatch_task_sends_through_bot(
         state={"bot": object(), "settings": SimpleNamespace(public_base_url=BASE)}
     )
     assert await tasks.module.dispatch_due_notifications.original_func(context, db_session) == 1
-    assert notifier.sent == [(7001, "👋 Ученик принял приглашение: Борис.")]
+    assert notifier.sent == [(7001, "👋 Подключение: Борис.")]
 
 
 async def test_expire_and_generation_tasks_run_on_empty_database(
