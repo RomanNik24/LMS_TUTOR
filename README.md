@@ -133,28 +133,37 @@ uv run pre-commit install
 ## Сквозные тесты (E2E)
 
 Playwright проверяет сценарий «вход → сдача ДЗ → оценка → уведомления» на полном стеке. В `pnpm test`
-и CI они не входят: нужен запущенный стек и подставной Telegram. Вход выполняется по `initData`,
-подписанному **тестовым** токеном бота (`100000:E2E_TEST_TOKEN_NOT_REAL`, не настоящий), поэтому
-сервер ничего не подменяет. Запускайте только на отдельной базе для E2E, не на рабочей.
+и CI они не входят. Вход выполняется по `initData`, подписанному **тестовым** токеном бота
+(`100000:E2E_TEST_TOKEN_NOT_REAL`, не настоящий), поэтому сервер ничего не подменяет; Telegram
+подменён отдельным процессом. Стек изолирован от рабочего: свой проект, контейнеры, тома и порты
+(`docker-compose.e2e.yml`, окружение `frontend/e2e/stack.env`). Результаты прогона — `docs/ops/E2E_STAGE8.md`.
 
-1. Стек с тестовыми настройками (отдельная база, `BOT_TOKEN` — тестовый,
-   `TELEGRAM_API_BASE=http://host.docker.internal:18081` — адрес подставного Telegram, который
-   поднимает сам тест; рассылка уведомлений идёт задачей раз в минуту, поэтому тест ждёт до 2,5 мин).
-2. Справочники и пользователи E2E (владелец и ученик с известными Telegram ID):
-
-   ```bash
-   uv run python scripts/seed_reference.py
-   uv run python scripts/e2e_seed.py          # удалить: --purge
-   ```
-
-3. Браузер и запуск:
+1. Подставной Telegram **до** стека (приложению нужен Telegram при старте); в отдельном окне терминала:
 
    ```bash
    cd frontend
-   pnpm exec playwright install chromium
-   pnpm e2e                                   # E2E_BASE_URL по умолчанию http://127.0.0.1:8080
+   node e2e/telegram-mock-server.ts            # порт 18081; остановка — Ctrl+C
    ```
 
-Переменные (значения по умолчанию подходят для описанной выше схемы): `E2E_BASE_URL`,
-`E2E_BOT_TOKEN`, `E2E_OWNER_TG_ID`, `E2E_STUDENT_TG_ID`, `E2E_TELEGRAM_MOCK_PORT`. Отчёт —
-`frontend/e2e-report`, видео и трассировки упавших сценариев — `frontend/e2e-results`.
+2. Стек, миграции, справочники и пользователи E2E (владелец и ученик с известными Telegram ID):
+
+   ```bash
+   docker compose -p my-lms-e2e -f docker-compose.yml -f docker-compose.e2e.yml --profile full up -d --build
+   docker compose -p my-lms-e2e -f docker-compose.yml -f docker-compose.e2e.yml --profile full exec app alembic upgrade head
+   docker compose -p my-lms-e2e -f docker-compose.yml -f docker-compose.e2e.yml --profile full exec app python scripts/seed_reference.py
+   docker compose -p my-lms-e2e -f docker-compose.yml -f docker-compose.e2e.yml --profile full exec app python scripts/e2e_seed.py
+   ```
+
+3. Браузер и запуск (рассылка уведомлений идёт фоновой задачей раз в минуту, сценарий ждёт до 2,5 мин):
+
+   ```bash
+   cd frontend
+   pnpm exec playwright install chromium       # если CDN недоступен: E2E_BROWSER_CHANNEL=chrome
+   pnpm e2e
+   ```
+
+Снести стек вместе с данными E2E: та же команда `docker compose -p my-lms-e2e ... down -v`.
+Переменные (значения по умолчанию подходят для схемы выше): `E2E_BASE_URL` (по умолчанию
+`http://127.0.0.1:18080`), `E2E_BOT_TOKEN`, `E2E_OWNER_TG_ID`, `E2E_STUDENT_TG_ID`,
+`E2E_TELEGRAM_MOCK_PORT`, `E2E_BROWSER_CHANNEL`. Отчёт — `frontend/e2e-report`, видео и трассировки
+упавших сценариев — `frontend/e2e-results`.
