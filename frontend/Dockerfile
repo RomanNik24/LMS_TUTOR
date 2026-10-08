@@ -32,6 +32,10 @@ RUN pnpm build
 # ---------- Этап runtime: Nginx со статикой ----------
 FROM nginx:1.28-alpine AS runtime
 
+# Исправления безопасности ОС поверх базового образа (nginx, openssl, pcre2, zlib, curl...):
+# в базовом теге они появляются с задержкой (docs/ops/SECURITY_CHECK.md, T8.10).
+RUN apk upgrade --no-cache
+
 # Стандартный default.conf образа заменяется нашим; snippets подключаются через include.
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
