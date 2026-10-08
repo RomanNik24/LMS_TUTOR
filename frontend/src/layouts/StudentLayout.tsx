@@ -1,5 +1,7 @@
 import { Outlet } from "react-router-dom";
 
+import { OfflineBanner } from "@/components/common/OfflineBanner";
+
 import { AppHeader } from "./AppHeader";
 import { STUDENT_NAV } from "./navigation";
 import { TabBar } from "./TabBar";
@@ -13,6 +15,7 @@ export function StudentLayout() {
     <div className="min-h-dvh bg-background">
       <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col bg-background">
         <AppHeader />
+        <OfflineBanner />
         <main className="flex-1 px-4 py-4">
           <Outlet />
         </main>

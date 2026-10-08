@@ -40,7 +40,12 @@ export function StudentLessonPage() {
     return (
       <div className="flex flex-col gap-4">
         {back}
-        <ErrorState message={errorMessage(query.error)} />
+        <ErrorState
+          message={errorMessage(query.error)}
+          onRetry={() => {
+            void query.refetch();
+          }}
+        />
       </div>
     );
   }
