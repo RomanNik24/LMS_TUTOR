@@ -1408,6 +1408,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Промпт:** `Задача T8.07 (CODE). Playwright: «вход → сдача ДЗ → оценка → уведомление» (с подменой Telegram initData для тестового бота); Vitest/MSW по списку docs/06 B7 (datetime, unwrap, RequireRole, формы на границах, экран ДЗ по статусам, отсутствие финансов у ученика и менеджера). Инструкция запуска в README.`
 **Проверка:** 🤖 Playwright-сценарий зелёный локально (TERM запустит в T8.09).
 
+**Статус T8.07:** ✅ код готов: Playwright `frontend/e2e/homework-flow.spec.ts` (выдача ДЗ → вход ученика по подписанному initData → «Сделал» → уведомление владельцу → оценка → уведомление ученику → проверенное ДЗ в приложении; второй сценарий — ученик не попадает в Admin App/финансы), подставной Telegram Bot API (`e2e/support/telegramMock.ts`), `scripts/e2e_seed.py` (владелец и ученик E2E, `--purge`), инструкция в README. Vitest по docs/06 B7: добавлен сводный `src/test/noFinance.test.tsx` (ученик и менеджер без денег), остальной список B7 был закрыт ранее. Сам Playwright-прогон на стеке — T8.09 (TERM).
+
 ### T8.08 · Аудит бэкенда и «сканер запрещённого»
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `chore/t8-08-forbidden-scan` · **Коммит:** `chore: add forbidden feature scan and query optimizations`
 **Промпт:**

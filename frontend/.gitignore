@@ -10,3 +10,5 @@ coverage/
 
 # Vite
 .vite/
+e2e-report/
+e2e-results/
