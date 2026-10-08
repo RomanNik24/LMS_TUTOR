@@ -55,6 +55,7 @@ def test_commands_by_state() -> None:
             "start",
             "app",
             "today",
+            "hw",
             "web",
             "logout",
             "help",

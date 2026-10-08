@@ -188,10 +188,12 @@ async def test_menu_has_schedule_buttons(
     assert [b.text for row in student_menu for b in row] == [
         texts.BOT_OPEN_APP_STUDENT,
         texts.BOT_BUTTON_SCHEDULE,
+        texts.BOT_BUTTON_HOMEWORK,
     ]
     await harness.send_text(TG_STAFF, "/start")
     staff_menu = harness.session.of("SendMessage")[-1].reply_markup.keyboard
     assert [b.text for row in staff_menu for b in row] == [
         texts.BOT_OPEN_APP_STAFF,
         texts.BOT_BUTTON_TODAY,
+        texts.BOT_BUTTON_REVIEW,
     ]

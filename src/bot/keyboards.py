@@ -17,6 +17,7 @@ CALLBACK_LOGOUT_YES = "logout:yes"
 CALLBACK_LOGOUT_NO = "logout:no"
 
 STUDENT_APP_PATH = "/app/"
+STUDENT_HOMEWORK_PATH = "/app/homework/{assignment_id}"
 STAFF_APP_PATH = "/admin/"
 
 
@@ -50,7 +51,11 @@ def main_menu(role: UserRole | None, public_base_url: str) -> ReplyKeyboardMarku
         student = role == UserRole.STUDENT
         label = texts.BOT_OPEN_APP_STUDENT if student else texts.BOT_OPEN_APP_STAFF
         today = texts.BOT_BUTTON_SCHEDULE if student else texts.BOT_BUTTON_TODAY
-        rows = [[KeyboardButton(text=label)], [KeyboardButton(text=today)]]
+        homework = texts.BOT_BUTTON_HOMEWORK if student else texts.BOT_BUTTON_REVIEW
+        rows = [
+            [KeyboardButton(text=label)],
+            [KeyboardButton(text=today), KeyboardButton(text=homework)],
+        ]
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 
@@ -63,6 +68,19 @@ def open_app_button(role: UserRole, public_base_url: str) -> InlineKeyboardMarku
     return InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text=label, web_app=WebAppInfo(url=url))]]
     )
+
+
+def homework_button(public_base_url: str, assignment_id: int) -> InlineKeyboardMarkup | None:
+    """Инлайн-кнопка ``web_app`` «Открыть в приложении» на карточку ДЗ (docs/05 §5.3).
+
+    ``None``, если адрес не HTTPS (Telegram не откроет Mini App).
+    """
+    base = public_base_url.strip().rstrip("/")
+    if not base.startswith("https://"):
+        return None
+    url = base + STUDENT_HOMEWORK_PATH.format(assignment_id=assignment_id)
+    button = InlineKeyboardButton(text=texts.BOT_HW_OPEN, web_app=WebAppInfo(url=url))
+    return InlineKeyboardMarkup(inline_keyboard=[[button]])
 
 
 def relink_confirm() -> InlineKeyboardMarkup:
