@@ -18,6 +18,7 @@ from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.bot.dispatcher import create_dispatcher
 from src.core.config import Settings
+from src.db.models import ExamType
 
 BOT_TOKEN = "123:TEST"  # noqa: S105 - тестовый токен
 PUBLIC_BASE_URL = "https://lms.example.com"
@@ -176,3 +177,46 @@ async def harness(db_session: AsyncSession, redis_clean: aioredis.Redis) -> BotH
 
     dispatcher = create_dispatcher(make_settings(), redis_clean, scope, storage=MemoryStorage())
     return BotHarness(bot=bot, dispatcher=dispatcher, session=session)
+
+
+@pytest.fixture
+async def seeded_reference(db_session: AsyncSession) -> dict[str, ExamType]:
+    """Справочники из сидов (предметы, 4 типа экзаменов, шкалы 2026) в тестовой БД.
+
+    Returns:
+        Типы экзаменов по коду (``oge_math``, ``ege_informatics`` …).
+    """
+    from src.db.models import GradeScale, Subject  # noqa: PLC0415
+    from src.db.seeds import reference as seeds  # noqa: PLC0415
+
+    subjects = {
+        str(row["code"]): Subject(code=row["code"], name=row["name"]) for row in seeds.SUBJECTS
+    }
+    db_session.add_all(subjects.values())
+    await db_session.flush()
+    exam_types: dict[str, ExamType] = {}
+    for row in seeds.EXAM_TYPES:
+        exam_type = ExamType(
+            code=row["code"],
+            subject_id=subjects[str(row["subject_code"])].id,
+            kind=row["kind"],
+            result_kind=row["result_kind"],
+            max_primary=row["max_primary"],
+            name=row["name"],
+            config=row["config"],
+        )
+        db_session.add(exam_type)
+        exam_types[str(row["code"])] = exam_type
+    await db_session.flush()
+    for code, scale in seeds.GRADE_SCALES.items():
+        db_session.add_all(
+            GradeScale(
+                exam_type_id=exam_types[code].id,
+                valid_year=seeds.SCALE_YEAR,
+                primary_score=primary,
+                result_value=value,
+            )
+            for primary, value in scale.items()
+        )
+    await db_session.commit()
+    return exam_types

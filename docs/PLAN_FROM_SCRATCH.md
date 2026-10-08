@@ -1256,6 +1256,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 Задача T6.02 (CODE). ExamService.convert_score по таблице grade_scales (берётся максимальный valid_year <= года экзамена); нестандартный max_primary → converted_value=NULL и scale_applicable=false; правило ОГЭ математики: геометрия < 2 → оценка 2 (при отсутствии geometry_score — предупреждение). Шкалы НЕ хардкодятся в коде. Тесты по ГРАНИЦАМ всех четырёх шкал (например ОГЭ информатика: 4→2, 5→3, 10→3, 11→4, 16→4, 17→5), правило геометрии, пробник «27 баллов ЕГЭ информатика».
 ```
 **Проверка:** 🤖 тесты зелёные; 👁 `grep -rn "grade_scale\|шкал" src/services` — таблица читается из БД.
+**Статус:** ✅ `src/services/exams.py` (`ExamService.convert_score`), `src/repositories/exams.py` (`GradeScaleRepository.lookup`: шкала с максимальным `valid_year <= год экзамена`, читается из БД), схема `ScoreConversion` (`converted_value`, `scale_year`, `scale_applicable`, `warning`); нестандартный максимум или отсутствие шкалы/балла → `scale_applicable = false`; ОГЭ математика: геометрия меньше `config.min_geometry` → оценка 2 при любой сумме, не указана → расчёт по сумме и предупреждение `geometry_missing`. Тесты `tests/integration/test_exam_scoring.py` (42): границы всех четырёх шкал по docs/04 §10, правило геометрии, «27 баллов ЕГЭ информатики», выбор шкалы по году.
 
 ### T6.03 · Результаты пробников и API
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t6-03-mock-results-api` · **Коммит:** `feat(exams): add mock exam results and api`
