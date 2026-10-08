@@ -87,6 +87,7 @@ async def test_student_start_greets_by_name_with_web_app_button(
         "start",
         "app",
         "today",
+        "hw",
         "web",
         "logout",
         "help",

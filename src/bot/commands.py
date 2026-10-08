@@ -8,10 +8,7 @@ from src.core.enums import UserRole
 
 
 def commands_for(role: UserRole | None) -> list[BotCommand]:
-    """Список команд для гостя (``None``), ученика или персонала.
-
-    Команда ``/hw`` появится вместе с ДЗ (этап 4).
-    """
+    """Список команд для гостя (``None``), ученика или персонала."""
     start = BotCommand(command="start", description=texts.BOT_CMD_START)
     help_command = BotCommand(command="help", description=texts.BOT_CMD_HELP)
     if role is None:
@@ -20,6 +17,12 @@ def commands_for(role: UserRole | None) -> list[BotCommand]:
         start,
         BotCommand(command="app", description=texts.BOT_CMD_APP),
         BotCommand(command="today", description=texts.BOT_CMD_TODAY),
+        BotCommand(
+            command="hw",
+            description=(
+                texts.BOT_CMD_HW_STUDENT if role == UserRole.STUDENT else texts.BOT_CMD_HW_STAFF
+            ),
+        ),
         BotCommand(command="web", description=texts.BOT_CMD_WEB),
         BotCommand(command="logout", description=texts.BOT_CMD_LOGOUT),
         help_command,

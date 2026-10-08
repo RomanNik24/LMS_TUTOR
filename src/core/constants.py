@@ -99,6 +99,8 @@ BOT_FSM_TTL_SECONDS = 60 * 60
 BOT_ALLOWED_UPDATES: tuple[str, ...] = ("message", "callback_query", "my_chat_member")
 BOT_INVITE_PAYLOAD_PREFIX = "inv_"
 BOT_WEBHOOK_PATH = "/telegram/webhook"
+# /hw: сколько активных ДЗ ученика показать сообщениями (остальные — в приложении)
+BOT_HOMEWORK_LIST_LIMIT = 10
 BOT_WEBHOOK_AUTH_HEADER = "x-telegram-bot-api-secret-token"
 # Маска секретного сегмента пути вебхука в логах и Sentry (docs/09 §4).
 WEBHOOK_PATH_REDACTED = BOT_WEBHOOK_PATH + "/***"
