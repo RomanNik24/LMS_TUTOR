@@ -86,3 +86,16 @@ def test_scrub_event_removes_sensitive_data() -> None:
         "headers": {"X-Request-ID": "r1"},
     }
     assert "user" not in scrubbed
+
+
+async def test_api_responses_carry_security_headers() -> None:
+    """T8.08: единый набор заголовков и без кэша для данных API (в том числе у ошибок)."""
+    api = await _get("local", "/api/v1/unknown")
+    other = await _get("local", "/openapi.json")
+
+    assert api.status_code == 404  # заголовки есть и у ответа с ошибкой
+    for response in (api, other):
+        assert response.headers["x-content-type-options"] == "nosniff"
+        assert response.headers["referrer-policy"] == "no-referrer"
+    assert api.headers["cache-control"] == "no-store"
+    assert "cache-control" not in other.headers
