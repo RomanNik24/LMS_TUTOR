@@ -1,31 +1,25 @@
 /**
  * Маршруты (docs/12 §5.4): вход, страница «Привет», Student App (`/app/*`) и Admin App (`/admin/*`).
- * Админская часть подгружается лениво (React.lazy): ученику её код не нужен.
+ * Админская часть и её страницы подгружаются лениво (React.lazy): ученику их код не нужен.
  * Разделы без данных показывают «пустое состояние» (`SectionPlaceholder`) — их заменят экраны этапов 2–8.
  */
 import { BookOpen, ClipboardCheck, LineChart, Sun, Wallet } from "lucide-react";
 import { Suspense, lazy } from "react";
+import type { ComponentType, LazyExoticComponent } from "react";
 import { createBrowserRouter, createMemoryRouter, Navigate } from "react-router-dom";
 import type { RouteObject } from "react-router-dom";
 
 import { FullScreenLoader } from "@/components/common/FullScreenLoader";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { RequireRole } from "@/features/auth/RequireRole";
 import { HelloPage } from "@/features/auth/pages/HelloPage";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
-import { AdminHomeworkPage } from "@/features/homework/AdminHomeworkPage";
-import { HomeworkDetailPage } from "@/features/homework/HomeworkDetailPage";
-import { ReviewPage } from "@/features/homework/ReviewPage";
 import { StudentHomeworkCardPage } from "@/features/homework/student/StudentHomeworkCardPage";
 import { StudentHomeworkPage } from "@/features/homework/student/StudentHomeworkPage";
 import { ProfilePage } from "@/features/profile/ProfilePage";
 import { StudentLessonPage } from "@/features/schedule/StudentLessonPage";
 import { StudentSchedulePage } from "@/features/schedule/StudentSchedulePage";
-import { SchedulePage } from "@/features/schedule/SchedulePage";
-import { StaffPage } from "@/features/staff/StaffPage";
-import { StudentCardPage } from "@/features/students/StudentCardPage";
-import { StudentFormPage } from "@/features/students/StudentFormPage";
-import { StudentsListPage } from "@/features/students/StudentsListPage";
 import { StudentLayout } from "@/layouts/StudentLayout";
 import { texts } from "@/lib/texts";
 import { MorePage } from "@/pages/MorePage";
@@ -33,6 +27,72 @@ import { SectionPlaceholder } from "@/pages/SectionPlaceholder";
 
 const AdminLayout = lazy(() =>
   import("@/layouts/AdminLayout").then((module) => ({ default: module.AdminLayout })),
+);
+
+/**
+ * Страница админки, загружаемая по требованию (React.lazy): ученику код админских экранов не нужен,
+ * основной бандл остаётся небольшим (аудит 2026-10-08, п. 8). Пока код грузится, показывается
+ * скелетон страницы.
+ */
+function withSkeleton(Page: LazyExoticComponent<ComponentType>) {
+  return function LazyPage() {
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <Page />
+      </Suspense>
+    );
+  };
+}
+
+const AdminHomeworkPage = withSkeleton(
+  lazy(() =>
+    import("@/features/homework/AdminHomeworkPage").then((module) => ({
+      default: module.AdminHomeworkPage,
+    })),
+  ),
+);
+const HomeworkDetailPage = withSkeleton(
+  lazy(() =>
+    import("@/features/homework/HomeworkDetailPage").then((module) => ({
+      default: module.HomeworkDetailPage,
+    })),
+  ),
+);
+const ReviewPage = withSkeleton(
+  lazy(() =>
+    import("@/features/homework/ReviewPage").then((module) => ({ default: module.ReviewPage })),
+  ),
+);
+const SchedulePage = withSkeleton(
+  lazy(() =>
+    import("@/features/schedule/SchedulePage").then((module) => ({ default: module.SchedulePage })),
+  ),
+);
+const StaffPage = withSkeleton(
+  lazy(() =>
+    import("@/features/staff/StaffPage").then((module) => ({ default: module.StaffPage })),
+  ),
+);
+const StudentCardPage = withSkeleton(
+  lazy(() =>
+    import("@/features/students/StudentCardPage").then((module) => ({
+      default: module.StudentCardPage,
+    })),
+  ),
+);
+const StudentFormPage = withSkeleton(
+  lazy(() =>
+    import("@/features/students/StudentFormPage").then((module) => ({
+      default: module.StudentFormPage,
+    })),
+  ),
+);
+const StudentsListPage = withSkeleton(
+  lazy(() =>
+    import("@/features/students/StudentsListPage").then((module) => ({
+      default: module.StudentsListPage,
+    })),
+  ),
 );
 
 function LazyAdminLayout() {

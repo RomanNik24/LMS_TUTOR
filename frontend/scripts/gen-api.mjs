@@ -15,12 +15,15 @@ const frontendDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const repoRoot = resolve(frontendDir, "..");
 const output = join(frontendDir, "src", "api", "schema.d.ts");
 
+// pnpm в Windows — это pnpm.cmd, его запускает только cmd.exe. Вызываем cmd.exe напрямую
+// (без `shell: true` с аргументами: Node 24 предупреждает об этом, DEP0190).
 function run(command, args, cwd) {
-  const result = spawnSync(command, args, {
-    cwd,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
+  const windowsCmd = process.platform === "win32" && command === "pnpm";
+  const result = spawnSync(
+    windowsCmd ? "cmd.exe" : command,
+    windowsCmd ? ["/d", "/s", "/c", command, ...args] : args,
+    { cwd, stdio: "inherit" },
+  );
   if (result.error || result.status !== 0) {
     console.error(`Команда не выполнена: ${command} ${args.join(" ")}`);
     process.exit(result.status ?? 1);
