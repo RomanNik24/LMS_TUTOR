@@ -42,7 +42,7 @@ export function parseErrorBody(body: unknown): { code: string; message: string }
   return { code, message };
 }
 
-function toApiError(result: FetchResult<unknown>): ApiError {
+export function toApiError(result: FetchResult<unknown>): ApiError {
   const { code, message } = parseErrorBody(result.error);
   return new ApiError(result.response.status, code, message);
 }

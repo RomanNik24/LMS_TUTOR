@@ -3,7 +3,7 @@
  * Админская часть и её страницы подгружаются лениво (React.lazy): ученику их код не нужен.
  * Разделы без данных показывают «пустое состояние» (`SectionPlaceholder`) — их заменят экраны этапов 2–8.
  */
-import { BookOpen, Sun, Wallet } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { Suspense, lazy } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { createBrowserRouter, createMemoryRouter, Navigate } from "react-router-dom";
@@ -49,6 +49,18 @@ const StudentReportsPage = withSkeleton(
     import("@/features/reports/StudentReportsPage").then((module) => ({
       default: module.StudentReportsPage,
     })),
+  ),
+);
+const DashboardPage = withSkeleton(
+  lazy(() =>
+    import("@/features/dashboard/DashboardPage").then((module) => ({
+      default: module.DashboardPage,
+    })),
+  ),
+);
+const FinancePage = withSkeleton(
+  lazy(() =>
+    import("@/features/finance/FinancePage").then((module) => ({ default: module.FinancePage })),
   ),
 );
 const AdminExamsPage = withSkeleton(
@@ -136,7 +148,7 @@ const studentRoutes: RouteObject = {
   ],
 };
 
-const soon = (title: string, icon: typeof Sun) => (
+const soon = (title: string, icon: typeof BookOpen) => (
   <SectionPlaceholder icon={icon} title={title} text={texts.empty.soon} />
 );
 
@@ -148,7 +160,7 @@ const adminRoutes: RouteObject = {
       element: <LazyAdminLayout />,
       children: [
         { index: true, element: <Navigate to="today" replace /> },
-        { path: "today", element: soon(texts.nav.admin.today, Sun) },
+        { path: "today", element: <DashboardPage /> },
         { path: "schedule", element: <SchedulePage /> },
         { path: "homework", element: <AdminHomeworkPage /> },
         { path: "homework/:homeworkId", element: <HomeworkDetailPage /> },
@@ -163,7 +175,7 @@ const adminRoutes: RouteObject = {
         {
           element: <RequireRole allowed={["owner"]} />,
           children: [
-            { path: "finance", element: soon(texts.nav.admin.finance, Wallet) },
+            { path: "finance", element: <FinancePage /> },
             { path: "staff", element: <StaffPage /> },
           ],
         },
