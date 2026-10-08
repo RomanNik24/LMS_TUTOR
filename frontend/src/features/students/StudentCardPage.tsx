@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudentFinanceTab } from "@/features/finance/StudentFinanceTab";
 import { InvitationDialog } from "@/features/invitations/InvitationDialog";
 import { StudentProgressTab } from "@/features/reports/StudentProgressTab";
 import { texts } from "@/lib/texts";
@@ -202,6 +203,7 @@ function CardView({ card }: { card: StudentCard }) {
         {"lesson_price" in card && (
           <TabsContent value="finance">
             <Finance card={card} />
+            <StudentFinanceTab studentId={card.user_id} />
           </TabsContent>
         )}
       </Tabs>
