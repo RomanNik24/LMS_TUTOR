@@ -53,6 +53,8 @@ def test_backend_address_is_resolved_per_request() -> None:
 def test_access_log_hides_login_tokens_and_413_is_json() -> None:
     """Аудит 2026-10-08, пп. 7 и 16: токен входа не попадает в журнал, 413 — JSON docs/08 §1."""
     config = (NGINX / "conf.d" / "default.conf").read_text(encoding="utf-8")
+    # по $request_uri, а не по $uri: try_files для маршрутов SPA переводит $uri на /index.html
+    assert "map $request_uri $log_uri {" in config
     assert re.search(r'~\^/login/\s+"/login/\*\*\*";', config)
     assert "error_page 413 = @payload_too_large;" in config
     assert '"code":"file_too_large"' in config
