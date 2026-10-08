@@ -22,6 +22,9 @@ COPY frontend/ ./
 # Публичные значения VITE_* вшиваются в сборку (секретов во фронтенде нет, docs/02 §7).
 ARG VITE_BOT_USERNAME=""
 ENV VITE_BOT_USERNAME=${VITE_BOT_USERNAME}
+# Публичный DSN Sentry (необязательно): без него Sentry не загружается.
+ARG VITE_SENTRY_DSN=""
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
 
 # pnpm build = tsc --noEmit && vite build → /app/dist
 RUN pnpm build
@@ -39,8 +42,9 @@ COPY nginx/snippets/ /etc/nginx/snippets/
 # по умолчанию пусто — картинки только со своего домена.
 COPY nginx/templates/ /etc/nginx/templates/
 ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx \
-    NGINX_ENVSUBST_FILTER=^S3_PUBLIC_ENDPOINT\$ \
-    S3_PUBLIC_ENDPOINT=""
+    NGINX_ENVSUBST_FILTER=^(S3_PUBLIC_ENDPOINT|CSP_CONNECT_EXTRA)\$ \
+    S3_PUBLIC_ENDPOINT="" \
+    CSP_CONNECT_EXTRA=""
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

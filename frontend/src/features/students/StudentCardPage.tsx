@@ -16,6 +16,7 @@ import { InvitationDialog } from "@/features/invitations/InvitationDialog";
 import { StudentProgressTab } from "@/features/reports/StudentProgressTab";
 import { texts } from "@/lib/texts";
 import { useSubjectName } from "@/features/reference/api";
+import { externalLinkProps } from "@/lib/externalLink";
 
 import { useArchiveStudent, useRestoreStudent, useStudent, useUnlinkTelegram } from "./api";
 import type { StudentCard } from "./api";
@@ -36,9 +37,7 @@ function LinkValue({ url }: { url: string | null }) {
   if (url === null) return <>{o.none}</>;
   return (
     <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...externalLinkProps(url)}
       className="text-primary underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {url}

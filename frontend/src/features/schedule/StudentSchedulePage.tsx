@@ -25,6 +25,7 @@ import {
 import { texts } from "@/lib/texts";
 import { cn } from "@/lib/utils";
 import { useSubjectName } from "@/features/reference/api";
+import { externalLinkProps } from "@/lib/externalLink";
 
 import { useStudentLessons } from "./studentApi";
 import type { StudentLesson } from "./studentApi";
@@ -102,7 +103,7 @@ function Hero({
           </p>
           {next.video_url !== null && (
             <Button asChild variant="highlight">
-              <a href={next.video_url} target="_blank" rel="noopener noreferrer">
+              <a {...externalLinkProps(next.video_url)}>
                 <ExternalLink className="size-4" aria-hidden />
                 {t.card.video}
               </a>
