@@ -136,7 +136,7 @@ function ListView({
     <div className="flex flex-col gap-5">
       {group(lessons, timeZone).map(([key, items]) => (
         <section key={key} className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-gray-600 font-body">
+          <h2 className="text-sm font-semibold text-muted-foreground font-body">
             {dayHeading(key, today)}
           </h2>
           {items.map((lesson) => (

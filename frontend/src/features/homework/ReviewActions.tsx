@@ -320,7 +320,7 @@ export function ExtendControl({
               />
             )}
           </Field>
-          <Button type="submit" variant="primary" loading={extend.isPending}>
+          <Button type="submit" variant="outline" loading={extend.isPending}>
             {t.extendManualSubmit}
           </Button>
         </form>
