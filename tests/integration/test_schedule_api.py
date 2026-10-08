@@ -347,6 +347,52 @@ async def test_student_sees_only_own_lessons_with_resolved_links(
     assert foreign.json()["error"]["code"] == missing.json()["error"]["code"] == "lesson_not_found"
 
 
+async def test_student_lesson_card_lists_only_own_linked_homework(
+    owner: AuthedClient,
+    anya_client: AuthedClient,
+    boris_client: AuthedClient,
+    anya: User,
+    boris: User,
+) -> None:
+    """Аудит 2026-10-08, п. 6: в карточке урока — ДЗ, привязанное к уроку, только своё."""
+    lesson = (
+        await owner.post("/api/v1/admin/lessons", json=lesson_body([anya.id, boris.id]))
+    ).json()
+    other = (
+        await owner.post(
+            "/api/v1/admin/lessons", json=lesson_body([anya.id], START + timedelta(days=1))
+        )
+    ).json()
+    due = iso(START + timedelta(days=3))
+    base = {
+        "kind": "regular",
+        "subject_code": "informatics",
+        "max_score": 5,
+        "due_mode": "fixed",
+        "due_at": due,
+    }
+    # привязано к уроку: Аня и Борис; привязано к другому уроку и без урока — не показывается
+    for title, lesson_id, students in (
+        ("Графы", lesson["id"], [anya.id, boris.id]),
+        ("Для Бориса", lesson["id"], [boris.id]),
+        ("Другой урок", other["id"], [anya.id]),
+        ("Без урока", None, [anya.id]),
+    ):
+        body = {**base, "title": title, "lesson_id": lesson_id, "student_ids": students}
+        assert (await owner.post("/api/v1/admin/homework", json=body)).status_code == 201
+
+    card = (await anya_client.get(f"/api/v1/student/lessons/{lesson['id']}")).json()
+    assert [(h["title"], h["status"], h["is_overdue"]) for h in card["homework"]] == [
+        ("Графы", "assigned", False)
+    ]
+    assert card["homework"][0]["due_at"] == due
+    boris_card = (await boris_client.get(f"/api/v1/student/lessons/{lesson['id']}")).json()
+    assert sorted(h["title"] for h in boris_card["homework"]) == ["Графы", "Для Бориса"]
+    # у другого урока свой список
+    empty = (await anya_client.get(f"/api/v1/student/lessons/{other['id']}")).json()
+    assert [h["title"] for h in empty["homework"]] == ["Другой урок"]
+
+
 async def test_student_response_has_no_private_or_financial_data(
     owner: AuthedClient, anya_client: AuthedClient, anya: User, boris: User
 ) -> None:

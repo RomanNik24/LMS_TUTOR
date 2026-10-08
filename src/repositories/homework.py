@@ -151,6 +151,18 @@ class HomeworkAssignmentRepository(BaseRepository[HomeworkAssignment]):
             stmt = stmt.with_for_update()
         return (await self._session.execute(stmt)).scalar_one_or_none()
 
+    async def for_lesson_and_student(
+        self, lesson_id: int, student_id: int
+    ) -> list[tuple[HomeworkAssignment, str]]:
+        """Выдачи ученика по заданиям, привязанным к уроку, с названием задания."""
+        stmt = (
+            select(HomeworkAssignment, Homework.title)
+            .join(Homework, Homework.id == HomeworkAssignment.homework_id)
+            .where(Homework.lesson_id == lesson_id, HomeworkAssignment.student_id == student_id)
+            .order_by(HomeworkAssignment.due_at, HomeworkAssignment.id)
+        )
+        return [(row, title) for row, title in (await self._session.execute(stmt)).all()]
+
     @staticmethod
     def _joined() -> Select[Any]:
         stmt = (

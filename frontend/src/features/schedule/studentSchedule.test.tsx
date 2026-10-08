@@ -23,6 +23,7 @@ const lesson = (id: number, start: string, patch: Record<string, unknown> = {}) 
   video_url: "https://telemost.yandex.ru/j/1",
   board_url: null,
   participants_count: 1,
+  homework: [],
   ...patch,
 });
 
@@ -187,6 +188,45 @@ describe("Расписание ученика: неделя и карточка"
     );
     renderRoutes(routes, ["/app/schedule/6"]);
     expect(await screen.findByText(t.card.noLinks)).toBeInTheDocument();
+  });
+
+  it("блок «Домашнее задание»: ссылка на карточку ДЗ, срок и статус; без ДЗ блока нет", async () => {
+    mockMe("student");
+    server.use(
+      http.get("*/api/v1/student/lessons/8", () =>
+        HttpResponse.json(
+          lesson(8, "2026-10-14T14:00:00Z", {
+            homework: [
+              {
+                assignment_id: 31,
+                title: "Графы",
+                status: "assigned",
+                due_at: "2026-10-16T17:00:00Z",
+                is_overdue: true,
+              },
+            ],
+          }),
+        ),
+      ),
+    );
+    renderRoutes(routes, ["/app/schedule/8"]);
+    expect(await screen.findByRole("heading", { name: t.card.homework })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Графы" })).toHaveAttribute("href", "/app/homework/31");
+    // 17:00 UTC = 20:00 по Москве (пояс ученика)
+    expect(screen.getByText(/Сдать до .*16 октября 2026.*20:00/)).toBeInTheDocument();
+    expect(screen.getByText(texts.status["homework.overdue"])).toBeInTheDocument();
+  });
+
+  it("без ДЗ блока «Домашнее задание» нет", async () => {
+    mockMe("student");
+    server.use(
+      http.get("*/api/v1/student/lessons/10", () =>
+        HttpResponse.json(lesson(10, "2026-10-14T14:00:00Z")),
+      ),
+    );
+    renderRoutes(routes, ["/app/schedule/10"]);
+    await screen.findByText(t.card.video);
+    expect(screen.queryByRole("heading", { name: t.card.homework })).toBeNull();
   });
 
   it("чужой или несуществующий урок: «Урок не найден» и возврат к расписанию", async () => {

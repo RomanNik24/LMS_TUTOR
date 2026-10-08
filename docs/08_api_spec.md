@@ -63,7 +63,7 @@
 | Метод | Путь | Описание |
 |---|---|---|
 | GET | `/student/lessons?from=&to=` | Свои уроки за период (время, предмет, статус, ссылки, ДЗ-метки) |
-| GET | `/student/lessons/{id}` | Карточка урока: ссылки Телемоста и доски (из профиля или переопределённые), привязанные ДЗ |
+| GET | `/student/lessons/{id}` | Карточка урока: ссылки Телемоста и доски (из профиля или переопределённые), `homework` — свои выдачи по заданиям, привязанным к уроку (`assignment_id`, `title`, `status`, `due_at`, `is_overdue`) |
 | GET | `/student/homework?status=&limit=&offset=` | Свои выдачи ДЗ. Фильтр `status`: `active`, `submitted`, `graded`, `expired` |
 | GET | `/student/homework/{assignment_id}` | Карточка: описание, материалы, дедлайн, `is_overdue`, `extensions_left` (без деталей журнала), оценка, комментарий, свои файлы |
 | POST | `/student/homework/{assignment_id}/files` | Загрузка одного файла решения (multipart, поле `file`). Лимиты: ≤ 10 файлов, ≤ 10 МБ, jpg/png/heic/pdf |
@@ -164,6 +164,7 @@
 | Метод | Путь | Описание |
 |---|---|---|
 | GET | `/files/{file_id}/url` | Presigned URL на чтение (TTL 10 минут) после проверки прав. Ответ: `{ "url": "...", "expires_in": 600 }` |
+| GET | `/files/materials/{material_id}/url` | То же для файла-материала преподавателя к заданию (ученик — только материалы своих заданий, иначе 404) |
 
 ## 7. Служебные
 | Метод | Путь | Описание |

@@ -581,7 +581,7 @@ export interface paths {
         };
         /**
          * Карточка урока
-         * @description Карточка: ссылки Телемоста и доски (урок → профиль), число участников.
+         * @description Карточка: ссылки Телемоста и доски (урок → профиль), число участников, свои ДЗ урока.
          */
         get: operations["get_student_lesson"];
         put?: never;
@@ -1573,6 +1573,24 @@ export interface components {
             topic?: string | null;
         };
         /**
+         * LessonHomeworkItem
+         * @description ДЗ, привязанное к уроку, в карточке урока ученика: только его собственная выдача.
+         */
+        LessonHomeworkItem: {
+            /** Assignment Id */
+            assignment_id: number;
+            /** Title */
+            title: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Is Overdue */
+            is_overdue: boolean;
+        };
+        /**
          * LessonItem
          * @description Урок в ответе для сотрудников. Финансовых полей нет: их добавит схема владельца.
          */
@@ -2020,6 +2038,37 @@ export interface components {
          * @enum {string}
          */
         StudentHomeworkFilter: "active" | "submitted" | "graded" | "expired";
+        /**
+         * StudentLessonDetail
+         * @description Карточка урока ученика: урок и привязанные к нему ДЗ ученика (docs/08 §4, docs/07 §9.1.3).
+         */
+        StudentLessonDetail: {
+            /** Id */
+            id: number;
+            /** Subject Code */
+            subject_code: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            status: components["schemas"]["LessonStatus"];
+            /** Topic */
+            topic: string | null;
+            /** Video Url */
+            video_url: string | null;
+            /** Board Url */
+            board_url: string | null;
+            /** Participants Count */
+            participants_count: number;
+            /** Homework */
+            homework: components["schemas"]["LessonHomeworkItem"][];
+        };
         /**
          * StudentLessonItem
          * @description Урок для ученика: только его данные.
@@ -4710,7 +4759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StudentLessonItem"];
+                    "application/json": components["schemas"]["StudentLessonDetail"];
                 };
             };
             /** @description Нет или истекла сессия / неверные данные входа */
