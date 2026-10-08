@@ -24,3 +24,5 @@ class ExamTypeItem(BaseModel):
     result_kind: ExamResultKind
     max_primary: int
     name: str
+    # есть правило «баллы по геометрии» (ОГЭ математика): форма показывает поле геометрии
+    uses_geometry: bool

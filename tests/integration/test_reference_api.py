@@ -123,6 +123,7 @@ async def test_any_signed_in_user_reads_active_subjects_and_exam_types(
         "result_kind": "grade_2_5",
         "max_primary": 31,
         "name": "ОГЭ — Математика",
+        "uses_geometry": True,
     }
 
 

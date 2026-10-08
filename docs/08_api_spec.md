@@ -55,7 +55,7 @@
 | Метод | Путь | Описание | Доступ |
 |---|---|---|---|
 | GET | `/reference/subjects` | Предметы | авторизован |
-| GET | `/reference/exam-types` | Типы экзаменов (код, предмет, вид, макс. балл) | авторизован |
+| GET | `/reference/exam-types` | Типы экзаменов (`id`, `code`, `subject_code`, `kind`, `result_kind`, `max_primary`, `name`, `uses_geometry` — есть правило «баллы по геометрии»: форма показывает поле геометрии) | авторизован |
 | GET | `/catalog` | Опубликованные услуги | авторизован |
 
 ## 4. Student API (`/student/*`, роль `student`)

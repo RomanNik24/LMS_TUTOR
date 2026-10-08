@@ -67,6 +67,8 @@ export function gradeFormSchema(maxScore: number) {
       .trim()
       .refine((value) => /^\d+$/.test(value) && Number(value) <= maxScore, r.scoreRange(maxScore)),
     comment: z.string().trim().max(DESCRIPTION_MAX, r.commentTooLong),
+    // Баллы по геометрии (только пробник ОГЭ математики): пусто или целое неотрицательное.
+    geometry_score: z.string().trim().regex(/^\d*$/, r.geometryRange),
   });
 }
 export type GradeFormValues = z.infer<ReturnType<typeof gradeFormSchema>>;

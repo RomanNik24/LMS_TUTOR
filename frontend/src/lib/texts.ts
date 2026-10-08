@@ -100,6 +100,17 @@ export const texts = {
     logout: "Выйти",
     logoutFailed: "Не получилось выйти. Попробуй ещё раз",
   },
+  /** Конвертация баллов пробников (docs/04 §6, docs/07 §9.2.9–9.2.10): тексты считает фронтенд только как подписи */
+  exams: {
+    gradeOf: (primary: number, value: number) =>
+      `${String(primary)} баллов = оценка ${String(value)}`,
+    testOf: (primary: number, value: number) =>
+      `${String(primary)} баллов = тестовый ${String(value)}`,
+    notApplicable: "Шкала не применима (нестандартный максимум)",
+    geometryMissing: "Баллы по геометрии не указаны: расчёт по сумме",
+    gradeLabel: (value: number) => `оценка ${String(value)}`,
+    testLabel: (value: number) => `тестовый ${String(value)}`,
+  },
   /** Расписание ученика (docs/07 §9.1.1–9.1.3) */
   student: {
     homework: {
@@ -150,6 +161,36 @@ export const texts = {
         failed: "Не получилось загрузить файл. Попробуй ещё раз",
       },
     },
+    reports: {
+      periods: { weeks4: "4 недели", months3: "3 месяца", all: "Всё" },
+      periodLabel: "Период",
+      loadError: "Не получилось загрузить отчёт",
+      empty: "Пока мало данных. Графики появятся после первых проверенных ДЗ",
+      homework: {
+        title: "Средний процент ДЗ",
+        axisWeek: "Неделя",
+        axisPercent: "Процент",
+        series: "Средний процент",
+        last: (percent: number) => `Последний результат: ${String(percent)}%`,
+        weekPoint: (week: string, percent: number, count: number) =>
+          `неделя с ${week}: ${String(percent)}% (проверено работ: ${String(count)})`,
+        none: "Проверенных ДЗ за период нет",
+      },
+      mock: {
+        title: "Пробные экзамены",
+        axisDate: "Дата",
+        axisPercent: "Процент от максимума",
+        series: "Процент от максимума",
+        none: "Пробных экзаменов за период нет",
+        point: (date: string, name: string, result: string) => `${date}, ${name}: ${result}`,
+      },
+      onTime: {
+        title: "Сдано в срок",
+        value: (percent: number) => `${String(percent)}%`,
+        detail: (onTime: number, total: number) => `${String(onTime)} из ${String(total)}`,
+        none: "Сданных ДЗ за период нет",
+      },
+    },
     schedule: {
       today: "Сегодня",
       tomorrow: "Завтра",
@@ -188,6 +229,50 @@ export const texts = {
   },
   /** Админка: ученики, сотрудники, приглашения (docs/07 §9.2.2–9.2.4, §9.2.13) */
   admin: {
+    exams: {
+      title: "Пробники",
+      newResult: "Ввести результат",
+      filterStudent: "Ученик",
+      filterExam: "Экзамен",
+      all: "Все",
+      loadError: "Не получилось загрузить результаты",
+      empty: "Результатов пробников пока нет",
+      loadMore: "Показать ещё",
+      delete: "Удалить",
+      deleteTitle: "Удалить результат пробника?",
+      deleteConfirm: "Удалить результат",
+      deleted: "Результат удалён",
+      fromHomework: "Из ДЗ",
+      saved: "Результат сохранён",
+      row: (primary: number, max: number) => `${String(primary)} из ${String(max)}`,
+      form: {
+        title: "Результат пробника",
+        student: "Ученик",
+        studentPlaceholder: "Выберите ученика",
+        exam: "Экзамен",
+        examPlaceholder: "Выберите экзамен",
+        date: "Дата экзамена",
+        primary: "Первичный балл",
+        max: "Максимум варианта",
+        maxHint: "Официальный максимум подставлен сам; другое значение отключает шкалу",
+        geometry: "Баллы по геометрии",
+        geometryHint: "ОГЭ математика: меньше 2 баллов — оценка 2",
+        comment: "Комментарий",
+        submit: "Сохранить результат",
+        conversion: "Конвертация",
+        errors: {
+          studentRequired: "Выберите ученика",
+          examRequired: "Выберите экзамен",
+          dateRequired: "Укажите дату",
+          primaryRange: "Первичный балл — целое число от 0",
+          maxRange: "Максимум — целое число от 1",
+          scoreAboveMax: "Первичный балл больше максимума",
+          geometryRange: "Баллы по геометрии — целое число от 0",
+          geometryAbovePrimary: "Баллов по геометрии больше, чем первичных",
+          commentTooLong: "Не длиннее 2000 символов",
+        },
+      },
+    },
     homework: {
       title: "ДЗ",
       newHomework: "Новое ДЗ",
@@ -271,7 +356,9 @@ export const texts = {
         notReviewable: "Эту работу уже нельзя изменить",
         graded: (score: number, max: number, percent: number | null) =>
           `Оценка: ${String(score)} из ${String(max)}${percent === null ? "" : ` (${String(percent)}%)`}`,
-        mockHint: "Конвертация пробника в оценку появится позже",
+        mockConversion: "Конвертация пробника",
+        geometry: "Баллы по геометрии",
+        geometryHint: "ОГЭ математика: меньше 2 баллов — оценка 2",
         extensionsLog: "Переносы срока",
         extensionRow: (from: string, to: string) => `${from} → ${to}`,
         onTime: "Сдано в срок",
@@ -286,6 +373,7 @@ export const texts = {
           scoreRange: (max: number) => `Балл — целое от 0 до ${String(max)}`,
           commentRequired: "Напиши, что исправить",
           commentTooLong: "Не длиннее 5000 символов",
+          geometryRange: "Баллы по геометрии — целое число от 0",
           dateRequired: "Выбери дату",
           timeRequired: "Выбери время",
         },
@@ -303,7 +391,7 @@ export const texts = {
       noArchived: "В архиве никого нет",
       loadMore: "Показать ещё",
       archivedBadge: "В архиве",
-      tabs: { overview: "Обзор", finance: "Финансы" },
+      tabs: { overview: "Обзор", progress: "Пробники и прогресс", finance: "Финансы" },
       overview: {
         profile: "Профиль",
         timezone: "Часовой пояс",
@@ -579,6 +667,11 @@ export const texts = {
     last_owner: "Нельзя понизить или архивировать последнего владельца.",
     invite_already_used: "Ссылка уже использована. Попроси новую у Романа.",
     internal_error: "Произошла внутренняя ошибка. Попробуй позже.",
+    mock_exam_not_found: "Результат пробника не найден.",
+    mock_exam_linked_to_homework: "Результат создан из ДЗ: исправь оценку работы, и он обновится.",
+    geometry_not_applicable: "Баллы по геометрии указываются только для ОГЭ математики.",
+    geometry_too_big: "Баллы по геометрии не могут быть больше первичного балла.",
+    exam_type_not_found: "Тип экзамена не найден.",
   },
 } as const;
 

@@ -30,3 +30,16 @@ export function useSubjectName(): (code: string) => string {
   const { data } = useSubjects();
   return (code) => data?.find((subject) => subject.code === code)?.name ?? code;
 }
+
+export type ExamType = components["schemas"]["ExamTypeItem"];
+
+const EXAM_TYPES_KEY = ["reference", "exam-types"] as const;
+
+/** Типы экзаменов (4 штуки на MVP): форма пробника и подписи к результатам. */
+export function useExamTypes() {
+  return useQuery({
+    queryKey: EXAM_TYPES_KEY,
+    queryFn: async () => unwrap(await api.GET("/api/v1/reference/exam-types")),
+    staleTime: Infinity,
+  });
+}
