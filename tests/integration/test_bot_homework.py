@@ -104,9 +104,20 @@ async def test_staff_hw_shows_review_queue(
     await harness.send_text(TG_STAFF, "/hw")
     send = harness.session.of("SendMessage")[-1]
     assert send.text == "На проверку: 1\n«Задачи 1-5» — Аня, вт, 6 окт, 15:00"
-    assert send.reply_markup.inline_keyboard[0][0].web_app.url == f"{PUBLIC_BASE_URL}/admin/"
+    rows = send.reply_markup.inline_keyboard
+    # deep link на конкретную работу, затем общая кнопка «Открыть Admin App»
+    assert rows[0][0].web_app.url == f"{PUBLIC_BASE_URL}/admin/assignments/{assignment_id}"
+    assert rows[0][0].text == "Аня: Задачи 1-5"
+    assert rows[-1][0].web_app.url == f"{PUBLIC_BASE_URL}/admin/"
 
 
 async def test_guest_hw_gets_guest_greeting(harness: BotHarness) -> None:
     await harness.send_text(100_099, "/hw")
     assert harness.session.sent_texts()[-1] == texts.BOT_GUEST_GREETING
+
+
+async def test_staff_today_has_admin_app_button(harness: BotHarness, owner: User) -> None:
+    await harness.send_text(TG_STAFF, "/today")
+
+    send = harness.session.of("SendMessage")[-1]
+    assert send.reply_markup.inline_keyboard[0][0].web_app.url == f"{PUBLIC_BASE_URL}/admin/"

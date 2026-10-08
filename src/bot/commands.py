@@ -1,10 +1,15 @@
 """Меню команд (``setMyCommands``) по состоянию пользователя (docs/05 §2)."""
 
+import logging
+
 from aiogram import Bot
+from aiogram.exceptions import TelegramAPIError
 from aiogram.types import BotCommand, BotCommandScopeChat
 
 from src.core import texts
 from src.core.enums import UserRole
+
+logger = logging.getLogger(__name__)
 
 
 def commands_for(role: UserRole | None) -> list[BotCommand]:
@@ -27,6 +32,17 @@ def commands_for(role: UserRole | None) -> list[BotCommand]:
         BotCommand(command="logout", description=texts.BOT_CMD_LOGOUT),
         help_command,
     ]
+
+
+async def set_default_commands(bot: Bot) -> None:
+    """Команды по умолчанию (для гостя) — для чатов, где ещё не выставлено своё меню.
+
+    Сбой Telegram не мешает запуску бота: меню обновится при следующем ``/start``.
+    """
+    try:
+        await bot.set_my_commands(commands_for(None))
+    except TelegramAPIError:
+        logger.warning("Failed to set default bot commands", exc_info=True)
 
 
 async def set_commands(bot: Bot, chat_id: int, role: UserRole | None) -> None:

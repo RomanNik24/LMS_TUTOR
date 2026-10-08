@@ -74,7 +74,11 @@ async def homework(
         lines.append(texts.BOT_HW_QUEUE_MORE.format(count=queue.total - len(queue.items)))
     await message.answer(
         "\n".join(lines),
-        reply_markup=keyboards.open_app_button(current_user.role, settings.public_base_url),
+        reply_markup=keyboards.staff_review_buttons(
+            settings.public_base_url,
+            [(item.assignment_id, f"{item.student_name}: {item.title}") for item in queue.items],
+            current_user.role,
+        ),
     )
 
 

@@ -112,8 +112,12 @@ async def test_archived_user_is_treated_as_guest_with_closed_access(
     await _user(db_session, UserRole.STUDENT, "Архив", telegram_id=TG_STUDENT, active=False)
     await harness.send_text(TG_STUDENT, "/start")
     assert harness.session.sent_texts()[-1] == texts.BOT_ACCESS_CLOSED
-    await harness.send_text(TG_STUDENT, "/web")
-    assert harness.session.sent_texts()[-1] == texts.BOT_WEB_GUEST
+    # архивный пользователь не получает ни ссылок входа, ни каталога, ни расписания
+    for text in ("/web", "/today", "/hw", texts.BOT_BUTTON_CATALOG, "что-то"):
+        await harness.send_text(TG_STUDENT, text)
+        assert harness.session.sent_texts()[-1] == texts.BOT_ACCESS_CLOSED, text
+    await harness.press(TG_STUDENT, "cat:0")
+    assert harness.session.of("AnswerCallbackQuery")[-1].text == texts.BOT_ACCESS_CLOSED
 
 
 # ---------------------------------------------------------------- приглашения

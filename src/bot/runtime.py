@@ -14,6 +14,7 @@ from aiogram import Bot, Dispatcher
 from redis.asyncio import Redis
 
 from src.bot.client import build_bot
+from src.bot.commands import set_default_commands
 from src.bot.dispatcher import create_dispatcher
 from src.bot.middlewares import SessionScope
 from src.core.config import Settings
@@ -61,6 +62,7 @@ async def start_bot(settings: Settings, redis: Redis, scope: SessionScope) -> Bo
         return None
     dispatcher = create_dispatcher(settings, redis, scope)
     runtime = BotRuntime(bot=bot, dispatcher=dispatcher)
+    await set_default_commands(bot)
     allowed = list(BOT_ALLOWED_UPDATES)
     if settings.bot_mode == BOT_MODE_WEBHOOK:
         await bot.set_webhook(

@@ -11,6 +11,7 @@ from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.bot import keyboards
 from src.core import texts
+from src.core.config import Settings
 from src.core.current_user import CurrentUser
 from src.core.enums import LessonStatus, UserRole
 from src.core.timeutils import to_local
@@ -80,7 +81,9 @@ def _staff_text(dashboard: DashboardStaff) -> str | None:
     return BLOCK_SEPARATOR.join("\n".join(block) for block in blocks if block)
 
 
-async def today(message: Message, session: AsyncSession, current_user: CurrentUser | None) -> None:
+async def today(
+    message: Message, session: AsyncSession, settings: Settings, current_user: CurrentUser | None
+) -> None:
     """Расписание на сегодня: ученику — 24 часа вперёд, персоналу — сводка дня."""
     if current_user is None:
         await message.answer(texts.BOT_GUEST_GREETING)
@@ -97,7 +100,10 @@ async def today(message: Message, session: AsyncSession, current_user: CurrentUs
             )
         return
     dashboard = await DashboardService(session).get_today_dashboard(current_user)
-    await message.answer(_staff_text(dashboard) or texts.BOT_STAFF_NO_LESSONS)
+    await message.answer(
+        _staff_text(dashboard) or texts.BOT_STAFF_NO_LESSONS,
+        reply_markup=keyboards.open_app_button(current_user.role, settings.public_base_url),
+    )
 
 
 def create_router() -> Router:

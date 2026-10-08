@@ -20,6 +20,8 @@ CALLBACK_CATALOG_PREFIX = "cat:"
 STUDENT_APP_PATH = "/app/"
 STUDENT_HOMEWORK_PATH = "/app/homework/{assignment_id}"
 STAFF_APP_PATH = "/admin/"
+STAFF_ASSIGNMENT_PATH = "/admin/assignments/{assignment_id}"
+BUTTON_TITLE_MAX = 48
 
 
 def app_url(public_base_url: str, role: UserRole) -> str | None:
@@ -82,6 +84,37 @@ def homework_button(public_base_url: str, assignment_id: int) -> InlineKeyboardM
     url = base + STUDENT_HOMEWORK_PATH.format(assignment_id=assignment_id)
     button = InlineKeyboardButton(text=texts.BOT_HW_OPEN, web_app=WebAppInfo(url=url))
     return InlineKeyboardMarkup(inline_keyboard=[[button]])
+
+
+def staff_review_buttons(
+    public_base_url: str, items: list[tuple[int, str]], role: UserRole
+) -> InlineKeyboardMarkup | None:
+    """Кнопки ``web_app`` «на проверку»: по одной на работу + общая «Открыть Admin App».
+
+    Args:
+        public_base_url: Адрес приложения.
+        items: Пары (идентификатор выдачи, подпись кнопки).
+        role: Роль сотрудника (адрес общей кнопки).
+
+    Returns:
+        ``None``, если адрес не HTTPS (Telegram не откроет Mini App).
+    """
+    base = public_base_url.strip().rstrip("/")
+    if not base.startswith("https://"):
+        return None
+    rows = [
+        [
+            InlineKeyboardButton(
+                text=label[:BUTTON_TITLE_MAX],
+                web_app=WebAppInfo(url=base + STAFF_ASSIGNMENT_PATH.format(assignment_id=item_id)),
+            )
+        ]
+        for item_id, label in items
+    ]
+    general = open_app_button(role, public_base_url)
+    if general is not None:
+        rows += general.inline_keyboard
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def relink_confirm() -> InlineKeyboardMarkup:
