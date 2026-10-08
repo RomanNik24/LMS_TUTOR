@@ -1332,6 +1332,8 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Промпт:** `Задача T7.05 (CODE). scripts/seed_demo.py: до 100 учеников, уроки, ДЗ, пробники; защита — скрипт отказывается работать при APP_ENV=prod; помечай демо-данные признаком, чтобы их можно было удалить одной командой (--purge).`
 **Проверка:** 🤖 запуск и `--purge` работают; при `APP_ENV=prod` скрипт отказывается.
 
+**Статус T7.05:** ✅ `scripts/seed_demo.py` (`--students`, `--seed`, `--purge`), описание — `docs/ops/DEV_TOOLS.md`; тесты `tests/integration/test_seed_demo.py` (100 учеников, слоты владельца без пересечений, `--purge` не трогает настоящих, отказ при `APP_ENV=prod`).
+
 ### T7.06 · Проверка производительности
 **Кто:** 🖥️ TERM · **Размер:** M
 **Промпт:**
