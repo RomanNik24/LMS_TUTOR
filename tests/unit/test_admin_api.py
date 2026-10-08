@@ -469,4 +469,6 @@ async def test_operation_ids_are_stable(app: FastAPI) -> None:
         "convert_mock_exam_score",
         "update_mock_exam",
         "delete_mock_exam",
+        # отчёты (T6.04)
+        "get_admin_student_report",
     }

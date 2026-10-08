@@ -15,6 +15,7 @@ from src.api.v1 import (
     reference,
     student_homework,
     student_lessons,
+    student_reports,
 )
 
 api_router = APIRouter()
@@ -26,6 +27,7 @@ api_router.include_router(admin_staff.router)
 api_router.include_router(invitations.router)
 api_router.include_router(admin_schedule.router)
 api_router.include_router(student_lessons.router)
+api_router.include_router(student_reports.router)
 api_router.include_router(admin_homework.router)
 api_router.include_router(admin_exams.router)
 api_router.include_router(student_homework.router)

@@ -1270,6 +1270,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Читать:** `docs/04` §11, `docs/08`.
 **Промпт:** `Задача T6.04 (CODE). StatsService.student_report по формулам docs/04 §11: средний процент ДЗ по ISO-неделям graded_at (в поясе ученика; expired без оценки не входит), «% в срок», серия пробников. GET /student/reports и GET /admin/students/{id}/report; без финансов. Тесты формул на фиксированных данных. gen:api.`
 **Проверка:** 🤖 тесты зелёные.
+**Статус:** ✅ `StatsService` (`my_report`, `student_report`), `StatsRepository`, схемы `src/schemas/reports.py` (`StudentReport`: `homework_weekly`, `homework_last_percent`, `on_time`, `mock_exams`, `attendance`), эндпоинты `GET /student/reports` и `GET /admin/students/{id}/report`. Решения: «% в срок» считается по выдачам, у которых `original_due_at` в периоде (пунктуальность относится к дедлайну), сгоревшие входят в знаменатель; дата пробника сравнивается по местной дате ученика; проценты — целые, половина округляется вверх. Финансы владельца в отчёте по ученику добавятся на этапе 7 (docs/08 §5.2). Тесты `tests/integration/test_stats_service.py` (6: недели в поясе Владивостока, граница недели, «в срок», пустой отчёт, пробники и «27 баллов», посещаемость, права и период) и `test_reports_api.py` (3); privacy-контракт зелёный; `pnpm gen:api`.
 
 ### T6.05 · Фронтенд: пробники и отчёты
 **Кто:** 💻 CODE · **Размер:** L · **Ветка:** `feature/t6-05-mock-reports-ui` · **Коммит:** `feat(frontend): add mock exams and reports`
