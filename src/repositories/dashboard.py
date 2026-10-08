@@ -63,12 +63,8 @@ class DashboardRepository(BaseRepository[Lesson]):
     async def lessons_between(
         self, start: datetime, end: datetime, *, limit: int
     ) -> tuple[list[LessonRow], int]:
-        """Не отменённые уроки с началом в ``[start, end)``: первые ``limit`` и общее число."""
-        conditions = [
-            Lesson.start_at >= start,
-            Lesson.start_at < end,
-            Lesson.status != LessonStatus.CANCELLED,
-        ]
+        """Уроки с началом в ``[start, end)``, в том числе отменённые (видны со статусом)."""
+        conditions = [Lesson.start_at >= start, Lesson.start_at < end]
         return await self._lessons(conditions, limit=limit, newest_first=False)
 
     async def unmarked_lessons(

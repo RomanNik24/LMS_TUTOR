@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import ColumnElement, select
 
 from src.core.enums import AssignmentStatus, LessonStatus
 from src.db.models import (
@@ -91,19 +91,6 @@ class DigestRepository(BaseRepository[Lesson]):
             HomeworkAssignment.due_at > start,
             HomeworkAssignment.due_at <= end,
         )
-
-    async def earned_between(self, start: datetime, end: datetime) -> int:
-        """Сумма зафиксированных цен оплачиваемых занятий с началом в ``[start, end)``."""
-        stmt = (
-            select(func.coalesce(func.sum(LessonParticipant.price_snapshot), 0))
-            .join(Lesson, Lesson.id == LessonParticipant.lesson_id)
-            .where(
-                LessonParticipant.is_billable.is_(True),
-                Lesson.start_at >= start,
-                Lesson.start_at < end,
-            )
-        )
-        return int((await self._session.execute(stmt)).scalar_one() or 0)
 
     async def _assignments(self, *conditions: ColumnElement[bool]) -> list[DigestAssignment]:
         stmt = (

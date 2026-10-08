@@ -154,7 +154,7 @@ async def test_blocks_follow_the_documented_rules(factory: Factory, owner_user: 
     past = await factory.lesson(subject, [anya], NOW - 3 * HOUR)
     later = await factory.lesson(subject, [anya, boris], NOW + 2 * HOUR)
     await factory.lesson(subject, [boris], NOW + 24 * HOUR)
-    await factory.lesson(subject, [boris], NOW + HOUR, LessonStatus.CANCELLED)
+    cancelled = await factory.lesson(subject, [boris], NOW + HOUR, LessonStatus.CANCELLED)
     # у Бори сегодня урок в 12:00 UTC; срок ДЗ Ани раньше урока → «не сдали»
     unsubmitted = await factory.assignment(subject, anya, AssignmentStatus.ASSIGNED, NOW + HOUR)
     # срок позже урока — в блок не входит; срок ДЗ Бори ближе чем через сутки, но урок позже срока
@@ -168,10 +168,12 @@ async def test_blocks_follow_the_documented_rules(factory: Factory, owner_user: 
     dashboard = await DashboardService(factory.db).get_today_dashboard(staff_actor(owner_user), NOW)
 
     assert dashboard.date.isoformat() == "2026-10-14"
-    assert [item.id for item in dashboard.lessons.items] == [past.id, later.id]
-    assert dashboard.lessons.total == 2
-    assert [item.needs_mark for item in dashboard.lessons.items] == [True, False]
-    assert dashboard.lessons.items[1].student_names == ["Аня", "Борис"]
+    assert [item.id for item in dashboard.lessons.items] == [past.id, cancelled.id, later.id]
+    assert dashboard.lessons.total == 3
+    # отметка нужна только прошедшему запланированному уроку; отменённый показан со статусом
+    assert [item.needs_mark for item in dashboard.lessons.items] == [True, False, False]
+    assert dashboard.lessons.items[1].status == LessonStatus.CANCELLED
+    assert dashboard.lessons.items[2].student_names == ["Аня", "Борис"]
     assert [item.assignment_id for item in dashboard.review_queue.items] == [queued.id]
     assert [item.assignment_id for item in dashboard.unsubmitted.items] == [unsubmitted.id]
     assert [item.id for item in dashboard.unmarked_lessons.items] == [past.id]
