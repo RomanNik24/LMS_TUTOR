@@ -17,6 +17,22 @@ uv run python scripts/dev_create_student.py --name "Аня" --timezone Europe/Mo
 - Откройте ссылку **со второго Telegram-аккаунта**: бот привяжет его к ученику.
   Повторное открытие той же ссылки покажет «ссылка уже использована».
 
+## Демо-данные (`scripts/seed_demo.py`)
+
+До 100 учеников с профилями, уроками (прошедшими, сегодняшними, будущими), ДЗ в разных статусах и
+результатами пробников — для проверки производительности и показа. Нужны владелец
+(`scripts/create_owner.py`) и справочники (`scripts/seed_reference.py`).
+
+```bash
+uv run python scripts/seed_demo.py --students 100   # создать (повторный запуск без --purge откажется)
+uv run python scripts/seed_demo.py --purge          # удалить все демо-данные одной командой
+```
+
+Признаки демо-данных: ученик — `telegram_username` вида `demo_001` без `telegram_id`; урок —
+тема «Демо-урок»; ДЗ — название начинается с «Демо: ». Настоящие записи под эти признаки не
+попадают и `--purge` их не трогает. Уведомления и сообщения в Telegram не создаются. При
+`APP_ENV=prod` скрипт отказывается работать.
+
 ## HTTPS-туннель для Mini App (`scripts/dev_tunnel.sh`, `scripts/dev_tunnel.ps1`)
 
 Mini App открывается только по HTTPS, а cookie `Secure` не работают по `http`.
