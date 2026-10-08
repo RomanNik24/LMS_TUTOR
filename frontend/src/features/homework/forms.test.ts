@@ -60,7 +60,8 @@ describe("homeworkFormSchema", () => {
 
 describe("gradeFormSchema", () => {
   const schema = gradeFormSchema(13);
-  const ok = (score: string) => schema.safeParse({ score, comment: "" }).success;
+  const ok = (score: string, geometry_score = "") =>
+    schema.safeParse({ score, comment: "", geometry_score }).success;
 
   it("балл — целое от 0 до максимума включительно", () => {
     expect(ok("0")).toBe(true);
@@ -69,6 +70,13 @@ describe("gradeFormSchema", () => {
     expect(ok("-1")).toBe(false);
     expect(ok("")).toBe(false);
     expect(ok("1.5")).toBe(false);
+  });
+
+  it("баллы по геометрии: пусто или целое неотрицательное", () => {
+    expect(ok("5", "")).toBe(true);
+    expect(ok("5", "2")).toBe(true);
+    expect(ok("5", "-1")).toBe(false);
+    expect(ok("5", "1.5")).toBe(false);
   });
 });
 

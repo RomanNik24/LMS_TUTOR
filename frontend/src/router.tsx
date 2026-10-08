@@ -3,7 +3,7 @@
  * Админская часть и её страницы подгружаются лениво (React.lazy): ученику их код не нужен.
  * Разделы без данных показывают «пустое состояние» (`SectionPlaceholder`) — их заменят экраны этапов 2–8.
  */
-import { BookOpen, ClipboardCheck, LineChart, Sun, Wallet } from "lucide-react";
+import { BookOpen, Sun, Wallet } from "lucide-react";
 import { Suspense, lazy } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
 import { createBrowserRouter, createMemoryRouter, Navigate } from "react-router-dom";
@@ -44,6 +44,20 @@ function withSkeleton(Page: LazyExoticComponent<ComponentType>) {
   };
 }
 
+const StudentReportsPage = withSkeleton(
+  lazy(() =>
+    import("@/features/reports/StudentReportsPage").then((module) => ({
+      default: module.StudentReportsPage,
+    })),
+  ),
+);
+const AdminExamsPage = withSkeleton(
+  lazy(() =>
+    import("@/features/exams/AdminExamsPage").then((module) => ({
+      default: module.AdminExamsPage,
+    })),
+  ),
+);
 const AdminHomeworkPage = withSkeleton(
   lazy(() =>
     import("@/features/homework/AdminHomeworkPage").then((module) => ({
@@ -116,16 +130,7 @@ const studentRoutes: RouteObject = {
         { path: "schedule/:lessonId", element: <StudentLessonPage /> },
         { path: "homework", element: <StudentHomeworkPage /> },
         { path: "homework/:assignmentId", element: <StudentHomeworkCardPage /> },
-        {
-          path: "reports",
-          element: (
-            <SectionPlaceholder
-              icon={LineChart}
-              title={texts.empty.studentReports.title}
-              text={texts.empty.studentReports.text}
-            />
-          ),
-        },
+        { path: "reports", element: <StudentReportsPage /> },
       ],
     },
   ],
@@ -153,7 +158,7 @@ const adminRoutes: RouteObject = {
         { path: "students/:id", element: <StudentCardPage /> },
         { path: "students/:id/edit", element: <StudentFormPage /> },
         { path: "more", element: <MorePage /> },
-        { path: "exams", element: soon(texts.nav.admin.exams, ClipboardCheck) },
+        { path: "exams", element: <AdminExamsPage /> },
         { path: "catalog", element: soon(texts.nav.admin.catalog, BookOpen) },
         {
           element: <RequireRole allowed={["owner"]} />,

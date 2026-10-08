@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InvitationDialog } from "@/features/invitations/InvitationDialog";
+import { StudentProgressTab } from "@/features/reports/StudentProgressTab";
 import { texts } from "@/lib/texts";
 import { useSubjectName } from "@/features/reference/api";
 
@@ -189,10 +190,14 @@ function CardView({ card }: { card: StudentCard }) {
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">{t.tabs.overview}</TabsTrigger>
+          <TabsTrigger value="progress">{t.tabs.progress}</TabsTrigger>
           {"lesson_price" in card && <TabsTrigger value="finance">{t.tabs.finance}</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview">
           <Overview card={card} />
+        </TabsContent>
+        <TabsContent value="progress">
+          <StudentProgressTab studentId={card.user_id} canAddResult={card.is_active} />
         </TabsContent>
         {"lesson_price" in card && (
           <TabsContent value="finance">

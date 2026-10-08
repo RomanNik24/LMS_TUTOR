@@ -69,7 +69,11 @@ function Body({ assignment, timeZone }: { assignment: AssignmentDetail; timeZone
         )}
         {GRADEABLE.has(assignment.status) && (
           <>
-            <GradeForm key={assignment.score ?? "new"} assignment={assignment} />
+            <GradeForm
+              key={assignment.score ?? "new"}
+              assignment={assignment}
+              timeZone={timeZone}
+            />
             {assignment.status === "submitted" && (
               <Button
                 variant="outline"

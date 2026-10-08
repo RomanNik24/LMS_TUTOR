@@ -245,7 +245,7 @@ describe("ДЗ: экран проверки", () => {
     fireEvent.change(screen.getByLabelText(t.review.comment), { target: { value: "Хорошо" } });
     fireEvent.click(screen.getByRole("button", { name: t.review.save }));
     await waitFor(() => {
-      expect(body).toEqual({ score: 11, comment: "Хорошо" });
+      expect(body).toEqual({ score: 11, comment: "Хорошо", geometry_score: null });
     });
   });
 

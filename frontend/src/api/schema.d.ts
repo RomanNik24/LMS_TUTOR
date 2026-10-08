@@ -1381,6 +1381,8 @@ export interface components {
             max_primary: number;
             /** Name */
             name: string;
+            /** Uses Geometry */
+            uses_geometry: boolean;
         };
         /**
          * ExtendRequest

@@ -47,6 +47,7 @@ class ReferenceService:
                 result_kind=exam_type.result_kind,
                 max_primary=exam_type.max_primary,
                 name=exam_type.name,
+                uses_geometry=isinstance(exam_type.config.get("min_geometry"), int),
             )
             for exam_type, subject_code in await self._exam_types.list_active_with_subject_codes()
         ]

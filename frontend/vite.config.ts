@@ -31,6 +31,10 @@ export default defineConfig({
           if (inPackage("zod", "react-hook-form", "@hookform/resolvers")) return "vendor-forms";
           if (inPackage("date-fns", "@date-fns/tz")) return "vendor-date";
           if (id.includes("/node_modules/@telegram-apps/")) return "vendor-telegram";
+          // Графики нужны только экранам отчётов (они грузятся лениво): свой чанк.
+          if (inPackage("recharts", "victory-vendor") || id.includes("/node_modules/d3-")) {
+            return "vendor-charts";
+          }
           return "vendor";
         },
       },

@@ -1,14 +1,17 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { ApiError, errorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
+import { ConversionLine } from "@/features/exams/ConversionLine";
+import { useConversionPreview } from "@/features/exams/api";
+import { useExamTypes } from "@/features/reference/api";
 import { dialogScroll } from "@/features/schedule/LessonFormDialog";
-import { localToUtcIso } from "@/lib/datetime";
+import { localToUtcIso, todayKey } from "@/lib/datetime";
 import { texts } from "@/lib/texts";
 
 import { MAX_EXTENSIONS, useExtend, useGrade, useReturn, useUploadReviewFile } from "./api";
@@ -26,20 +29,58 @@ function ErrorLine({ error }: { error: unknown }) {
   );
 }
 
-/** Оценка: балл (0..максимум) и комментарий. */
-export function GradeForm({ assignment }: { assignment: AssignmentDetail }) {
+/**
+ * Оценка: балл (0..максимум) и комментарий. Для пробника — ещё и конвертация в оценку или
+ * тестовый балл (считает сервер), а для ОГЭ математики поле баллов по геометрии (docs/07 §9.2.9).
+ */
+export function GradeForm({
+  assignment,
+  timeZone,
+}: {
+  assignment: AssignmentDetail;
+  timeZone: string;
+}) {
   const grade = useGrade(assignment.assignment_id);
+  const examTypes = useExamTypes();
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<GradeFormValues>({
     resolver: zodResolver(gradeFormSchema(assignment.max_score)),
     defaultValues: {
       score: assignment.score === null ? "" : String(assignment.score),
       comment: assignment.teacher_comment ?? "",
+      geometry_score: "",
     },
   });
+  const exam =
+    assignment.kind === "mock_exam"
+      ? examTypes.data?.find((item) => item.id === assignment.exam_type_id)
+      : undefined;
+  const watched = useWatch({ control });
+  const score = watched.score ?? "";
+  const geometry = watched.geometry_score ?? "";
+  const scoreNumber = /^\d+$/.test(score) ? Number(score) : null;
+  const geometryNumber = /^\d+$/.test(geometry) ? Number(geometry) : null;
+  const usable =
+    exam !== undefined &&
+    scoreNumber !== null &&
+    scoreNumber <= assignment.max_score &&
+    (geometryNumber === null || geometryNumber <= scoreNumber);
+  const preview = useConversionPreview(
+    usable
+      ? {
+          exam_type_id: exam.id,
+          // дата экзамена — день оценки в поясе преподавателя (так её выберет сервер для ученика)
+          exam_date: todayKey(timeZone),
+          primary_score: scoreNumber,
+          max_primary: assignment.max_score,
+          geometry_score: exam.uses_geometry ? geometryNumber : null,
+        }
+      : null,
+  );
   return (
     <form
       noValidate
@@ -48,7 +89,14 @@ export function GradeForm({ assignment }: { assignment: AssignmentDetail }) {
         void handleSubmit((values) => {
           const comment = values.comment.trim();
           grade.mutate(
-            { score: Number(values.score), comment: comment === "" ? null : comment },
+            {
+              score: Number(values.score),
+              comment: comment === "" ? null : comment,
+              geometry_score:
+                exam?.uses_geometry === true && values.geometry_score !== ""
+                  ? Number(values.geometry_score)
+                  : null,
+            },
             {
               onSuccess: () => {
                 toast.success(t.saved);
@@ -73,6 +121,25 @@ export function GradeForm({ assignment }: { assignment: AssignmentDetail }) {
           />
         )}
       </Field>
+      {exam?.uses_geometry === true && (
+        <Field label={t.geometry} hint={t.geometryHint} error={errors.geometry_score?.message}>
+          {({ id, invalid, describedBy }) => (
+            <Input
+              id={id}
+              inputMode="numeric"
+              invalid={invalid}
+              aria-describedby={describedBy}
+              {...register("geometry_score")}
+            />
+          )}
+        </Field>
+      )}
+      {exam !== undefined && usable && preview.data !== undefined && (
+        <div className="rounded-md bg-muted p-3">
+          <p className="text-sm text-muted-foreground font-body">{t.mockConversion}</p>
+          <ConversionLine conversion={preview.data} examType={exam} primaryScore={scoreNumber} />
+        </div>
+      )}
       <Field label={t.comment} error={errors.comment?.message}>
         {({ id, invalid, describedBy }) => (
           <Input
