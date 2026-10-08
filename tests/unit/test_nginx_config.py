@@ -48,3 +48,11 @@ def test_backend_address_is_resolved_per_request() -> None:
     assert "set $app_upstream app:8000;" in code
     assert "proxy_pass http://$app_upstream;" in code
     assert re.search(r"^resolver\s+127\.0\.0\.11\b", config, flags=re.MULTILINE)
+
+
+def test_access_log_hides_login_tokens_and_413_is_json() -> None:
+    """Аудит 2026-10-08, пп. 7 и 16: токен входа не попадает в журнал, 413 — JSON docs/08 §1."""
+    config = (NGINX / "conf.d" / "default.conf").read_text(encoding="utf-8")
+    assert re.search(r'~\^/login/\s+"/login/\*\*\*";', config)
+    assert "error_page 413 = @payload_too_large;" in config
+    assert '"code":"file_too_large"' in config

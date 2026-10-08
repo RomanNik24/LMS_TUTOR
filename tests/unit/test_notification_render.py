@@ -61,14 +61,14 @@ def test_student_homework_notifications_link_to_card() -> None:
     graded = render(
         NotificationType.HOMEWORK_GRADED, assignment_id=7, title="Графы", score=11, max_score=13
     )
-    assert graded.text == "✅ ДЗ «Графы» проверено: 11/13."
+    assert graded.text == "✅ ДЗ «Графы» проверено: 11 из 13."
     button = graded.buttons[0][0]
     assert button.url == f"{BASE}/app/homework/7"
     assert button.web_app is True
     returned = render(
         NotificationType.HOMEWORK_RETURNED, assignment_id=7, title="Графы", comment="№3"
     )
-    assert returned.text == "↩ ДЗ «Графы» нужно доработать. Комментарий: №3"
+    assert returned.text == "↩ ДЗ «Графы» вернулось на доработку. Комментарий: №3"
     assigned = render(
         NotificationType.HOMEWORK_ASSIGNED, assignment_id=7, title="Графы", due_epoch=EPOCH
     )

@@ -152,3 +152,15 @@ def test_enum_values_match_project_enums() -> None:
     }
     for (table, column), enum_cls in expected.items():
         assert list(table_of(table).c[column].type.enums) == [m.value for m in enum_cls]
+
+
+def test_fk_lookup_indexes_exist() -> None:
+    """Аудит 2026-10-08, п. 9: файлы, журнал переносов и материалы выбираются по FK."""
+    from src.db.models import HomeworkExtension, HomeworkFile, HomeworkMaterial  # noqa: PLC0415
+
+    for model, column in (
+        (HomeworkFile, "assignment_id"),
+        (HomeworkExtension, "assignment_id"),
+        (HomeworkMaterial, "homework_id"),
+    ):
+        assert (column,) in {tuple(i.columns.keys()) for i in model.__table__.indexes}
