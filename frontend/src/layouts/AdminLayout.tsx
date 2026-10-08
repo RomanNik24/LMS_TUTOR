@@ -1,6 +1,7 @@
 import { LogOut } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
+import { OfflineBanner } from "@/components/common/OfflineBanner";
 import { useLogout, useMe } from "@/features/auth/api";
 import { texts } from "@/lib/texts";
 import { useBreakpoint } from "@/lib/useBreakpoint";
@@ -98,6 +99,7 @@ export function AdminLayout() {
   if (breakpoint === "mobile") {
     return (
       <div className="flex min-h-dvh flex-col bg-background">
+        <OfflineBanner />
         <main className="flex-1 px-4 py-4">
           <Outlet />
         </main>
@@ -108,9 +110,12 @@ export function AdminLayout() {
   return (
     <div className="flex min-h-dvh bg-background">
       <Sidebar items={sidebarItems} compact={breakpoint === "tablet"} />
-      <main className="min-w-0 flex-1 px-6 py-6">
-        <Outlet />
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <OfflineBanner />
+        <main className="flex-1 px-6 py-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
