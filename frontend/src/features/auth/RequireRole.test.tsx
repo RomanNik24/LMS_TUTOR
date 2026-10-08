@@ -60,6 +60,20 @@ describe("RequireRole", () => {
     expect(router.state.location.pathname).toBe("/login");
   });
 
+  it("не вошёл → /login с запоминанием исходного адреса", async () => {
+    server.use(
+      http.get("*/api/v1/me", () =>
+        HttpResponse.json(
+          { error: { code: "unauthenticated", message: "Требуется вход.", details: {} } },
+          { status: 401 },
+        ),
+      ),
+    );
+    const { router } = renderRoutes(routes(["student"]), ["/secret?tab=1"]);
+    await screen.findByText("экран входа");
+    expect(router.state.location.state).toEqual({ from: "/secret?tab=1" });
+  });
+
   it("сбой сервера (500) не выбрасывает на экран входа, а показывает ошибку", async () => {
     server.use(
       http.get("*/api/v1/me", () =>

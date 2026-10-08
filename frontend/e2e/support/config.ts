@@ -8,7 +8,7 @@ function required(name: string, fallback?: string): string {
 }
 
 export const E2E = {
-  baseUrl: process.env["E2E_BASE_URL"] ?? "http://127.0.0.1:8080",
+  baseUrl: process.env["E2E_BASE_URL"] ?? "http://127.0.0.1:18080",
   /** Тестовый токен бота, с которым запущен стек: им подписывается initData. Не настоящий токен. */
   botToken: required("E2E_BOT_TOKEN", "100000:E2E_TEST_TOKEN_NOT_REAL"),
   ownerTelegramId: Number(required("E2E_OWNER_TG_ID", "900000001")),

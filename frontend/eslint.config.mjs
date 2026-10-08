@@ -20,7 +20,16 @@ const DANGEROUS_HTML_SELECTOR = {
 };
 
 export default tseslint.config(
-  { ignores: ["dist/**", "node_modules/**", "coverage/**", "src/api/schema.d.ts"] },
+  {
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      "src/api/schema.d.ts",
+      "e2e-report/**",
+      "e2e-results/**",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {

@@ -19,7 +19,6 @@ export const texts = {
   },
   hello: {
     greeting: "Привет, {name}",
-    roleLabel: "Роль",
   },
   roles: {
     student: "Ученик",

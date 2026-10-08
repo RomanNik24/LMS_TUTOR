@@ -37,6 +37,11 @@ export class TelegramMock {
 
   private async handle(request: IncomingMessage): Promise<unknown> {
     const method = (request.url ?? "").split("/").pop()?.split("?")[0] ?? "";
+    if (method === "__sent") return this.sent;
+    if (method === "__reset") {
+      this.sent.length = 0;
+      return { ok: true };
+    }
     const raw = await new Promise<string>((resolve) => {
       let data = "";
       request.on("data", (chunk: Buffer) => (data += chunk.toString()));

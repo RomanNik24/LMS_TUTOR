@@ -1,0 +1,50 @@
+# Изолированный стек для сквозных тестов Playwright (T8.09). Не трогает рабочий стек разработки:
+# другое имя проекта, свои контейнеры, тома и порты, окружение из frontend/e2e/stack.env
+# (тестовый токен бота, подставной Telegram), а не из .env.local.
+#
+#   docker compose -p my-lms-e2e -f docker-compose.yml -f docker-compose.e2e.yml \
+#       --profile full up -d --build
+#
+# Дальше: миграции, справочники и пользователи E2E (см. README, раздел «Сквозные тесты»).
+# Снести стек вместе с данными E2E: ... down -v (тома этого проекта отдельные).
+
+x-e2e-env: &e2e-env
+  env_file: !override
+    - frontend/e2e/stack.env
+  environment:
+    DATABASE_URL: postgresql+asyncpg://lms:lms_dev_password@postgres:5432/lms
+    REDIS_URL: redis://redis:6379/0
+    S3_ENDPOINT: http://minio:9000
+    S3_PUBLIC_ENDPOINT: http://127.0.0.1:19000
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+  postgres:
+    container_name: my-lms-e2e-postgres
+    ports: !reset []
+  redis:
+    container_name: my-lms-e2e-redis
+    ports: !reset []
+  minio:
+    container_name: my-lms-e2e-minio
+    ports: !override
+      - "127.0.0.1:19000:9000"
+  minio-init:
+    container_name: my-lms-e2e-minio-init
+  app:
+    <<: *e2e-env
+    container_name: my-lms-e2e-app
+    ports: !reset []
+  nginx:
+    container_name: my-lms-e2e-nginx
+    environment:
+      S3_PUBLIC_ENDPOINT: http://127.0.0.1:19000
+    ports: !override
+      - "127.0.0.1:18080:80"
+  worker:
+    <<: *e2e-env
+    container_name: my-lms-e2e-worker
+  scheduler:
+    <<: *e2e-env
+    container_name: my-lms-e2e-scheduler

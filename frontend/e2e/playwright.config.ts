@@ -16,10 +16,22 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never", outputFolder: "../e2e-report" }]],
   outputDir: "../e2e-results",
   use: {
-    baseURL: process.env["E2E_BASE_URL"] ?? "http://127.0.0.1:8080",
+    baseURL: process.env["E2E_BASE_URL"] ?? "http://127.0.0.1:18080",
     trace: "retain-on-failure",
     video: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // E2E_BROWSER_CHANNEL=chrome (или msedge) — взять установленный браузер, если скачать
+  // Chromium Playwright нельзя (нет доступа к cdn.playwright.dev).
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(process.env["E2E_BROWSER_CHANNEL"]
+          ? { channel: process.env["E2E_BROWSER_CHANNEL"] }
+          : {}),
+      },
+    },
+  ],
 });

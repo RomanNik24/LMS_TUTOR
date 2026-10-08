@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { errorMessage } from "@/api/errors";
 import { ErrorState } from "@/components/common/ErrorState";
@@ -9,6 +9,7 @@ import { texts } from "@/lib/texts";
 import { externalLinkProps } from "@/lib/externalLink";
 
 import { useTelegramLogin } from "../api";
+import { returnPathFrom } from "../redirect";
 
 const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME;
 
@@ -18,6 +19,7 @@ const BOT_USERNAME = import.meta.env.VITE_BOT_USERNAME;
  */
 export function LoginPage() {
   const navigate = useNavigate();
+  const target = returnPathFrom(useLocation().state) ?? "/";
   const login = useTelegramLogin();
   const inMiniApp = isTelegramMiniApp();
   // StrictMode в dev запускает эффекты дважды: автовход должен отправиться один раз
@@ -32,10 +34,10 @@ export function LoginPage() {
     started.current = true;
     mutate(initData, {
       onSuccess: () => {
-        void navigate("/", { replace: true });
+        void navigate(target, { replace: true });
       },
     });
-  }, [inMiniApp, mutate, navigate]);
+  }, [inMiniApp, mutate, navigate, target]);
 
   if (inMiniApp && !login.isError) {
     return <FullScreenLoader />;
@@ -55,7 +57,7 @@ export function LoginPage() {
               if (initData !== null) {
                 login.mutate(initData, {
                   onSuccess: () => {
-                    void navigate("/", { replace: true });
+                    void navigate(target, { replace: true });
                   },
                 });
               }

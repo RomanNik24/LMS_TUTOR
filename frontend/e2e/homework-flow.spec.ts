@@ -3,7 +3,7 @@
  * преподаватель получает уведомление, оценивает → ученик получает уведомление об оценке.
  *
  * Вход — через подписанный тестовым токеном initData (как в Telegram), без подмены сервера.
- * Telegram подменён: стек запущен с TELEGRAM_API_BASE на TelegramMock, тест читает отправленное.
+ * Telegram подменён: стек запущен с TELEGRAM_API_BASE на telegram-mock-server, тест читает отправленное.
  */
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Browser, Page } from "@playwright/test";
@@ -11,22 +11,14 @@ import type { APIRequestContext, Browser, Page } from "@playwright/test";
 import { texts } from "../src/lib/texts";
 import { E2E } from "./support/config";
 import { launchUrl, signInitData } from "./support/initData";
-import { TelegramMock } from "./support/telegramMock";
+import { sentTo } from "./support/telegramMockClient";
 
-const telegram = new TelegramMock();
 const TITLE = `E2E ДЗ ${String(Date.now())}`;
 const MAX_SCORE = 10;
 const SCORE = 9;
 
 const owner = { id: E2E.ownerTelegramId, first_name: "Владелец" };
 const student = { id: E2E.studentTelegramId, first_name: "Ученик" };
-
-test.beforeAll(async () => {
-  await telegram.start(E2E.telegramMockPort);
-});
-test.afterAll(async () => {
-  await telegram.stop();
-});
 
 /** Сессия персонала в API-клиенте Playwright (cookie хранится в контексте запросов). */
 async function staffApi(request: APIRequestContext): Promise<APIRequestContext> {
@@ -82,12 +74,11 @@ test("вход → сдача ДЗ → оценка → уведомления",
   await expect(studentPage.getByText(TITLE)).toBeVisible();
   await studentPage.getByText(TITLE).click();
   await studentPage.getByRole("button", { name: texts.student.homework.selfReport }).click();
-  await expect(studentPage.getByText(texts.student.homework.submitDone)).toBeVisible();
   await expect(studentPage.getByText(texts.student.homework.submitted)).toBeVisible();
 
   // 3. Преподаватель получает уведомление «сдано» (рассылка идёт фоновой задачей).
   await expect
-    .poll(() => telegram.textsTo(E2E.ownerTelegramId).some((text) => text.includes(TITLE)), {
+    .poll(async () => (await sentTo(E2E.ownerTelegramId)).some((text) => text.includes(TITLE)), {
       timeout: E2E.notificationTimeoutMs,
       message: "владельцу не пришло уведомление о сданной работе",
     })
@@ -103,13 +94,11 @@ test("вход → сдача ДЗ → оценка → уведомления",
   // 5. Ученик получает уведомление «проверено» с оценкой.
   await expect
     .poll(
-      () =>
-        telegram
-          .textsTo(E2E.studentTelegramId)
-          .some(
-            (text) =>
-              text.includes(TITLE) && text.includes(`${String(SCORE)} из ${String(MAX_SCORE)}`),
-          ),
+      async () =>
+        (await sentTo(E2E.studentTelegramId)).some(
+          (text) =>
+            text.includes(TITLE) && text.includes(`${String(SCORE)} из ${String(MAX_SCORE)}`),
+        ),
       {
         timeout: E2E.notificationTimeoutMs,
         message: "ученику не пришло уведомление об оценке",

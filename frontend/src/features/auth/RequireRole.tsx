@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { errorMessage, isUnauthenticated } from "@/api/errors";
 import { ErrorState } from "@/components/common/ErrorState";
@@ -6,6 +6,7 @@ import { FullScreenLoader } from "@/components/common/FullScreenLoader";
 
 import { useMe } from "./api";
 import type { Role } from "./api";
+import type { LoginLocationState } from "./redirect";
 
 type RequireRoleProps = {
   allowed: readonly Role[];
@@ -18,12 +19,15 @@ type RequireRoleProps = {
  */
 export function RequireRole({ allowed }: RequireRoleProps) {
   const { data: me, isPending, error, refetch } = useMe();
+  const location = useLocation();
   if (isPending) {
     return <FullScreenLoader />;
   }
   if (error !== null) {
     if (isUnauthenticated(error)) {
-      return <Navigate to="/login" replace />;
+      // Запомнить, куда шёл пользователь (ссылка из бота ведёт на конкретный экран).
+      const from: LoginLocationState = { from: location.pathname + location.search };
+      return <Navigate to="/login" replace state={from} />;
     }
     // Сетевой сбой или 5xx: не выкидываем пользователя на экран входа
     return (

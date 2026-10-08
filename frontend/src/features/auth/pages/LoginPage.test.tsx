@@ -51,6 +51,25 @@ describe("LoginPage", () => {
     expect(queryClient.getQueryData(["me"])).toEqual(ME);
   });
 
+  it("после входа возвращает на экран, куда шёл пользователь (ссылка из бота)", async () => {
+    server.use(http.post("*/api/v1/auth/telegram", () => HttpResponse.json(ME)));
+    const { router } = renderRoutes(
+      [...routes, { path: "/app/homework/:id", element: <p>карточка ДЗ</p> }],
+      [{ pathname: "/login", state: { from: "/app/homework/7" } }],
+    );
+    await screen.findByText("карточка ДЗ");
+    expect(router.state.location.pathname).toBe("/app/homework/7");
+  });
+
+  it("чужой адрес возврата игнорируется: уходит на /", async () => {
+    server.use(http.post("*/api/v1/auth/telegram", () => HttpResponse.json(ME)));
+    const { router } = renderRoutes(routes, [
+      { pathname: "/login", state: { from: "//evil.example" } },
+    ]);
+    await screen.findByText("страница после входа");
+    expect(router.state.location.pathname).toBe("/");
+  });
+
   it("ошибка входа показывает понятный текст и кнопку «Попробовать ещё раз»", async () => {
     let calls = 0;
     server.use(

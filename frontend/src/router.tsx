@@ -10,7 +10,7 @@ import type { RouteObject } from "react-router-dom";
 import { FullScreenLoader } from "@/components/common/FullScreenLoader";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { RequireRole } from "@/features/auth/RequireRole";
-import { HelloPage } from "@/features/auth/pages/HelloPage";
+import { HomeRedirect } from "@/features/auth/HomeRedirect";
 import { LinkLoginPage } from "@/features/auth/pages/LinkLoginPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { StudentHomeworkCardPage } from "@/features/homework/student/StudentHomeworkCardPage";
@@ -186,7 +186,7 @@ export const routes: RouteObject[] = [
   { path: "/login/:token", element: <LinkLoginPage /> },
   {
     element: <RequireRole allowed={["student", "manager", "owner"]} />,
-    children: [{ path: "/", element: <HelloPage /> }],
+    children: [{ path: "/", element: <HomeRedirect /> }],
   },
   studentRoutes,
   adminRoutes,
