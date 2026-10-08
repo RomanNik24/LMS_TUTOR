@@ -27,7 +27,7 @@ export function MorePage() {
               <Card className="flex min-h-12 items-center gap-3">
                 <Icon className="size-5 text-primary" strokeWidth={1.75} aria-hidden />
                 <span className="flex-1 text-base font-semibold font-body">{label}</span>
-                <ChevronRight className="size-5 text-gray-600" aria-hidden />
+                <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
               </Card>
             </Link>
           </li>

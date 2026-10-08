@@ -27,7 +27,7 @@ export function TabBar({ items }: TabBarProps) {
               className={({ isActive }) =>
                 cn(
                   "relative flex h-full min-h-11 flex-col items-center justify-center gap-1 text-xs font-semibold font-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-                  isActive ? "text-primary" : "text-gray-600",
+                  isActive ? "text-primary" : "text-muted-foreground",
                 )
               }
             >

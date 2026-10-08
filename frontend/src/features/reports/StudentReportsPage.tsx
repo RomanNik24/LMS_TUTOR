@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { errorMessage } from "@/api/errors";
 import { ErrorState } from "@/components/common/ErrorState";
+import { PageHeader } from "@/components/common/PageHeader";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { useMe } from "@/features/auth/api";
 import { DEFAULT_TIMEZONE } from "@/features/students/studentForm";
@@ -20,7 +21,7 @@ export function StudentReportsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-extrabold font-display">{texts.nav.student.reports}</h1>
+      <PageHeader title={texts.nav.student.reports} />
       <PeriodTabs value={period} onChange={setPeriod} />
       {query.isPending && <PageSkeleton cards={3} />}
       {query.isError && (
