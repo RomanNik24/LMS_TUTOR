@@ -1246,6 +1246,7 @@ git diff main...HEAD | grep -nE "TODO|FIXME|type: ignore|ts-ignore|: any|skip\(|
 **Читать:** `docs/04` §6.
 **Промпт:** `Задача T6.01 (CODE). Модель mock_exam_results по docs/04 §6 + ревизия Alembic (downgrade) + тест соответствия.`
 **Проверка:** 🤖 тесты зелёные.
+**Статус:** ✅ модель `src/db/models/exams.py` (`MockExamResult`: все поля docs/04 §6, `assignment_id` UNIQUE и `ON DELETE SET NULL`, остальные ссылки `RESTRICT`, CHECK `primary_score >= 0`, индекс `(student_id, exam_type_id, exam_date)`), ревизия `f7a8b9c0d1e2` с `downgrade` (upgrade → `alembic check` → downgrade → upgrade проверены на PostgreSQL); тесты `tests/unit/test_mock_exam_model.py`, обновлены списки таблиц и ограничений. Проверка `primary_score <= max_primary` и конвертация — сервис (T6.02–T6.03).
 
 ### T6.02 · Конвертация баллов
 **Кто:** 💻 CODE · **Размер:** M · **Ветка:** `feature/t6-02-score-conversion` · **Коммит:** `feat(exams): implement score conversion`

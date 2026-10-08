@@ -66,6 +66,7 @@ EXPECTED_TABLES: set[str] = {
     "homework_extensions",
     "homework_files",
     "notifications",
+    "mock_exam_results",
 }
 
 IDENTITY_PK_TABLES = (
