@@ -15,13 +15,22 @@
 
 import logging
 
-from taskiq import TaskiqEvents, TaskiqScheduler, TaskiqState
+from redis.asyncio.retry import Retry
+from redis.backoff import ExponentialBackoff
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
+from taskiq import ScheduledTask, ScheduleSource, TaskiqEvents, TaskiqScheduler, TaskiqState
 from taskiq.schedule_sources import LabelScheduleSource
 from taskiq_redis import ListQueueBroker
 
 from src.bot.client import build_bot
 from src.core.config import get_settings
-from src.core.constants import REDIS_CONNECT_TIMEOUT_SECONDS
+from src.core.constants import (
+    REDIS_CONNECT_TIMEOUT_SECONDS,
+    REDIS_HEALTH_CHECK_INTERVAL_SECONDS,
+    REDIS_RETRY_ATTEMPTS,
+    REDIS_RETRY_BACKOFF_CAP_SECONDS,
+)
 from src.core.sentry import init_sentry
 from src.db.session import create_engine, create_session_factory
 
@@ -42,6 +51,14 @@ def create_broker(redis_url: str) -> ListQueueBroker:
     Для брокера таймаут чтения отключён (``None``); обрыв соединения ловит TCP keepalive,
     а подключение по-прежнему ограничено ``socket_connect_timeout``.
 
+    Соединения из пула переживают перезапуск Redis «мёртвыми»: без повтора первая команда через
+    каждое такое соединение падала (``Connection lost``), и планировщик терял задачу. Соединения
+    №4–5 пула нужны только на границе часа (5 отправок сразу), поэтому после перезапуска Redis
+    пропадали именно часовые задачи (аудит 2026-10-08, п. 1). Поэтому включены проверка
+    простаивающего соединения перед командой (``health_check_interval``) и повтор команды с
+    переподключением при ``ConnectionError``/``TimeoutError``; заодно воркер переживает короткий
+    обрыв без перезапуска процесса.
+
     Args:
         redis_url: Адрес Redis (``REDIS_URL``).
     """
@@ -50,11 +67,31 @@ def create_broker(redis_url: str) -> ListQueueBroker:
         socket_timeout=None,
         socket_connect_timeout=REDIS_CONNECT_TIMEOUT_SECONDS,
         socket_keepalive=True,
+        health_check_interval=REDIS_HEALTH_CHECK_INTERVAL_SECONDS,
+        retry=Retry(ExponentialBackoff(cap=REDIS_RETRY_BACKOFF_CAP_SECONDS), REDIS_RETRY_ATTEMPTS),
+        retry_on_error=[RedisConnectionError, RedisTimeoutError],
     )
 
 
+class LoggingScheduler(TaskiqScheduler):
+    """Планировщик, который не теряет сбой отправки молча.
+
+    TaskIQ пишет «Sending task …» до отправки и запускает её в отдельной задаче asyncio:
+    исключение отправки всплывало только при сборке мусора («Task exception was never
+    retrieved»), и по журналу казалось, что задача ушла. Здесь сбой сразу пишется в журнал
+    уровня ERROR с именем задачи (и уходит в Sentry, если он включён).
+    """
+
+    async def on_ready(self, source: ScheduleSource, task: ScheduledTask) -> None:
+        """Поставить задачу в очередь; сбой записать в журнал, а не терять молча."""
+        try:
+            await super().on_ready(source, task)
+        except Exception:
+            logger.exception("Задача %s не поставлена в очередь", task.task_name)
+
+
 broker = create_broker(get_settings().redis_url)
-scheduler = TaskiqScheduler(broker=broker, sources=[LabelScheduleSource(broker)])
+scheduler = LoggingScheduler(broker=broker, sources=[LabelScheduleSource(broker)])
 
 
 @broker.on_event(TaskiqEvents.WORKER_STARTUP)
