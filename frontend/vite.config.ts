@@ -19,14 +19,18 @@ export default defineConfig({
       output: {
         // Библиотеки редко меняются, код приложения — часто: разные файлы кешируются отдельно, и
         // после обновления приложения браузер не скачивает React и остальное заново (Rolldown).
-        manualChunks(id: string) {
-          if (!id.includes("node_modules")) return undefined;
-          if (/[\/](react|react-dom|react-router|react-router-dom|scheduler)[\/]/.test(id)) {
+        manualChunks(rawId: string) {
+          // Разделитель путей зависит от ОС: приводим к «/», чтобы проверки работали везде.
+          const id = rawId.replaceAll("\\", "/");
+          if (!id.includes("/node_modules/")) return undefined;
+          const inPackage = (...names: string[]) =>
+            names.some((name) => id.includes(`/node_modules/${name}/`));
+          if (inPackage("react", "react-dom", "react-router", "react-router-dom", "scheduler")) {
             return "vendor-react";
           }
-          if (/[\/](zod|react-hook-form|@hookform)[\/]/.test(id)) return "vendor-forms";
-          if (/[\/](date-fns|@date-fns)[\/]/.test(id)) return "vendor-date";
-          if (/[\/]@telegram-apps[\/]/.test(id)) return "vendor-telegram";
+          if (inPackage("zod", "react-hook-form", "@hookform/resolvers")) return "vendor-forms";
+          if (inPackage("date-fns", "@date-fns/tz")) return "vendor-date";
+          if (id.includes("/node_modules/@telegram-apps/")) return "vendor-telegram";
           return "vendor";
         },
       },
