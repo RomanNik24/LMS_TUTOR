@@ -13,6 +13,7 @@ import secrets
 from dataclasses import dataclass
 from urllib.parse import parse_qsl
 
+from src.core import texts
 from src.core.constants import (
     INIT_DATA_FUTURE_TOLERANCE_SECONDS,
     INIT_DATA_MAX_AGE_SECONDS,
@@ -23,7 +24,6 @@ from src.core.timeutils import utcnow
 
 # Код и HTTP-статус при невалидных данных входа (docs/08 §1: 401 unauthenticated).
 _UNAUTHENTICATED_CODE = "unauthenticated"
-_INVALID_INIT_DATA_MESSAGE = "Не удалось подтвердить вход через Telegram."
 
 
 @dataclass(frozen=True)
@@ -69,7 +69,7 @@ def hash_token(token: str) -> str:
 def _invalid(reason: str) -> AppError:
     """Единая ошибка проверки initData; причина идёт в details без данных клиента."""
     return AppError(
-        _INVALID_INIT_DATA_MESSAGE,
+        texts.AUTH_INIT_DATA_INVALID,
         code=_UNAUTHENTICATED_CODE,
         details={"reason": reason},
         http_status=401,

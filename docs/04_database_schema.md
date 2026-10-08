@@ -207,7 +207,7 @@ PK `(lesson_id, student_id)`. Индекс `(student_id, lesson_id)`.
 
 ### 5.2. `homework_materials`
 Файлы преподавателя к заданию (PDF и т. п.).
-`id`, `homework_id FK ON DELETE CASCADE`, `s3_key`, `original_name`, `content_type`, `size_bytes`.
+`id`, `homework_id FK ON DELETE CASCADE`, `s3_key`, `original_name`, `content_type`, `size_bytes`. Индекс `(homework_id)`.
 
 ### 5.3. `homework_assignments` (выдача конкретному ученику)
 | Поле | Тип | Описание |
@@ -249,7 +249,7 @@ assigned ──(ученик сдал)──▶ submitted ──(оценка)�
 `needs_revision` также подвержен `expired` по тем же правилам, при возврате преподаватель задаёт новый `due_at` (по умолчанию — следующее занятие).
 
 ### 5.4. `homework_extensions` (журнал переносов)
-`id`, `assignment_id FK ON DELETE CASCADE`, `old_due_at`, `new_due_at`, `created_by FK → users`, `created_at`.
+`id`, `assignment_id FK ON DELETE CASCADE`, `old_due_at`, `new_due_at`, `created_by FK → users`, `created_at`. Индекс `(assignment_id)`.
 
 Правила переноса:
 - Только персонал. Не более 2 переносов на выдачу (`extensions_count`).
@@ -273,6 +273,8 @@ assigned ──(ученик сдал)──▶ submitted ──(оценка)�
 | content_type | VARCHAR(100) NOT NULL | |
 | size_bytes | INTEGER NOT NULL | |
 | created_at | TIMESTAMPTZ | |
+
+Индекс `(assignment_id)`.
 
 Лимиты (проверяются в сервисе): ≤ 10 файлов `student_solution` на выдачу, ≤ 10 МБ каждый, `image/jpeg`, `image/png`, `image/heic`, `application/pdf`.
 

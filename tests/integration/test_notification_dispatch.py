@@ -139,7 +139,7 @@ async def test_due_notification_is_sent_and_future_one_waits(db_session: AsyncSe
     notifier = FakeNotifier()
     stats = await dispatcher(db_session, notifier).dispatch_due(DAY)
     assert (stats.sent, stats.total) == (1, 1)
-    assert notifier.sent == [(501, "✅ ДЗ «Графы 1» проверено: 11/13.")]
+    assert notifier.sent == [(501, "✅ ДЗ «Графы 1» проверено: 11 из 13.")]
     first, second = await rows(db_session)
     assert (first.status, first.attempts, first.sent_at) == (NotificationStatus.SENT, 1, DAY)
     assert second.status == NotificationStatus.PENDING

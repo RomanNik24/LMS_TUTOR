@@ -137,6 +137,9 @@ class HomeworkMaterial(Base):
     )
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, comment="Размер файла, байты")
 
+    # Материалы выбираются по заданию на каждом экране ДЗ (аудит 2026-10-08, п. 9).
+    __table_args__ = (Index("ix_homework_materials_homework_id", "homework_id"),)
+
     homework: Mapped["Homework"] = relationship(back_populates="materials", lazy="raise")
 
 
@@ -268,6 +271,9 @@ class HomeworkExtension(Base):
         comment="Время записи (TIMESTAMPTZ, UTC)",
     )
 
+    # Журнал переносов выбирается по выдаче (карточка выдачи персонала).
+    __table_args__ = (Index("ix_homework_extensions_assignment_id", "assignment_id"),)
+
     assignment: Mapped["HomeworkAssignment"] = relationship(
         back_populates="extensions", lazy="raise"
     )
@@ -314,5 +320,8 @@ class HomeworkFile(Base):
         nullable=False,
         comment="Время загрузки (TIMESTAMPTZ, UTC)",
     )
+
+    # Файлы выбираются по выдаче при каждом просмотре, сдаче и подсчёте лимита.
+    __table_args__ = (Index("ix_homework_files_assignment_id", "assignment_id"),)
 
     assignment: Mapped["HomeworkAssignment"] = relationship(back_populates="files", lazy="raise")

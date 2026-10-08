@@ -158,7 +158,7 @@ class ExternalServiceError(AppError):
 
     def __init__(
         self,
-        message: str = "Внешний сервис временно недоступен. Попробуйте позже.",
+        message: str = texts.API_EXTERNAL_SERVICE_UNAVAILABLE,
         *,
         code: str = "internal_error",
         details: dict[str, DetailValue] | None = None,
